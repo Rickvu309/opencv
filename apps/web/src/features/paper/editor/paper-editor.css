@@ -80,7 +80,6 @@
 .paper-editor {
   position: relative;
   overflow: clip;
-  background: var(--muted);
 }
 
 .paper-editor-stage {

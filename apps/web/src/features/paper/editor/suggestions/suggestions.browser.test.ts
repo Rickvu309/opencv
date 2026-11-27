@@ -70,7 +70,7 @@ async function bundle(): Promise<string> {
         : []
     )
     .join("\n")
-  return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>:root{--muted:#f4f4f5;--border:#e4e4e7;--foreground:#09090b}body{margin:0}#scroller{height:100vh;overflow:auto}${css}</style></head><body><div id="scroller"><div id="host"></div></div><script>${code.replaceAll("</script", "<\\/script")}</script></body></html>`
+  return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>:root{--muted:#f4f4f5;--border:#e4e4e7;--foreground:#09090b;--background:#ffffff;--destructive:oklch(0.572 0.183 23.679);--chart-2:oklch(0.65 0.13 154.934)}body{margin:0}#scroller{height:100vh;overflow:auto}${css}</style></head><body><div id="scroller"><div id="host"></div></div><script>${code.replaceAll("</script", "<\\/script")}</script></body></html>`
 }
 
 async function launch(): Promise<Browser> {
@@ -147,6 +147,7 @@ const lineStyle = (page: Page, block: string) =>
     return {
       text: line!.textContent,
       decoration: style.textDecorationLine,
+      color: style.color,
     }
   }, block)
 
@@ -173,22 +174,28 @@ describe("Coach suggestions on the page", () => {
     expect(await lineStyle(page, "c8")).toMatchObject({
       decoration: "line-through",
     })
-    expect(await lineStyle(page, "c8~lab-proposal-1~new0")).toEqual({
+    const added = await lineStyle(page, "c8~lab-proposal-1~new0")
+    expect(added).toMatchObject({
       text: expect.stringContaining(NEW_8),
       decoration: "underline",
     })
+    const plain = await lineStyle(page, "c10")
+    const struck = await lineStyle(page, "c8")
+    expect(new Set([plain!.color, struck!.color, added!.color]).size).toBe(3)
     expect(await bullets(page)).toEqual([OLD_8, OLD_9])
     const old = await page.locator('.paper-line[data-block="c8"]').boundingBox()
-    const added = await page
+    const newLine = await page
       .locator('.paper-line[data-block="c8~lab-proposal-1~new0"]')
       .boundingBox()
     const buttons = await chip(page, "lab-proposal-1", "accept").boundingBox()
-    expect(added!.y).toBeGreaterThan(old!.y)
-    expect(buttons!.y).toBeGreaterThanOrEqual(added!.y + added!.height - 1)
+    expect(newLine!.y).toBeGreaterThan(old!.y)
+    expect(buttons!.y).toBeGreaterThanOrEqual(newLine!.y + newLine!.height - 1)
     const next = await page
       .locator('.paper-line[data-block="c9"]')
       .boundingBox()
-    expect(buttons!.y + buttons!.height).toBeLessThanOrEqual(next!.y + 1)
+    const below = next!.y - (buttons!.y + buttons!.height)
+    expect(below).toBeGreaterThanOrEqual(6)
+    expect(below).toBeLessThanOrEqual(12)
     await page.context().close()
   }, 60_000)
 

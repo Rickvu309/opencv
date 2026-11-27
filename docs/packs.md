@@ -181,6 +181,7 @@ flowchart TD
   p_apps_web_src_features_paper_editor --> p_packages_paper_engine
   p_apps_web_src_features_paper_editor --> p_packages_domain_src_paper_doc
   p_apps_web_src_features_paper_editor --> p_packages_paper_corpus
+  p_apps_web_src_features_paper_editor --> p_apps_web_src_lib
   p_apps_web_src_features_paper_rich_editor --> p_apps_web_src_features_paper
   p_apps_web_src_features_paper_rich_editor --> p_apps_web_src_features_paper_page
   p_apps_web_src_features_paper_rich_editor --> p_apps_web_src_features_coach
@@ -237,7 +238,7 @@ flowchart TD
 | `apps/web/src/features/landing` | feature | about/about-page.tsx, blog/blog-copy.ts, blog/blog-index.tsx, blog/blog-post.tsx, help/help-page.tsx, landing-page.tsx, landing-pricing.tsx, landing-stories-page.tsx | apps/web/src/lib, apps/web/src/components | none |
 | `apps/web/src/features/paper` | feature | paper-api.ts, paper-library.tsx, paper-templates.ts, document-share.tsx, design/paper-writing-page.css, paper-letter-stopped-rich.tsx | apps/web/src/features/apply, apps/web/src/features/coach, apps/web/src/features/paper-page, apps/web/src/features/seed, apps/web/src/lib, apps/web/src/components | none |
 | `apps/web/src/features/paper-page` | feature | document-chrome.tsx | apps/web/src/lib, apps/web/src/components | none |
-| `apps/web/src/features/paper/editor` | feature | paper-editor.ts, lab-documents.ts | packages/paper-engine, packages/domain/src/paper-doc, packages/paper-corpus | none |
+| `apps/web/src/features/paper/editor` | feature | paper-editor.ts, lab-documents.ts, chrome/paper-chrome.tsx | packages/paper-engine, packages/domain/src/paper-doc, packages/paper-corpus, apps/web/src/lib | none |
 | `apps/web/src/features/paper/rich-editor` | feature | rich-page.tsx | apps/web/src/features/paper, apps/web/src/features/paper-page, apps/web/src/features/coach, apps/web/src/lib, apps/web/src/components | none |
 | `apps/web/src/features/seed` | feature | sample-author.ts | apps/web/src/lib, apps/web/src/components | none |
 | `apps/web/src/features/settings` | feature | account-section.tsx, billing-section.tsx, coach-section.tsx, integrations-section.tsx, preferences-section.tsx, sections.ts, settings-api.ts, settings-layout.tsx, settings-nav.tsx, usage-section.tsx | apps/web/src/features/auth, apps/web/src/features/connections, apps/web/src/lib, apps/web/src/components | none |

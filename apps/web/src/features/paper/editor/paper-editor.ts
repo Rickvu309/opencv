@@ -3,33 +3,23 @@ import "./paper-editor.css"
 import {
   type BlockId,
   type DocCommand,
-  type Document,
   type Origin,
   type Pos,
   type Range,
-  type Selection,
   type SelectionCommand,
 } from "@workspace/domain/paper-doc"
 import {
   caret,
   createEngine,
   createLayouter,
-  lineEdges,
-  locate,
   paperFontMetrics,
   selectionRange,
   type EditorState,
   type InputEdit,
-  type Layout,
-  type Metrics,
-  type PagePoint,
 } from "@workspace/paper-engine"
 
 import {
-  allMarked,
   at,
-  codeUnitsAfter,
-  codeUnitsBefore,
   comparePos,
   containerAt,
   indexDoc,
@@ -38,13 +28,11 @@ import {
   samePos,
   shift,
   textBetween,
-  textBlocksIn,
   type DocIndex,
 } from "./doc-positions.ts"
 import {
   attachPointer,
   createInputPort,
-  type KeyAction,
   type InputKind,
   type InputSink,
   type Mirror,
@@ -52,12 +40,15 @@ import {
 } from "./input-port.ts"
 import { copySelection, plainFragment } from "./clipboard.ts"
 import { createEditorTools } from "./editor-tools.ts"
+import { createKeyActions } from "./key-actions.ts"
 import { pasteHtml } from "./paste-html.ts"
 import { createOverlays, rangeRects, type PageRect } from "./overlays.ts"
-import { createSuggestionLayer } from "./suggestions/suggestion-layer.ts"
-import { verticalTarget } from "./vertical-move.ts"
+import { mountEditorSuggestions } from "./suggestions/editor-suggestions.ts"
 import { randomId } from "./random-id.ts"
-import { coachOrigin } from "./suggestions/suggestion-view.ts"
+import type {
+  PaperEditor,
+  PaperEditorOptions,
+} from "./paper-editor-contract.ts"
 import {
   createPainter,
   MPT_PER_PX,
@@ -67,19 +58,10 @@ import {
   px,
 } from "./painter.ts"
 
-export type PaperEditorOptions = {
-  doc: Document
-  metrics?: Metrics
-}
-
-export type PaperEditor = {
-  read(): { doc: Document; selection: Selection }
-  layout(): Layout
-  scale(): number
-  focus(): void
-  suggest: ReturnType<typeof createSuggestionLayer>["set"]
-  destroy(): void
-}
+export type {
+  PaperEditor,
+  PaperEditorOptions,
+} from "./paper-editor-contract.ts"
 
 const MIRROR_WINDOW = 2000
 const STAND_IN_LIMIT = 1000
@@ -103,13 +85,13 @@ export function mountPaperEditor(
   let index: DocIndex = indexDoc(doc)
   let layout = layouter.layout(doc, null)
   let composition: { from: Pos; to: Pos } | null = null
-  let goalX: number | null = null
   let dragAnchor: Pos | null = null
   let focused = false
   let scale = 1
   let fittedWidth = -1
   let base: { pos: Pos } | { whole: Range } = { whole: currentRange() }
   let scrollQueued = false
+  const listeners = new Set<() => void>()
   let stageLeft = 0
   let stageTop = 0
 
@@ -120,13 +102,14 @@ export function mountPaperEditor(
   stage.append(overlays.layer)
   host.append(stage)
   const painter = createPainter(stage, metrics)
-  const suggestions = createSuggestionLayer(host, overlays.layer, engine, {
-    land(commands, ids) {
-      focusEditor()
-      return run(commands, undefined, coachOrigin(client, ids))
-    },
-    undo: () => act({ do: "undo" }),
-    changed() {
+  const suggestions = mountEditorSuggestions(host, overlays.layer, engine, {
+    client,
+    metrics,
+    layout: () => layout,
+    run: (commands, by) => run(commands, undefined, by),
+    focus: focusEditor,
+    undo: () => keys.act({ do: "undo" }),
+    refresh() {
       relayout()
       fit()
       draw()
@@ -243,6 +226,7 @@ export function mountPaperEditor(
       relayout()
     }
     draw()
+    for (const listener of listeners) listener()
   }
 
   function relayout() {
@@ -251,12 +235,6 @@ export function mountPaperEditor(
     layout = layouter.layout(shown, layout)
     painter.paint(layout, shown)
     if (layout.pages.length !== pages) fit()
-  }
-
-  function locateReal(point: PagePoint): Pos {
-    const pos = locate(metrics, layout, point)
-    const owner = suggestions.owner(pos.block)
-    return owner ? { block: owner, offset: 0 } : pos
   }
 
   function run(commands: DocCommand[], input?: InputEdit, by = origin) {
@@ -299,194 +277,30 @@ export function mountPaperEditor(
     return doc.content.find((block) => block.attrs.id === id)
   }
 
-  function listBlocks(range: Range) {
-    return textBlocksIn(doc, index, range).filter((id) => {
-      const block = blockOf(id)
-      return block?.type === "text_block" && block.attrs.list !== null
-    })
-  }
-
-  function backspace(word: boolean) {
-    if (!collapsed()) return deleteSelection()
-    if (word) {
-      selectCommand({ op: "move", unit: "word", dir: -1, extend: true })
-      if (!collapsed()) deleteSelection()
-      return
-    }
-    const here = head()
-    const found = containerAt(index, here)
-    if (!found) return
-    if (here.offset > 0) {
-      const units = codeUnitsBefore(found.container.text, here.offset)
-      run([
-        { op: "deleteRange", range: { from: shift(here, -units), to: here } },
-      ])
-      return
-    }
-    if (here.cell) return
-    const block = blockOf(here.block)
-    if (block?.type === "text_block" && block.attrs.list !== null) {
-      run([{ op: "setList", blocks: [here.block], list: null }])
-      return
-    }
-    if ((index.order.get(here.block) ?? 0) > 0)
-      run([{ op: "joinBlocks", block: here.block, direction: "backward" }])
-  }
-
-  function forwardDelete(word: boolean) {
-    if (!collapsed()) return deleteSelection()
-    if (word) {
-      selectCommand({ op: "move", unit: "word", dir: 1, extend: true })
-      if (!collapsed()) deleteSelection()
-      return
-    }
-    const here = head()
-    const found = containerAt(index, here)
-    if (!found) return
-    if (here.offset < found.container.text.length) {
-      const units = codeUnitsAfter(found.container.text, here.offset)
-      run([
-        { op: "deleteRange", range: { from: here, to: shift(here, units) } },
-      ])
-      return
-    }
-    if (here.cell) return
-    if ((index.order.get(here.block) ?? 0) < doc.content.length - 1)
-      run([{ op: "joinBlocks", block: here.block, direction: "forward" }])
-  }
-
-  function enter() {
-    if (collapsed()) {
-      run([{ op: "splitBlock", at: head() }])
-      return
-    }
-    const range = currentRange()
-    run([
-      { op: "deleteRange", range },
-      { op: "splitBlock", at: range.from },
-    ])
-  }
-
-  function vertical(dir: -1 | 1, extend: boolean) {
-    const goal = goalX ?? caret(metrics, layout, head()).x
-    const target = verticalTarget(
-      metrics,
-      layout,
-      head(),
-      goal,
-      dir,
-      locateReal
-    )
-    if (!target) selectCommand({ op: "move", unit: "doc", dir, extend })
-    else select(extend ? anchor() : target, target)
-    goalX = goal
-  }
-
-  function lineEdge(dir: -1 | 1, extend: boolean) {
-    const edges = lineEdges(layout, head())
-    const target = dir < 0 ? edges.start : edges.end
-    select(extend ? anchor() : target, target)
-  }
-
-  function act(action: KeyAction) {
-    if (!(action.do === "move" && action.unit === "line")) goalX = null
-    const range = currentRange()
-    switch (action.do) {
-      case "move":
-        if (action.unit === "line") return vertical(action.dir, action.extend)
-        if (action.unit === "lineEdge")
-          return lineEdge(action.dir, action.extend)
-        return selectCommand({
-          op: "move",
-          unit: action.unit,
-          dir: action.dir,
-          extend: action.extend,
-        })
-      case "selectAll":
-        return selectCommand({ op: "selectAll" })
-      case "undo": {
-        const undone = engine.undo(state)
-        if (undone) adopt(undone.state)
-        return
-      }
-      case "redo": {
-        const redone = engine.redo(state)
-        if (redone) adopt(redone.state)
-        return
-      }
-      case "mark":
-        run([
-          {
-            op: "setMark",
-            range,
-            mark: { type: action.mark },
-            on: !allMarked(doc, index, range, action.mark),
-          },
-        ])
-        return
-      case "find":
-        return tools.openFind(action.replace)
-      case "link":
-        return tools.openLink(doc, head(), collapsed(), () => {
-          if (collapsed()) selectCommand({ op: "selectWord" })
-          return currentRange()
-        })
-      case "clearFormatting":
-        run([{ op: "clearFormatting", range }])
-        return
-      case "kind": {
-        const blocks = textBlocksIn(doc, index, range)
-        if (blocks.length)
-          run([{ op: "setBlockKind", blocks, kind: action.kind }])
-        return
-      }
-      case "list": {
-        const blocks = textBlocksIn(doc, index, range)
-        if (!blocks.length) return
-        const already = blocks.every((id) => {
-          const block = blockOf(id)
-          return (
-            block?.type === "text_block" && block.attrs.list === action.list
-          )
-        })
-        run([{ op: "setList", blocks, list: already ? null : action.list }])
-        return
-      }
-      case "level": {
-        const blocks = listBlocks(range)
-        if (blocks.length) run([{ op: "shiftLevel", blocks, by: action.by }])
-        return
-      }
-      case "tab": {
-        const blocks = textBlocksIn(doc, index, range)
-        const lists = listBlocks(range)
-        if (blocks.length > 0 && lists.length === blocks.length) {
-          run([{ op: "shiftLevel", blocks: lists, by: action.by }])
-          return
-        }
-        if (action.by > 0) run([{ op: "insertText", range, text: "\t" }])
-        return
-      }
-      case "enter":
-        return enter()
-      case "lineBreak":
-        run([
-          {
-            op: "pasteFragment",
-            range,
-            fragment: [{ type: "hard_break" }],
-          },
-        ])
-        return
-      case "pageBreak":
-        run([{ op: "insertBlock", at: head(), block: "page_break" }])
-        return
-      case "backspace":
-        return backspace(action.word)
-      case "delete":
-        return forwardDelete(action.word)
-    }
-  }
+  const keys = createKeyActions(metrics, {
+    doc: () => doc,
+    index: () => index,
+    layout: () => layout,
+    head,
+    anchor,
+    collapsed,
+    currentRange,
+    blockOf,
+    locateAt: (point) => suggestions.locateReal(point),
+    run,
+    selectCommand,
+    select,
+    deleteSelection,
+    undo() {
+      const undone = engine.undo(state)
+      if (undone) adopt(undone.state)
+    },
+    redo() {
+      const redone = engine.redo(state)
+      if (redone) adopt(redone.state)
+    },
+    tools,
+  })
 
   const sink: InputSink = {
     mirror(): Mirror {
@@ -550,7 +364,7 @@ export function mountPaperEditor(
       revealCaret()
     },
     action(action) {
-      act(action)
+      keys.act(action)
       if (action.do !== "find" && action.do !== "link") revealCaret()
     },
     paste({ text, html }) {
@@ -625,7 +439,7 @@ export function mountPaperEditor(
       return { page, x: x * MPT_PER_PX, y: inPage * MPT_PER_PX }
     },
     press(point, clicks, extend) {
-      goalX = null
+      keys.forgetGoal()
       tools.dismissLink()
       const image = layout.pages[point.page]?.boxes.find(
         ({ kind, rect }) =>
@@ -644,7 +458,7 @@ export function mountPaperEditor(
         port.sync()
         return
       }
-      const pos = locateReal(point)
+      const pos = suggestions.locateReal(point)
       if (clicks === 3) {
         const found = containerAt(index, pos)
         const length = found?.container.text.length ?? 0
@@ -658,7 +472,7 @@ export function mountPaperEditor(
     },
     drag(point) {
       if (!dragAnchor) return
-      select(dragAnchor, locateReal(point))
+      select(dragAnchor, suggestions.locateReal(point))
       port.sync()
     },
     focus() {
@@ -682,6 +496,25 @@ export function mountPaperEditor(
 
   return {
     read: () => ({ doc, selection }),
+    range: currentRange,
+    act(action) {
+      keys.act(action)
+      port.sync()
+      revealCaret()
+    },
+    apply(commands) {
+      const done = run(commands)
+      port.sync()
+      return done
+    },
+    history: () => ({
+      undo: engine.undo(state) !== null,
+      redo: engine.redo(state) !== null,
+    }),
+    subscribe(listener) {
+      listeners.add(listener)
+      return () => listeners.delete(listener)
+    },
     layout: () => layout,
     scale: () => scale,
     focus: focusEditor,

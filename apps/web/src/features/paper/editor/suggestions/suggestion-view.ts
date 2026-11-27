@@ -98,7 +98,7 @@ export function mapSuggestions(
   return view
 }
 
-function gapBlock(id: string): Block {
+function gapBlock(id: string, lineSpacing: number): Block {
   return {
     type: "text_block",
     attrs: {
@@ -107,7 +107,7 @@ function gapBlock(id: string): Block {
       list: null,
       level: 0,
       align: "left",
-      lineSpacing: null,
+      lineSpacing,
       keepWithNext: null,
     },
     content: [],
@@ -121,7 +121,7 @@ function renamed(block: Block, id: string): Block {
 export function displayDocument(
   doc: Document,
   view: SuggestionView,
-  gaps: number
+  gapSpacing: number
 ): DisplayDocument {
   const roles = new Map<string, SuggestionRole>()
   if (view.lines.size === 0) return { doc, roles }
@@ -142,11 +142,9 @@ export function displayDocument(
           roles.set(id, { proposal, owner, role: "new" })
           content.push(renamed(line.after!, id))
         })
-      for (let n = 0; n < gaps; n++) {
-        const id = `${owner}~${proposal}~gap${n}`
-        roles.set(id, { proposal, owner, role: "gap" })
-        content.push(gapBlock(id))
-      }
+      const id = `${owner}~${proposal}~gap`
+      roles.set(id, { proposal, owner, role: "gap" })
+      content.push(gapBlock(id, gapSpacing))
     }
   }
   return { doc: { ...doc, content } as Document, roles }

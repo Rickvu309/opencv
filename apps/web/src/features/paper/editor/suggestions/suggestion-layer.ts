@@ -25,8 +25,9 @@ export type SuggestionHost = {
 }
 
 const STRIP_PX = 44
-const CHIP_ROW_PX = 36
-const GAP_LINE_PX = 30
+const GAP_SCREEN_PX = 41
+const GAP_LINE_PX = 20
+const GAP_AFTER_PX = 32 / 3
 const TOAST_MS = 6000
 
 const ICONS = {
@@ -236,10 +237,10 @@ export function createSuggestionLayer(
     const added = rule("new")
     style.textContent = [
       old
-        ? `:is(${old}) .paper-run:not([data-marker]){color:var(--destructive);text-decoration-line:line-through;text-decoration-thickness:1.5px}`
+        ? `:is(${old}) .paper-run:not([data-marker]){color:var(--destructive)!important;text-decoration-line:line-through;text-decoration-thickness:1.5px}`
         : "",
       added
-        ? `:is(${added}) .paper-run:not([data-marker]){color:color-mix(in oklch, var(--chart-2) 50%, var(--foreground));background:color-mix(in oklch, var(--chart-2) 16%, var(--background));text-decoration-line:underline;text-decoration-thickness:1.5px;text-underline-offset:3px}`
+        ? `:is(${added}) .paper-run:not([data-marker]){color:color-mix(in oklch, var(--chart-2) 50%, var(--foreground))!important;background:color-mix(in oklch, var(--chart-2) 16%, var(--background));text-decoration-line:underline;text-decoration-thickness:1.5px;text-underline-offset:3px}`
         : "",
       added ? `:is(${added}) [data-marker]{visibility:hidden}` : "",
     ].join("")
@@ -255,8 +256,9 @@ export function createSuggestionLayer(
     stripHeight: () => (strip.hidden ? 0 : STRIP_PX),
     display(doc: Document, scale: number): Document {
       lastDoc = doc
-      const gaps = Math.max(1, Math.ceil(CHIP_ROW_PX / scale / GAP_LINE_PX))
-      display = displayDocument(doc, currentView(), gaps)
+      const room = GAP_SCREEN_PX / scale - GAP_AFTER_PX
+      const spacing = Math.max(0.1, room / GAP_LINE_PX)
+      display = displayDocument(doc, currentView(), spacing)
       decorate(display.roles)
       paintControls()
       return display.doc
@@ -278,7 +280,7 @@ export function createSuggestionLayer(
             first.set(box.block, { page: page.index, box })
       const placed = new Set<string>()
       for (const [id, role] of roles) {
-        if (role.role !== "gap" || !id.endsWith("~gap0")) continue
+        if (role.role !== "gap") continue
         const gap = first.get(id)
         if (!gap) continue
         const text =

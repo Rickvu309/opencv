@@ -95,18 +95,16 @@ describe("Coach suggestions on the page", () => {
 
   it("lays the new line and the button gap under the struck line", () => {
     const view = mapSuggestions(engine, doc, proposals)
-    const shown = displayDocument(doc, view, 2)
-    const ids = shown.doc.content.map((block) => block.attrs.id).slice(6, 16)
+    const shown = displayDocument(doc, view, 1)
+    const ids = shown.doc.content.map((block) => block.attrs.id).slice(6, 14)
     expect(ids).toEqual([
       "c7",
       "c8",
       "c8~lab-proposal-1~new0",
-      "c8~lab-proposal-1~gap0",
-      "c8~lab-proposal-1~gap1",
+      "c8~lab-proposal-1~gap",
       "c9",
       "c9~lab-proposal-2~new0",
-      "c9~lab-proposal-2~gap0",
-      "c9~lab-proposal-2~gap1",
+      "c9~lab-proposal-2~gap",
       "c10",
     ])
     expect(shown.roles.get("c8")).toEqual({
@@ -114,7 +112,7 @@ describe("Coach suggestions on the page", () => {
       owner: "c8",
       role: "old",
     })
-    expect(displayDocument(doc, mapSuggestions(engine, doc, []), 2).doc).toBe(
+    expect(displayDocument(doc, mapSuggestions(engine, doc, []), 1).doc).toBe(
       doc
     )
   })
