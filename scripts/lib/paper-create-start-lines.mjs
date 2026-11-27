@@ -1,5 +1,5 @@
 const CREATE_SERVER = /^apps\/api\/src\/paper\/operations\/create\/server\.ts$/
-const STARTS_LOG = /\bengineLog\.start\(/g
+const STARTS_LOG = /\b(?:engineLog\.start|createPaper)\(/g
 const READS_TEMPLATE = /\btemplateLines\(/
 const READS_DRAFTED = /\binput\.lines\b/
 

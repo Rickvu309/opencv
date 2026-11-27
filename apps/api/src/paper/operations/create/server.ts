@@ -10,12 +10,11 @@ import type { OperationBinding } from "../../../registry/bind.js"
 import { startingPaper } from "../../new-paper.js"
 import { deleteNewPaper } from "../../new-paper-undo.js"
 import { blocksFromLines } from "../../engine-import-lines.js"
-import { admitted, engineLog } from "../../engine-sync-log.js"
 import { createPaper } from "../../store.js"
 
 type Created = Awaited<ReturnType<typeof createPaper>>
 
-function startingPage(input: {
+export function startingPage(input: {
   kind: "cv" | "letter"
   templateId?: PaperTemplateId
   lines?: readonly string[]
@@ -37,13 +36,13 @@ export const implementation = {
   execute: async (input, actor, registry) => {
     const created = await createPaper(actor, {
       kind: input.kind,
+      page: startingPage(input),
       name:
         input.name ??
         (input.templateId ? templatePageName(input.templateId) : undefined),
       ...(input.templateId ? { templateId: input.templateId } : {}),
       paper: startingPaper(input),
     })
-    admitted(await engineLog.start(created.id, startingPage(input)))
     if (input.jobId)
       await registry.execute({
         name: catalog["job.linkPaper"].name,

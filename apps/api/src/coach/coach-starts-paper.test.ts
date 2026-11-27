@@ -160,8 +160,8 @@ it("a Letter the Coach starts for a Job is a blank Paper named for the Job", () 
       name: "Cover letter, Lumiere",
     })
     expect(
-      (JSON.parse(before.outline) as { content: unknown[] }[]).every(
-        (node) => node.content.length === 0
+      (JSON.parse(before.outline) as { text?: string }[]).every(
+        (block) => block.text === ""
       )
     ).toBe(true)
     expect(before.outline).not.toContain("[Your name]")

@@ -11,6 +11,7 @@ import {
   toolReply as reply,
 } from "../test/proposal-client.js"
 import { paperFromLines } from "./import/word-to-paper.js"
+import { startingPage } from "./operations/create/server.js"
 import { createPaper } from "./store.js"
 
 const doorScope = registeredAgentScopes.join(" ")
@@ -30,6 +31,7 @@ it("an agent reads its own Paper, lists only its own, and is refused another per
         createPaper(personActor(userId), {
           kind: "cv",
           name: "CV",
+          page: startingPage({ kind: "cv", lines: texts }),
           paper: paperFromLines(
             "cv",
             texts.map((text) => ({ style: "Normal" as const, text }))
@@ -81,27 +83,20 @@ it("an agent reads its own Paper, lists only its own, and is refused another per
       refusedPrivately(await edit(unknownDoc))
     )
 
-    const read = (
-      own.body as {
-        data: { revision: number; nativeBasis: unknown; outline: string }
-      }
-    ).data
+    const read = (own.body as { data: { revision: number; outline: string } })
+      .data
     const [first] = (
-      JSON.parse(read.outline) as { id: string; content: { text: string }[] }[]
-    ).filter((node) =>
-      node.content.some((run) => run.text.includes("My first line"))
-    )
+      JSON.parse(read.outline) as { id: string; text?: string }[]
+    ).filter((block) => block.text?.includes("My first line"))
+    const at = { block: first!.id, offset: 0 }
     const proposed = await call("paper_edit", {
       docId: mine.id,
       basedOn: read.revision,
-      nativeBasis: read.nativeBasis,
-      edits: [
+      commands: [
         {
           op: "replaceText",
-          blockId: first!.id,
-          from: 0,
-          to: 0,
-          before: "",
+          range: { from: at, to: at },
+          expect: "",
           text: "Updated: ",
         },
       ],

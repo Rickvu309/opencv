@@ -29,7 +29,12 @@ import { PAGE_STORE_FILES, pageInsertingExports } from "./page-writes.js"
 
 const srcRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..")
 
-type Made = { docId: string; kind: "cv" | "letter"; engine?: 2 }
+type Made = {
+  docId: string
+  kind: "cv" | "letter"
+  version: number
+  copyOf?: string
+}
 type Account = { cookie: string; userId: string }
 type App = ReturnType<typeof createTestApp>
 type Maker = (app: App, owner: Account) => Promise<Made>
@@ -39,6 +44,7 @@ const idOf = z.object({
   docId: z.string().uuid().optional(),
   id: z.string().uuid().optional(),
 })
+const engineDoc = z.object({ doc: z.unknown() }).passthrough()
 const listOf = z.array(
   z
     .object({ id: z.string(), kind: z.string(), format: z.string().optional() })
@@ -99,97 +105,109 @@ async function importWord(app: App, owner: Account) {
   )
 }
 
-const rich = (docId: string, kind: "cv" | "letter" = "cv"): Made => ({
+const made = (docId: string, version: 0 | 1, copyOf?: string): Made => ({
   docId,
-  kind,
+  kind: "cv",
+  version,
+  ...(copyOf ? { copyOf } : {}),
 })
+
+async function duplicated(app: App, owner: Account, source: string) {
+  return made(
+    docIdOf(
+      await command(app, owner, "paper.duplicate", {
+        docId: source,
+        writer: RICH_NATIVE_WRITER,
+      })
+    ),
+    0,
+    source
+  )
+}
 
 const ENGINE_IMPORT_CASE = "Import a Word file into the new editor"
 
 const CASES: Record<string, Maker> = {
   "Coach start (paper.start)": async (app, owner) =>
-    rich(
+    made(
       docIdOf(
         await command(app, owner, "paper.start", {
           kind: "cv",
           templateId: "modern",
         })
-      )
+      ),
+      0
     ),
   "Import a Word file": async (app, owner) =>
-    rich(
+    made(
       await importFile(
         app,
         owner,
         textDocx("Imported Word words"),
         "Imported.docx",
         "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-      )
+      ),
+      1
     ),
-  [ENGINE_IMPORT_CASE]: async (app, owner) => ({
-    docId: await importFile(
-      app,
-      owner,
-      textDocx("Imported Word words"),
-      "Imported.docx",
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-      2
+  [ENGINE_IMPORT_CASE]: async (app, owner) =>
+    made(
+      await importFile(
+        app,
+        owner,
+        textDocx("Imported Word words"),
+        "Imported.docx",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        2
+      ),
+      1
     ),
-    kind: "cv",
-    engine: 2,
-  }),
   "Import a PDF": async (app, owner) =>
-    rich(
+    made(
       await importFile(
         app,
         owner,
         textPdf("Imported PDF words"),
         "Imported.pdf",
         "application/pdf"
-      )
+      ),
+      1
     ),
   "Import a text file": async (app, owner) =>
-    rich(
+    made(
       await importFile(
         app,
         owner,
         Buffer.from("Imported text words\nSecond line\n"),
         "Imported.txt",
         "text/plain"
-      )
+      ),
+      1
     ),
   "Duplicate an imported page (paper.duplicate)": async (app, owner) =>
-    rich(
+    duplicated(app, owner, await importWord(app, owner)),
+  "Rich document (paper.create)": async (app, owner) =>
+    made(
       docIdOf(
-        await command(app, owner, "paper.duplicate", {
-          docId: await importWord(app, owner),
-          writer: RICH_NATIVE_WRITER,
+        await command(app, owner, "paper.create", {
+          kind: "cv",
+          name: "Rich CV",
+          templateId: "modern",
+        })
+      ),
+      0
+    ),
+  "Duplicate a rich document (paper.duplicate)": async (app, owner) =>
+    duplicated(
+      app,
+      owner,
+      docIdOf(
+        await command(app, owner, "paper.create", {
+          kind: "cv",
+          name: "Rich CV to copy",
+          templateId: "modern",
         })
       )
     ),
-  "Rich document (paper.create)": async (app, owner) => ({
-    docId: docIdOf(
-      await command(app, owner, "paper.create", {
-        kind: "cv",
-        name: "Rich CV",
-      })
-    ),
-    kind: "cv",
-  }),
-  "Duplicate a rich document (paper.duplicate)": async (app, owner) => ({
-    docId: docIdOf(
-      await command(app, owner, "paper.duplicate", {
-        docId: docIdOf(
-          await command(app, owner, "paper.create", {
-            kind: "cv",
-            name: "Rich CV to copy",
-          })
-        ),
-        writer: RICH_NATIVE_WRITER,
-      })
-    ),
-    kind: "cv",
-  }),
 }
 
 const CREATOR_EXPORTS: Record<string, string[]> = {
@@ -197,14 +215,14 @@ const CREATOR_EXPORTS: Record<string, string[]> = {
     name.startsWith("Duplicate")
   ),
   "paper/store.ts#createEngineImportPage": [
-    "Import a Word file into the new editor",
+    "Import a Word file",
+    ENGINE_IMPORT_CASE,
+    "Import a PDF",
+    "Import a text file",
   ],
   "paper/store.ts#createPaper": [
     "Rich document (paper.create)",
     "Duplicate a rich document (paper.duplicate)",
-    "Import a Word file",
-    "Import a PDF",
-    "Import a text file",
     "Coach start (paper.start)",
   ],
 }
@@ -260,7 +278,6 @@ describe("every store function that inserts a page has cases", () => {
 describe("a page made any way is listed, opens, and stays hidden from others", () => {
   let app: App
   let close: () => Promise<void>
-  let owner: Account
   let stranger: Account
   let db: Awaited<ReturnType<typeof createMigratedTestDb>>["db"]
 
@@ -304,7 +321,6 @@ describe("a page made any way is listed, opens, and stays hidden from others", (
     db = opened.db
     close = () => opened.client.close()
     app = createTestApp(db)
-    owner = await account("Page owner")
     stranger = await account("Stranger")
   })
 
@@ -315,46 +331,45 @@ describe("a page made any way is listed, opens, and stays hidden from others", (
   it.each(Object.keys(CASES))("%s", async (name) => {
     const maker = CASES[name]
     if (!maker) throw new Error(name)
-    const creator =
-      name === ENGINE_IMPORT_CASE ? await account("New editor owner") : owner
-    const made = await withDatabase(db, () => maker(app, creator))
-    if (made.engine === 2) {
-      const engineRead = (who: Account) =>
-        app.request("/api/reads/paper.read", {
-          method: "POST",
-          headers: authHeaders(who.cookie),
-          body: JSON.stringify({ docId: made.docId, view: "engine" }),
-        })
-      const opened = await engineRead(creator)
-      expect(opened.status, await opened.clone().text()).toBe(200)
-      expect(dataOf.parse(await opened.json()).data).toMatchObject({
-        docId: made.docId,
-        kind: made.kind,
-        version: 1,
+    const creator = await account(`Owner of ${name}`)
+    const page = await withDatabase(db, () => maker(app, creator))
+    const engineRead = (who: Account, docId: string) =>
+      app.request("/api/reads/paper.read", {
+        method: "POST",
+        headers: authHeaders(who.cookie),
+        body: JSON.stringify({ docId, view: "engine" }),
       })
-      expect((await engineRead(stranger)).status).toBe(404)
-      expect(await listed(creator)).toMatchObject([
-        { id: made.docId, kind: made.kind, contentVersion: 1 },
-      ])
-      expect(await listed(stranger)).toEqual([])
-      await expectListIsLivePages(app, db, creator)
-      return
-    }
-    const mine = (await listed(owner)).filter((item) => item.id === made.docId)
-    expect(mine).toHaveLength(1)
-    expect(mine[0]?.kind).toBe(made.kind)
-    expect(mine[0]?.format).toBe("rich")
-    const opened = await app.request(
-      "/api/reads/paper.read",
-      richInfoRequest(made.docId, owner.cookie)
-    )
+    const opened = await engineRead(creator, page.docId)
     expect(opened.status, await opened.clone().text()).toBe(200)
+    const read = dataOf.parse(await opened.json()).data
+    expect(read).toMatchObject({
+      docId: page.docId,
+      kind: page.kind,
+      version: page.version,
+    })
+    if (page.copyOf) {
+      const source = await engineRead(creator, page.copyOf)
+      expect(source.status).toBe(200)
+      const original = engineDoc.parse(dataOf.parse(await source.json()).data)
+      expect(engineDoc.parse(read).doc).toEqual(original.doc)
+    }
+    expect((await engineRead(stranger, page.docId)).status).toBe(404)
     expect(
-      (await listed(stranger)).some((item) => item.id === made.docId)
+      (await listed(creator)).filter((item) => item.id === page.docId)
+    ).toMatchObject([
+      { id: page.docId, kind: page.kind, contentVersion: page.version },
+    ])
+    expect(
+      (await listed(stranger)).some((item) => item.id === page.docId)
     ).toBe(false)
-    await expectListIsLivePages(app, db, owner)
+    const info = await app.request(
+      "/api/reads/paper.read",
+      richInfoRequest(page.docId, creator.cookie)
+    )
+    expect(info.status, await info.clone().text()).toBe(200)
+    await expectListIsLivePages(app, db, creator)
     await expectListIsLivePages(app, db, stranger)
-    const strangerSees = await routeReads(stranger, made.docId)
+    const strangerSees = await routeReads(stranger, page.docId)
     expect(strangerSees.get.status).toBe(404)
     expect(strangerSees).toEqual(await routeReads(stranger, randomUUID()))
   })
