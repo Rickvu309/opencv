@@ -1,6 +1,6 @@
 import { z } from "zod"
 
-import { fileIdSchema } from "../ids.js"
+import { idResult, type FileId } from "../ids.js"
 import { blockIdSchema } from "./engine-document.js"
 
 export const layoutRectSchema = z.strictObject({
@@ -53,7 +53,7 @@ export const layoutBoxSchema = z.discriminatedUnion("kind", [
     kind: z.literal("image"),
     block: blockIdSchema,
     rect: layoutRectSchema,
-    fileId: fileIdSchema,
+    fileId: idResult<FileId>(),
   }),
   z.strictObject({
     kind: z.literal("rule"),

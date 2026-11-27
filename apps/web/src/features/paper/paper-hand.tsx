@@ -6,12 +6,17 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
   type PointerEvent as ReactPointerEvent,
 } from "react"
+import { useQuery } from "@tanstack/react-query"
+import type { LayoutPage } from "@workspace/domain/paper-doc"
 import { flushSync } from "react-dom"
 import { File } from "lucide-react"
 
 import { Button } from "@workspace/ui/components/button"
 import { motionToken } from "@workspace/ui/lib/motion"
 import { cn } from "@workspace/ui/lib/utils"
+
+import { useOwnerId } from "@/lib/owner-id.ts"
+import { paperFirstPagesQuery } from "@/lib/paper-first-pages.ts"
 
 import { PaperSheet } from "./paper-library-card.tsx"
 import { PaperHandCaption } from "./paper-hand-caption.tsx"
@@ -30,12 +35,13 @@ import {
 } from "./paper-library-sections.tsx"
 import {
   handCardWidth,
+  handCards,
   handCentre,
   handClamp,
   handDrag,
   handList,
-  handNear,
   handPose,
+  handPreviewIds,
   HAND_NARROW_WIDTH,
   handRelease,
   handSpread,
@@ -185,7 +191,13 @@ function isFileDrag(event: DragEvent) {
   return types ? Array.from(types).includes("Files") : false
 }
 
-function HandPicture({ entry }: { entry: LibraryEntry }) {
+function HandPicture({
+  entry,
+  page,
+}: {
+  entry: LibraryEntry
+  page: LayoutPage | undefined
+}) {
   if (entry.type === "file") {
     return (
       <PaperSheet
@@ -199,7 +211,7 @@ function HandPicture({ entry }: { entry: LibraryEntry }) {
       />
     )
   }
-  return <LibraryDocumentSheet entry={entry} />
+  return <LibraryDocumentSheet entry={entry} page={page} />
 }
 
 function poseStyle(pose: HandPose, entering: boolean) {
@@ -257,6 +269,10 @@ export function PaperHand({
   const reduced = prefersReduced()
   const step = handStep(handCardWidth(hand.viewport))
   const spread = handSpread(hand.viewport)
+  const cards = handCards(list, hand.pos)
+  const { data: firstPages } = useQuery(
+    paperFirstPagesQuery(useOwnerId(), handPreviewIds(cards))
+  )
   const count = list.length
   const centre = handCentre(hand.pos, count)
   const trimmed = query.trim()
@@ -470,9 +486,8 @@ export function PaperHand({
     reduced,
   })
 
-  function cardNodes(items: LibraryEntry[]) {
-    return items.map((entry, index) => {
-      if (!handNear(index, hand.pos)) return null
+  function cardNodes() {
+    return cards.map(({ entry, index }) => {
       const pose = handPose({
         index,
         pos: hand.pos,
@@ -485,6 +500,10 @@ export function PaperHand({
       const name = entryName(entry)
       const edited = entryEdited(entry)
       const atCentre = index === centre && !pose.hidden
+      const page =
+        entry.type === "paper" && entry.doc.engine === 2
+          ? firstPages?.find(({ id }) => id === entry.doc.id)?.page
+          : undefined
       return (
         <Button
           key={entry.key}
@@ -511,7 +530,7 @@ export function PaperHand({
           }}
           onPointerLeave={() => dispatch({ type: "hover", index: -1 })}
         >
-          <HandPicture entry={entry} />
+          <HandPicture entry={entry} page={page} />
         </Button>
       )
     })
@@ -557,7 +576,7 @@ export function PaperHand({
               onPointerDown={onPointerDown}
               onKeyDown={onHandKey}
             >
-              {cardNodes(list)}
+              {cardNodes()}
               {hand.dropping || importName !== null ? (
                 <div
                   className="paper-hand-ghost"

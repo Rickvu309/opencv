@@ -40,7 +40,10 @@ type Observation = {
   inputs: unknown[]
   changed: ReadSpec[]
 }
-type InvalidatesTable = Record<string, (input: unknown) => QueryRef[]>
+type InvalidatesTable = Record<
+  string,
+  (input: unknown, spec: ReadSpec) => QueryRef[]
+>
 
 type Ids = {
   jobs: string[]
@@ -69,6 +72,7 @@ const SNAPSHOT_QUERIES: {
   "inbox.snoozed": () => [{}],
   "inbox.get": (ids) => ids.threads.map((threadId) => ({ threadId })),
   "paper.list": () => [{}, { writer: RICH_NATIVE_WRITER }],
+  "paper.firstPages": (ids) => ids.docs.map((docId) => ({ ids: [docId] })),
   "paper.read": (ids) => [
     { view: "library" },
     ...ids.docs.map((docId) => ({ view: "info", docId })),
@@ -235,12 +239,14 @@ function invalidatesTable(): InvalidatesTable {
     (operation) => operation.kind === "read"
   )
   const adoptedRefreshes = (
-    touches: { ownerId: string; name: string; entityId?: string }[]
+    touches: { ownerId: string; name: string; entityId?: string }[],
+    spec: ReadSpec
   ) =>
     adoptedReads
+      .filter((operation) => operation.name === spec.query)
       .filter((operation) =>
         operation
-          .dependsOn({} as never)
+          .dependsOn(spec.input as never)
           .some((resource) =>
             touches.some((touch) =>
               resourcesOverlap(touch, { ...resource, ownerId: "owner" })
@@ -253,13 +259,14 @@ function invalidatesTable(): InvalidatesTable {
       .filter((operation) => operation.kind === "command")
       .map((operation) => [
         operation.name,
-        (input: unknown) => [
+        (input: unknown, spec: ReadSpec) => [
           ...adoptedRefreshes(
             (operation.writes as (input?: unknown) => readonly ResourceRef[])(
               operation.name === "paper.import"
                 ? undefined
                 : operation.input.parse(input)
-            ).map((resource) => ({ ...resource, ownerId: "owner" }))
+            ).map((resource) => ({ ...resource, ownerId: "owner" })),
+            spec
           ),
         ],
       ])
@@ -273,8 +280,8 @@ function without(
 ): InvalidatesTable {
   return {
     ...table,
-    [command]: (input) =>
-      table[command]!(input).filter((ref) => ref.query !== query),
+    [command]: (input, spec) =>
+      table[command]!(input, spec).filter((ref) => ref.query !== query),
   }
 }
 
@@ -287,9 +294,14 @@ function unlistedChanges(observations: Observation[], table: InvalidatesTable) {
     const refs = table[observation.command]
     if (!refs) throw new Error(`no invalidates for ${observation.command}`)
     if (observation.command in EXEMPT_COMMANDS) return []
-    const listed = observation.inputs.flatMap((input) => refs(input))
     return observation.changed
-      .filter((spec) => !refreshes(listed, spec))
+      .filter(
+        (spec) =>
+          !refreshes(
+            observation.inputs.flatMap((input) => refs(input, spec)),
+            spec
+          )
+      )
       .map((spec) => ({ observation, spec }))
   })
 }

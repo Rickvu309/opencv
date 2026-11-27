@@ -1,6 +1,7 @@
-const FIRST_PAGE_LIB = "/api/reads/paper.list"
+const PAPER_LIST = "/api/reads/paper.list"
+const FIRST_PAGES = "/api/reads/paper.firstPages"
 
-function rows(spec, pages) {
+function rows(spec) {
   const now = new Date().toISOString()
   return spec.docs.map((doc, index) => ({
     id: `15500000-0000-4000-8000-${String(index + 1).padStart(12, "0")}`,
@@ -14,7 +15,7 @@ function rows(spec, pages) {
     isFavorite: false,
     sourceFileId: null,
     ...(doc.lines ? { preview: doc.lines } : {}),
-    ...(pages[index] ? { firstPage: pages[index] } : {}),
+    ...(doc.lines ? {} : { engine: 2 }),
     createdAt: now,
     updatedAt: now,
   }))
@@ -36,8 +37,14 @@ export async function mockFirstPageLibrary(page, spec, repo) {
     },
     { docs: spec.docs, repo }
   )
+  const documents = rows(spec)
+  const pagesById = new Map(
+    documents.flatMap(({ id }, index) =>
+      pages[index] ? [[id, { id, page: pages[index] }]] : []
+    )
+  )
   await page.route(
-    (url) => url.pathname === FIRST_PAGE_LIB,
+    (url) => url.pathname === PAPER_LIST || url.pathname === FIRST_PAGES,
     (route) => {
       const request = route.request()
       const origin = request.headers().origin
@@ -59,11 +66,18 @@ export async function mockFirstPageLibrary(page, spec, repo) {
               "content-type",
           },
         })
+      const data =
+        new URL(request.url()).pathname === PAPER_LIST
+          ? documents
+          : request.postDataJSON().ids.flatMap((id) => {
+              const page = pagesById.get(id)
+              return page ? [page] : []
+            })
       return route.fulfill({
         status: 200,
         contentType: "application/json",
         headers: cors,
-        body: JSON.stringify({ ok: true, data: rows(spec, pages) }),
+        body: JSON.stringify({ ok: true, data }),
       })
     }
   )

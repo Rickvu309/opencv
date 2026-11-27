@@ -4,12 +4,19 @@ import type { ResourceRef } from "../../../resources.js"
 import { nativeWriterSchema } from "../../../paper-doc/native.js"
 import { paperStoredKindSchema } from "../../../paper-doc/paper.js"
 
-const listedPaper = z.object({ id: z.string(), name: z.string() }).passthrough()
+const listedPaper = z
+  .object({
+    id: z.string(),
+    name: z.string(),
+    engine: z.literal(2).optional(),
+    firstPage: z.never().optional(),
+  })
+  .passthrough()
 
 export const operation = defineOperation({
   owner: "paper",
   name: "paper.list",
-  version: 1,
+  version: 2,
   kind: "read",
   description:
     "List documents. A Word page is listed without a document body: read its text with paper_outline.",

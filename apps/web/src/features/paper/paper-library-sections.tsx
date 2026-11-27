@@ -10,7 +10,11 @@ import {
   Trash2,
   type LucideIcon,
 } from "lucide-react"
-import { type PaperFile, type PaperView } from "@workspace/domain/paper-doc"
+import {
+  type LayoutPage,
+  type PaperFile,
+  type PaperView,
+} from "@workspace/domain/paper-doc"
 
 import { buttonVariants } from "@workspace/ui/components/button"
 import { cn } from "@workspace/ui/lib/utils"
@@ -54,10 +58,11 @@ export function PaperProofsLink() {
 
 export function LibraryDocumentSheet({
   entry,
+  page,
 }: {
   entry: Exclude<LibraryEntry, { type: "file" }>
+  page: LayoutPage | undefined
 }) {
-  const page = entry.doc.firstPage
   if (page) return <PaperSheet preview={<PaperFirstPage page={page} />} />
   return <PaperSheet lines={librarySheetLines(entry.doc)} />
 }

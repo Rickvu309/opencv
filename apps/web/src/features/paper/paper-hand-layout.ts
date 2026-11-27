@@ -153,6 +153,18 @@ export function handNear(index: number, pos: number) {
   return Math.abs(index - pos) <= HAND_SPREAD + 2
 }
 
+export function handCards(list: readonly LibraryEntry[], pos: number) {
+  return list.flatMap((entry, index) =>
+    handNear(index, pos) ? [{ entry, index }] : []
+  )
+}
+
+export function handPreviewIds(cards: ReturnType<typeof handCards>) {
+  return cards.flatMap(({ entry }) =>
+    entry.type === "paper" && entry.doc.engine === 2 ? [entry.doc.id] : []
+  )
+}
+
 export function handList(
   entries: readonly LibraryEntry[],
   view: LibraryView,

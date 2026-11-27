@@ -425,7 +425,7 @@ describe("only the owner's tabs write, in server order", () => {
     ).toEqual({ head: 2, changes: [undone.change] })
   })
 
-  it("a saved Paper's library card carries its real first page (#2248)", async () => {
+  it("reads saved first pages separately from the Paper list and only for their owner (#2262)", async () => {
     const ada = await world.person("Ada")
     const docId = await enginePaper(ada)
     const change = type(ada, "tab-a", "Ada Lovelace, engineer")
@@ -440,14 +440,25 @@ describe("only the owner's tabs write, in server order", () => {
       )
     ).toEqual({ ok: true, head: 1 })
     await world.inside(() => engineLog.flushFirstPage(docId))
-    const listed = dataOf<{ id: string; firstPage?: LayoutPage }[]>(
+    const grace = await world.person("Grace")
+    const otherId = await enginePaper(grace)
+    await world.inside(() => engineLog.flushFirstPage(otherId))
+    const listed = dataOf<{ id: string; engine?: number }[]>(
       await ada.read("paper.list", {})
     )
     const { doc } = await stored(docId)
     const expected = createLayouter(paperFontMetrics).layout(doc, null)
       .pages[0]!
-    expect(listed.find((row) => row.id === docId)?.firstPage).toEqual(
-      JSON.parse(JSON.stringify(expected)) as LayoutPage
-    )
+    const card = listed.find((row) => row.id === docId)
+    expect(card).toMatchObject({ id: docId, engine: 2 })
+    expect(card).not.toHaveProperty("firstPage")
+    expect(
+      dataOf<{ id: string; page: LayoutPage }[]>(
+        await ada.read("paper.firstPages", { ids: [docId, otherId, docId] })
+      )
+    ).toEqual([{ id: docId, page: JSON.parse(JSON.stringify(expected)) }])
+    expect(
+      dataOf(await grace.read("paper.firstPages", { ids: [docId] }))
+    ).toEqual([])
   })
 })
