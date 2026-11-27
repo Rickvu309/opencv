@@ -13,6 +13,7 @@ import {
   emptyRichPaper,
   RICH_NATIVE_WRITER,
   richPaperDocumentSchema,
+  type Document,
   type NativeWriter,
   type PaperStoredKind,
 } from "@workspace/domain/paper-doc"
@@ -43,6 +44,7 @@ import {
 } from "./content/read-paper.js"
 import { isEnginePaper, toListedEnginePaper } from "./listed-engine-paper.js"
 import { readPaperDocumentInfo } from "./document-info.js"
+import { admitted, engineLog, headOf } from "./engine-sync-log.js"
 
 export const IMPORT_FILE_CAP = 8_000_000
 export const IMPORT_SIZE_MESSAGE = "File must be 8 MB or smaller."
@@ -56,6 +58,12 @@ export { toListedPaper, tryReadRichPaper }
 
 function documentNotFound(): never {
   throw new CommandError(ERROR_CODES.NOT_FOUND, "Document not found")
+}
+
+function listedRow(row: typeof paperDocs.$inferSelect, writer?: NativeWriter) {
+  return isEnginePaper(row)
+    ? toListedEnginePaper(row)
+    : toListedPaper(row, writer)
 }
 
 export async function ownedPaperOrNull(userId: UserId, docId: PaperId) {
@@ -112,6 +120,7 @@ export async function createPaper(
   actor: Actor,
   input: {
     kind: PaperStoredKind
+    page: Document
     name?: string
     templateId?: string
     paper?: unknown
@@ -131,7 +140,7 @@ export async function createPaper(
       "The document kind does not match."
     )
   admitDocument(paper, writer)
-  await getDb()
+  const inserted = await getDb()
     .insert(paperDocs)
     .values({
       id,
@@ -146,15 +155,23 @@ export async function createPaper(
       updatedAt: now,
     })
     .onConflictDoNothing()
+    .returning({ id: paperDocs.id })
   importParsers.onInsert?.()
   const row = (await ownedPaperOrNull(actor.userId, parsePaperId(id))) ?? null
   if (!row) return documentNotFound()
-  return readPaperDocumentInfo(actor.userId, parsePaperId(id), writer)
+  const info = await readPaperDocumentInfo(
+    actor.userId,
+    parsePaperId(id),
+    writer
+  )
+  if (inserted.length) admitted(await engineLog.start(id, input.page))
+  return info
 }
 
 export async function createEngineImportPage(
   owner: UserId,
-  input: { fileId: FileId; name: string; kind: PaperStoredKind }
+  input: { fileId: FileId; name: string; kind: PaperStoredKind },
+  page: Document
 ) {
   const id = createId()
   await getDb().insert(paperDocs).values({
@@ -165,6 +182,7 @@ export async function createEngineImportPage(
     contentVersion: 1,
     sourceFileId: input.fileId,
   })
+  admitted(await engineLog.start(id, page))
   return id
 }
 
@@ -182,7 +200,7 @@ export async function updatePaper(
 ) {
   const current = await ownedPaperOrNull(actor.userId, docId)
   if (!current) return documentNotFound()
-  toListedPaper(current, writer)
+  listedRow(current, writer)
   const touchesPage = patch.name !== undefined || patch.status !== undefined
   const next = {
     ...current,
@@ -203,7 +221,7 @@ export async function updatePaper(
       : {}),
     ...(patch.status !== undefined ? { status: current.status } : {}),
   }
-  return { ...toListedPaper(next, writer), previous }
+  return { ...listedRow(next, writer), previous }
 }
 
 export type DuplicatePlan = { kind: "block" } | { kind: "missing" }
@@ -217,28 +235,6 @@ export async function planDuplicate(
     : { kind: "missing" }
 }
 
-async function copyOfRichPaper(
-  actor: Actor,
-  source: typeof paperDocs.$inferSelect,
-  writer?: NativeWriter
-) {
-  toListedPaper(source, writer)
-  const created = await createPaper(
-    actor,
-    {
-      kind: source.kind,
-      name: `Copy of ${source.name}`.slice(0, 200),
-      templateId: source.templateId ?? undefined,
-      paper: source.crdtDocument,
-    },
-    writer
-  )
-  const copy =
-    (await ownedPaperOrNull(actor.userId, parsePaperId(created.id))) ??
-    documentNotFound()
-  return toListedPaper(copy, writer)
-}
-
 export async function duplicatePaper(
   actor: Actor,
   docId: PaperId,
@@ -248,7 +244,21 @@ export async function duplicatePaper(
   if (plan.kind === "missing") return documentNotFound()
   const source =
     (await ownedPaperOrNull(actor.userId, docId)) ?? documentNotFound()
-  return copyOfRichPaper(actor, source, writer)
+  const { doc } = await headOf(actor.userId, docId)
+  const created = await createPaper(
+    actor,
+    {
+      kind: source.kind,
+      page: doc,
+      name: `Copy of ${source.name}`.slice(0, 200),
+      templateId: source.templateId ?? undefined,
+    },
+    writer
+  )
+  const copy =
+    (await ownedPaperOrNull(actor.userId, parsePaperId(created.id))) ??
+    documentNotFound()
+  return listedRow(copy, writer)
 }
 
 export async function deletePaper(actor: Actor, docId: PaperId) {

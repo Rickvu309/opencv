@@ -1,4 +1,5 @@
 import { personActor } from "@workspace/domain/kernel"
+import { paperEngineBlank, type Document } from "@workspace/domain/paper-doc"
 import { and, asc, eq, isNull } from "drizzle-orm"
 
 import { getDb, transaction } from "../db/context.js"
@@ -10,6 +11,24 @@ import {
 } from "../db/schema.js"
 import { paperFromWord } from "./import/word-to-paper.js"
 import { createPaper } from "./store.js"
+import { readDocx } from "./word/read-docx.js"
+
+async function enginePageFromWord(
+  bytes: Uint8Array,
+  kind: "cv" | "letter"
+): Promise<Document | null> {
+  const read = await readDocx(Buffer.from(bytes)).catch(() => null)
+  if (!read) return null
+  const blank = paperEngineBlank.emptyPaper(kind)
+  const content = read.document.content.filter(
+    (block) => block.type !== "image"
+  )
+  return {
+    ...blank,
+    attrs: { ...blank.attrs, page: read.document.attrs.page },
+    content: content.length ? content : blank.content,
+  }
+}
 
 export async function convertWordPages() {
   const pages = await getDb()
@@ -37,7 +56,8 @@ export async function convertWordPages() {
   const unreadable: string[] = []
   for (const page of pages) {
     const word = await paperFromWord(page.bytes, page.kind).catch(() => null)
-    if (!word) {
+    const enginePage = await enginePageFromWord(page.bytes, page.kind)
+    if (!word || !enginePage) {
       unreadable.push(page.docId)
       continue
     }
@@ -46,6 +66,7 @@ export async function convertWordPages() {
         kind: page.kind,
         name: page.name,
         paper: word.paper,
+        page: enginePage,
         id: page.docId,
         createdAt: page.createdAt,
       })

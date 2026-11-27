@@ -1,0 +1,13 @@
+{
+  "id": "paper-insert-starts-engine",
+  "file": "scripts/paper-insert-starts-engine.test.mjs",
+  "detector": {
+    "module": "scripts/lib/paper-insert-starts-engine.mjs",
+    "export": "detect"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "aec0255c7",
+    "path": "apps/api/src/paper/store.ts"
+  }
+}

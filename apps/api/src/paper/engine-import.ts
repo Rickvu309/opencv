@@ -138,13 +138,10 @@ function writeImportedPage(
   return transaction(async () => {
     const blank = paperEngineBlank.emptyPaper(input.kind)
     const { content } = imported
-    const docId = await createEngineImportPage(owner, input)
-    admitted(
-      await engineLog.start(docId, {
-        ...blank,
-        attrs: { ...blank.attrs, page: imported.page ?? blank.attrs.page },
-      })
-    )
+    const docId = await createEngineImportPage(owner, input, {
+      ...blank,
+      attrs: { ...blank.attrs, page: imported.page ?? blank.attrs.page },
+    })
     admitted(
       await engineLog.append(docId, {
         edit: createId(),
