@@ -185,6 +185,7 @@ function scriptedServer(start: Document) {
       )
       if ("refusal" in result) throw new Error("other tab refused")
       append(result.change)
+      return result.change.edit
     },
   }
 }
@@ -516,8 +517,11 @@ describe("paper sync keeps unsent edits until the server has them", () => {
     tab.type("Built dashboards")
     await clock.tick(PUSH_IDLE_MS)
     server.typeAsOther("Elsewhere. ", "proposal-elsewhere")
-    tab.sync.accepting("proposal-1", "batch-1")
-    server.typeAsOther("Reviewed. ", "proposal-1")
+    const landed = tab.sync.accepting("batch-1")
+    const edit = server.typeAsOther("Reviewed. ", "proposal-1")
+    await drain()
+    expect(tab.text()).toBe("Elsewhere. Built dashboards")
+    landed(edit)
     await drain()
     expect(tab.text()).toBe("Reviewed. Elsewhere. Built dashboards")
     expect(tab.undo()).toBe(true)

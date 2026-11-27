@@ -28,18 +28,39 @@ export function refreshPaperSuggestions(queryClient: QueryClient) {
   })
 }
 
+function approve(queryClient: QueryClient, pendingActionId: string) {
+  return catalogClient.run(queryClient, catalog["actions.approve"].name, {
+    pendingActionId,
+  })
+}
+
+function acceptedEdit(receipt: unknown): string | null {
+  if (!receipt || typeof receipt !== "object" || !("result" in receipt))
+    return null
+  const result = receipt.result
+  return result &&
+    typeof result === "object" &&
+    "editId" in result &&
+    typeof result.editId === "string"
+    ? result.editId
+    : null
+}
+
 function suggestionPort(queryClient: QueryClient, sync: PaperSync) {
   return {
     async approve(
       pendingActionId: string,
       batch: string
     ): Promise<SuggestionReceipt> {
-      sync.accepting(pendingActionId, batch)
-      const receipt = await catalogClient.run(
-        queryClient,
-        catalog["actions.approve"].name,
-        { pendingActionId }
-      )
+      const landed = sync.accepting(batch)
+      let receipt: Awaited<ReturnType<typeof approve>>
+      try {
+        receipt = await approve(queryClient, pendingActionId)
+      } catch (error) {
+        landed(null)
+        throw error
+      }
+      landed(acceptedEdit(receipt))
       const activityId =
         receipt && "id" in receipt && typeof receipt.id === "string"
           ? receipt.id

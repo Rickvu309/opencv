@@ -25,6 +25,7 @@ export type SuggestionHost = {
   land(commands: DocCommand[], proposals: string[]): boolean
   undo(): void
   changed(): void
+  focus(): void
 }
 
 const TOUCH_LAYOUT = "(max-width: 767px), (pointer: coarse)"
@@ -209,6 +210,7 @@ export function createSuggestionLayer(
     status.textContent = failure
     const saved = receipts.length > 0 && receipts.every(Boolean)
     if (saved) {
+      deps.focus()
       deps.changed()
       const undoes = receipts.flatMap((each) => each?.undo ?? [])
       showToast(

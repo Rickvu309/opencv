@@ -89,7 +89,7 @@ export type PaperSync = {
   current(): EditorState
   attach(seat: SyncSeat): () => void
   local(): void
-  accepting(proposal: string, batch: string): void
+  accepting(batch: string): (edit: string | null) => void
   view(): SyncView
   subscribe(listener: () => void): () => void
   dismiss(index: number): void
@@ -186,9 +186,25 @@ export async function openPaperSync(
     }
   }
 
+  let accepts = 0
+
   function acceptedBatch(change: Change) {
-    const proposal = change.origin.proposal
-    return proposal === undefined ? null : (accepted.get(proposal) ?? null)
+    return accepted.get(change.edit) ?? null
+  }
+
+  function accepting(batch: string) {
+    accepts += 1
+    let settled = false
+    return (edit: string | null) => {
+      if (settled) return
+      settled = true
+      if (edit) accepted.set(edit, batch)
+      accepts -= 1
+      if (accepts > 0 || pushing) return
+      const held = queued
+      queued = []
+      if (held.length) incoming(held)
+    }
   }
 
   function keepLost(lost: readonly Run[]) {
@@ -241,8 +257,7 @@ export async function openPaperSync(
     if (!fresh.length) return "applied"
     if (fresh[0]!.base !== version) return "gap"
     const received = engine.receive(current(), fresh, acceptedBatch)
-    for (const change of fresh)
-      if (change.origin.proposal) accepted.delete(change.origin.proposal)
+    for (const change of fresh) accepted.delete(change.edit)
     version += stepsIn(fresh)
     adopt(received.state)
     keepLost(received.lost)
@@ -269,7 +284,7 @@ export async function openPaperSync(
   }
 
   function incoming(changes: readonly Change[]) {
-    if (pushing) {
+    if (pushing || accepts > 0) {
       queued.push(...changes)
       return
     }
@@ -357,8 +372,8 @@ export async function openPaperSync(
       } else offline()
     } finally {
       pushing = false
-      const held = queued
-      queued = []
+      const held = accepts > 0 ? [] : queued
+      if (accepts === 0) queued = []
       if (held.length) incoming(held)
     }
     await persist()
@@ -452,9 +467,7 @@ export async function openPaperSync(
       return detach
     },
     local,
-    accepting(proposal, batch) {
-      accepted.set(proposal, batch)
-    },
+    accepting,
     view: () => ({
       status,
       recovered,

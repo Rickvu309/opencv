@@ -33,6 +33,7 @@ export function mountEditorSuggestions(
     },
     undo: editor.undo,
     changed: editor.refresh,
+    focus: editor.focus,
   })
 
   function locateReal(point: PagePoint): Pos {
