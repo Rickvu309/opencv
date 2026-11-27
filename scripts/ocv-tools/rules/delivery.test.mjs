@@ -8,7 +8,10 @@ import {
 import { decide, evaluate, jobRows } from "./index.mjs"
 
 const BODY =
-  "## Summary\n\nA change.\n\n## Evidence\n\n`node --test scripts/x.test.mjs`: 4 pass.\n\n## Merge Danger\n\n**Door:** two-way\n**Blast Radius:** jobs\n"
+  "**Now:** A change.\n**Proof:** `node --test scripts/x.test.mjs`: 4 pass.\n"
+const NEEDS_LEAD =
+  "Start the PR body with **Now:** <text> followed by **Proof:** <text>, or a bold answer followed by a <details> block."
+const NO_MIGRATIONS = { files: [], allowed: [] }
 const pull = {
   n: 7,
   isDraft: false,
@@ -28,14 +31,16 @@ const CASES = {
   ],
   BAD_BODY: [
     {
-      body: { file: "/b.md", text: "## Summary\nOnly this" },
+      body: { file: "/b.md", text: "**Now:** Only this" },
+      migrations: NO_MIGRATIONS,
       pull: { title: "feat: add a thing (#7)" },
     },
     {
       body: { file: "/b.md", text: BODY },
+      migrations: NO_MIGRATIONS,
       pull: { title: "feat: add a thing (#7)" },
     },
-    "3 problems. (1) The PR body needs ## Evidence. (2) The PR body needs ## Merge Danger. (3) Fill in Door, Blast Radius and all template placeholders.",
+    NEEDS_LEAD,
   ],
   BAD_TITLE: [
     { pull: { title: "Add a thing" } },
@@ -82,25 +87,19 @@ test("every delivery row reads domain facts, with a failing and a passing fact",
   }
 })
 
-test("a body needs content under each section, and a readable file", () => {
+test("a body needs text on each lead line and a readable file", () => {
   const body = (text, extra) => ({ body: { file: "/b.md", text, ...extra } })
   const check = (facts) => jobRows.find((r) => r.id === "BAD_BODY").check(facts)
   assert.equal(
-    check(
-      body(
-        "## Summary\n\n## Evidence\n`node x.mjs`: exit 0\n## Merge Danger\n**Door:** two-way\n**Blast Radius:** jobs"
-      )
-    ),
-    "The PR body needs ## Summary."
+    check(body("**Now:**\n**Proof:** `node x.mjs`: exit 0")),
+    NEEDS_LEAD
   )
   assert.equal(
     check({
-      ...body(
-        "## Summary\nA fix.\n## Evidence\nIt works, see /home/me/log.\n## Merge Danger\n**Door:** two-way\n**Blast Radius:** jobs"
-      ),
+      ...body("**Now:** A fix.\n**Proof:** It works, see /home/me/log."),
       pull: { title: "fix: a thing (#7)" },
     }),
-    "4 problems. (1) The PR body names a path on your machine (/home/ or ~/tmp). Show the command and its result, or link a picture. (2) Evidence needs a command with its result on the same line or in the output block under it (exit 0, N passed, 0 mismatches), an image, or a link to a CI run. (3) A fix needs a line: Caught by: user|ci|review|verify-skill|test|agent-self (4) A fix needs a line: Introduced by: <sha>|#<pr>|unknown"
+    "4 problems. (1) The PR body names a path on your machine (/home/ or ~/tmp). Show the command and its result, or link a picture. (2) Proof needs a command with its result on the same line or in the output block under it (exit 0, N passed, 0 mismatches), an image, or a link to a CI run. (3) A fix needs a line: Caught by: user|ci|review|verify-skill|test|agent-self (4) A fix needs a line: Introduced by: <sha>|#<pr>|unknown"
   )
   assert.equal(
     check({ body: { file: null, text: "" } }),
@@ -108,27 +107,34 @@ test("a body needs content under each section, and a readable file", () => {
   )
   assert.match(check(body("", { unreadable: true })), /cannot be read/)
   assert.match(
-    check(body(BODY.replace("**Door:** two-way", "**Door:** <one-way>"))),
-    /Door, Blast Radius/
+    check(body(`${BODY}\n<screenshot>`)),
+    /Fill in all template placeholders/
   )
 })
 
 const fixture = (name) =>
   readFileSync(new URL(`pr-body-fixtures/${name}`, import.meta.url), "utf8")
-const badBody = (text, title = "feat: add a thing (#7)") =>
+const badBody = (
+  text,
+  title = "feat: add a thing (#7)",
+  migrations = NO_MIGRATIONS
+) =>
   jobRows
     .find((r) => r.id === "BAD_BODY")
-    .check({ body: { file: "/b.md", text }, pull: { title } })
+    .check({ body: { file: "/b.md", text }, pull: { title }, migrations })
 
 const withEvidence = (evidence) =>
-  BODY.replace("`node --test scripts/x.test.mjs`: 4 pass.", evidence)
+  BODY.replace(
+    "`node --test scripts/x.test.mjs`: 4 pass.",
+    /^(?:```|~~~)/.test(evidence) ? `Command output\n\n${evidence}` : evidence
+  )
 
 test("evidence needs a command with its result, or a picture or run link", () => {
   assert.equal(badBody(BODY), null)
   for (const evidence of REFUSED_EVIDENCE)
     assert.match(
       badBody(withEvidence(evidence)),
-      /^Evidence needs a command with its result/,
+      /^Proof needs a command with its result/,
       evidence
     )
 })
@@ -142,7 +148,7 @@ test("the body names no path under the author's own machine", () => {
   const local = BODY.replace("4 pass.", "4 pass, log at /home/quan/x.log")
   assert.match(badBody(local), /path on your machine/)
   assert.match(badBody(BODY.replace("4 pass.", "4 pass ~/tmp/out")), /path on/)
-  assert.match(badBody("/home/quan/tmp/pr-body.md"), /needs ## Summary/)
+  assert.match(badBody("/home/quan/tmp/pr-body.md"), /Start the PR body/)
 })
 
 test("a fix or hotfix PR names who caught the bug and what introduced it", () => {
@@ -172,9 +178,65 @@ test("a fix or hotfix PR names who caught the bug and what introduced it", () =>
 
 test("saved PR bodies: 487 and 915 are refused, a compliant fix passes", () => {
   const FIX = "fix: change (#7)"
-  assert.match(badBody(fixture("pr-487.txt"), FIX), /needs ## Summary/)
+  assert.match(badBody(fixture("pr-487.txt"), FIX), /Start the PR body/)
   assert.match(badBody(fixture("pr-915.txt"), FIX), /Caught by:/)
   assert.equal(badBody(fixture("compliant-fix.txt"), FIX), null)
+})
+
+test("the original PR 2140 body is refused and the rewrite passes", () => {
+  assert.match(badBody(fixture("pr-2140.txt")), /\*\*Now:\*\*.*\*\*Proof:\*\*/)
+  assert.equal(badBody(fixture("pr-2140-rewrite.txt")), null)
+  assert.match(
+    badBody(
+      `${withEvidence("Checked.")}\n<details>\n` +
+        "`node --test`: exit 0.\n</details>"
+    ),
+    /Proof needs a command/
+  )
+})
+
+test("a bold answer can lead a body with evidence inside a details block", () => {
+  assert.equal(badBody(fixture("tree.txt")), null)
+  assert.match(badBody("**The checks pass.**"), /Start the PR body/)
+  assert.match(
+    badBody("**The checks pass.**\n\n<details>\nClaim only.\n</details>"),
+    /Proof needs a command/
+  )
+  assert.match(
+    badBody("**The checks pass.**\n\n```html\n<details>\n</details>\n```"),
+    /Start the PR body/
+  )
+  assert.match(
+    badBody(`<details>\nContent\n</details>\n\n${BODY}`),
+    /Start the PR body/
+  )
+})
+
+test("the lead counts fenced code lines and excludes folded detail", () => {
+  const folded = `<details><summary>Detail</summary>\n\n${"Hidden.\n".repeat(26)}\n</details>`
+  const visible = (count) =>
+    `${BODY}\n\`\`\`text\n<details>\n${"Visible.\n".repeat(count)}</details>\n\`\`\`\n\n${folded}`
+  assert.equal(badBody(visible(19)), null)
+  assert.match(
+    badBody(visible(20)),
+    /at most 25 non-empty lines.*Fenced code lines count/
+  )
+  assert.match(badBody(fixture("long-lead.txt")), /at most 25 non-empty lines/)
+})
+
+test("a migration needs a visible Risk line even when it only adds", () => {
+  const migrations = { files: [{ tag: "new_table", changes: [] }], allowed: [] }
+  const check = (body) => badBody(body, undefined, migrations)
+  assert.match(check(BODY), /migration needs a \*\*Risk:\*\*/)
+  assert.match(
+    check(`${BODY}\n<details>\n**Risk:** Adds a table.\n</details>`),
+    /migration needs/
+  )
+  assert.match(
+    check(`${BODY}\n\`\`\`text\n**Risk:** Adds a table.\n\`\`\``),
+    /migration needs/
+  )
+  assert.equal(check(`${BODY}\n**Risk:** Adds a table.`), null)
 })
 
 test("merge holds the owner, and the draft passes the pr moment", () => {
@@ -219,10 +281,11 @@ test("legacy review labels on the issue or PR do not block a green merge", () =>
   }
 })
 
-test("finish refuses a body with no Evidence before it pushes", () => {
+test("finish refuses a body with no Proof before it pushes", () => {
   const verdict = decide("finish", {
     here: { ok: true },
-    body: { file: "/b.md", text: "## Summary\nOnly this" },
+    body: { file: "/b.md", text: "**Now:** Only this" },
+    migrations: NO_MIGRATIONS,
     pull: { title: "feat: add a thing (#7)", issue: 7, issueState: "OPEN" },
     commits: { count: 1, trailers: "", oversize: "" },
     issue: { n: 7, state: "OPEN", labels: [] },
@@ -235,8 +298,5 @@ test("finish refuses a body with no Evidence before it pushes", () => {
     protected: { weakened: [], retired: [], retirements: [] },
   })
   assert.equal(verdict.refusals[0].id, "BAD_BODY")
-  assert.equal(
-    verdict.refusals[0].message,
-    "3 problems. (1) The PR body needs ## Evidence. (2) The PR body needs ## Merge Danger. (3) Fill in Door, Blast Radius and all template placeholders."
-  )
+  assert.equal(verdict.refusals[0].message, NEEDS_LEAD)
 })

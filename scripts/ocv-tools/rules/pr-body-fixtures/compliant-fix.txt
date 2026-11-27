@@ -1,21 +1,11 @@
-## Summary
-
-```text
-finish
-  badBody
-    sectionBody
-    hasEvidence
-```
-
-## Evidence
-
-- `node --test scripts/ocv-tools/rules/delivery.test.mjs`: 12 pass, 0 fail.
-- Before: PR 915 body accepted with no origin lines. After: refused with `Caught by:` missing.
+**Now:** A fix body gives the source of the bug.
+**Proof:** `node --test scripts/ocv-tools/rules/delivery.test.mjs`: 12 pass, 0 fail.
 
 Caught by: review
 Introduced by: #911
 
-## Merge Danger
+<details><summary>Detail</summary>
 
-**Door:** two-way
-**Blast Radius:** finish
+PR 915 is refused when it omits the two lines.
+
+</details>

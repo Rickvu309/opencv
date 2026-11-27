@@ -224,13 +224,12 @@ The pass or refusal that one check or rule gives for one tree.
 _Avoid_: result (bare), proof
 
 **Evidence**:
-What shows that a change works, and the section of a pull request that presents it: a command with its real result, a screenshot, or a link to a CI run.
+What shows that a change works. A pull request presents it as Proof with a real command result, a screenshot, or a link to a CI run.
 _Not_: a builder's own account of what it did.
-_Avoid_: proof, self-review, claims
+_Avoid_: self-review, claims
 
-**Merge Danger**:
-The part of a pull request that says what merging risks in production. It gives the Door (one-way or two-way) and the Blast Radius, and names each migration and whether it only adds, each limit touched, and each retirement.
-_Avoid_: risk section, deploy notes
+**Risk**:
+The pull request line that states what merging changes in production. A pull request with a migration names each migration and whether it only adds.
 
 ### Protecting the checks
 

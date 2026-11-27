@@ -1,0 +1,27 @@
+**Now:** A change.
+**Proof:** `node --test`: exit 0.
+
+Detail 1.
+Detail 2.
+Detail 3.
+Detail 4.
+Detail 5.
+Detail 6.
+Detail 7.
+Detail 8.
+Detail 9.
+Detail 10.
+Detail 11.
+Detail 12.
+Detail 13.
+Detail 14.
+Detail 15.
+Detail 16.
+Detail 17.
+Detail 18.
+Detail 19.
+Detail 20.
+Detail 21.
+Detail 22.
+Detail 23.
+Detail 24.

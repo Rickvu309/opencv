@@ -2,7 +2,7 @@ import { ctxFor, fakePorts } from "../ports/fake.mjs"
 import { runCli } from "../cli.mjs"
 
 export const BODY =
-  "## Summary\n\nA useful change.\n\n## Evidence\n\n`node --test scripts/x.test.mjs`: 4 pass.\n\n## Merge Danger\n\n**Door:** two-way\n**Blast Radius:** jobs\n"
+  "**Now:** A useful change.\n**Proof:** `node --test scripts/x.test.mjs`: 4 pass.\n"
 export function fixture(over = {}) {
   const s = {
     tree: "tree-1",

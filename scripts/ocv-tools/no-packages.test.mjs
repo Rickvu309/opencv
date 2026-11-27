@@ -121,7 +121,7 @@ function world(t) {
       url: "https://github.com/o/r/pull/7",
       state: "OPEN",
       title: "chore: drop the doubling test (#7)",
-      body: "Closes #7\n\n## Summary\n\nx\n\n## Evidence\n\n`node --test` 1 pass\n\n## Merge Danger\n\nnone\n\nNo visible change. Fixture.\n",
+      body: "Closes #7\n\n**Now:** The doubling check is retired.\n**Proof:** `node --test scripts/prices.test.mjs`: 1 pass.\n",
       author: { login: "rickvu" },
       isDraft: false,
       labels: labels.map((name) => ({ name })),

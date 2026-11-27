@@ -1,13 +1,12 @@
 import { issueOfBranch } from "./pull-ref.mjs"
 
 const FINISH_TITLE = /^(feat|fix|hotfix|refactor|chore|docs): [^ ].* \(#\d+\)$/
-const SECTIONS = ["Summary", "Evidence", "Merge Danger"]
 const FIX_TITLE = /^(?:fix|hotfix)(?:\([^)]*\))?!?: /
 const LOCAL_PATH = /\/home\/|~\/tmp/
 const COMMAND_HEAD =
   /^(?:cd\s+\S+\s*&&\s*)?(?:[A-Za-z_][A-Za-z0-9_]*=\S+\s+)*(?:(?:pnpm|npm|npx|node|git|gh|curl|vitest|tsc|bash|docker|make|python3?)\s+(?:\S*[^\s:])|(?:\.?\/?scripts\/\S*[\w])|\.\/\S*[\w])/
 const COUNTED_RESULT =
-  /\bexit(?:s|ed)?(?: code| status)?\s*[:=]?\s*\d+|(?<![\w/.-])\d+\/\d+(?![\w/.-])|\b\d+\s+(?:(?:tests?|checks?|assertions?|specs?)\s+)?(?:pass(?:ed|es)?|fail(?:ed|s|ures?)?|ok)\b|\b0\s+(?:mismatch(?:es)?|errors?|failures?|warnings?|violations?|findings?|offenders?|diffs?|differences|issues?)\b|\bno\s+(?:errors?|output|failures?|mismatch(?:es)?|warnings?|violations?|findings?|offenders?|diffs?|differences)\b|\bHTTP \d{3}\b/i
+  /\bexit(?:s|ed)?(?: code| status)?\s*[:=]?\s*\d+|(?<![\w/.-])\d+\/\d+(?![\w/.-])|\b\d+\s+(?:(?:tests?|checks?|assertions?|specs?)\s+)?(?:pass(?:ed|es)?|fail(?:ed|s|ures?)?|ok)\b|\b(?:passed|failed)\s+\d+(?:,\d{3})*\s+(?:tests?|checks?|assertions?|specs?)\b|\b0\s+(?:mismatch(?:es)?|errors?|failures?|warnings?|violations?|findings?|offenders?|diffs?|differences|issues?)\b|\bno\s+(?:errors?|output|failures?|mismatch(?:es)?|warnings?|violations?|findings?|offenders?|diffs?|differences)\b|\bHTTP \d{3}\b/i
 const VERDICT_WORD =
   "(?:pass(?:ed|es)?|fail(?:ed|s)?|success(?:ful)?|clean|ok)\\b(?!\\?)"
 const SEPARATED_VERDICT = new RegExp(
@@ -28,14 +27,6 @@ const INTRODUCED_BY =
 const FINISH_FIX = "Fix the cause, then run scripts/ocv-tools.mjs finish again."
 const MERGE_FIX =
   "Wait for a green ci on the PR head, then run scripts/ocv-tools.mjs merge <pr#>."
-
-function sectionBody(text, heading) {
-  const start = new RegExp(`^## ${heading}\\r?$`, "m").exec(text)
-  if (!start) return null
-  const rest = text.slice(start.index + start[0].length)
-  const next = /^## /m.exec(rest)
-  return (next ? rest.slice(0, next.index) : rest).trim()
-}
 
 const hasResult = (rest) =>
   COUNTED_RESULT.test(rest) || SEPARATED_VERDICT.test(rest)
@@ -95,28 +86,116 @@ function hasRealEvidence(evidence) {
   return false
 }
 
+const FENCE = /^ {0,3}(`{3,}|~{3,})(.*)$/
+const DETAILS_OPEN = /^ {0,3}<details(?:\s[^<>]*)?>/i
+const DETAILS_CLOSE = /<\/details>\s*$/i
+const RISK_LINE = /^\*\*Risk:\*\* \S/
+
+function visibleBody(text) {
+  const lines = []
+  let fence = ""
+  let fold = -1
+  let depth = 0
+  let hasDetails = false
+  for (const line of text.split(/\r?\n/)) {
+    const marker = FENCE.exec(line)
+    const code = Boolean(fence || marker)
+    const opens = !code && DETAILS_OPEN.test(line)
+    if (opens) {
+      if (depth === 0) fold = lines.length
+      depth += 1
+    }
+    lines.push({ line, code })
+    if (
+      !code &&
+      depth &&
+      (opens || /^ {0,3}<\/details>/i.test(line)) &&
+      DETAILS_CLOSE.test(line)
+    ) {
+      depth -= 1
+      if (depth === 0) {
+        lines.splice(fold, lines.length - fold, { line: "", details: true })
+        hasDetails = true
+      }
+    }
+    if (marker && !fence) fence = marker[1]
+    else if (marker && marker[1].startsWith(fence) && !marker[2].trim())
+      fence = ""
+  }
+  return { lines, hasDetails }
+}
+
+function proofOf(lines, start) {
+  const proof = /^\*\*Proof:\*\* (\S.*)$/.exec(lines[start]?.line ?? "")
+  if (!proof) return null
+  const evidence = [proof[1]]
+  let separated = false
+  for (const { line, code, details } of lines.slice(start + 1)) {
+    if (details) break
+    if (!code && !line.trim()) {
+      separated = true
+      continue
+    }
+    if (
+      !code &&
+      (separated || /^(?:Closes #\d+\s*$|\*\*[^*]+:\*\*|#{1,6} )/.test(line))
+    )
+      break
+    if (separated) evidence.push("")
+    evidence.push(line)
+    separated = false
+  }
+  return evidence.join("\n")
+}
+
 function badBody(facts) {
   const body = facts.body
   if (!body?.file) return "Pass --body-file <file>."
   if (body.unreadable) return `The body file ${body.file} cannot be read.`
   const text = body.text ?? ""
-  const problems = SECTIONS.filter(
-    (heading) => !sectionBody(text, heading)
-  ).map((heading) => `The PR body needs ## ${heading}.`)
-  if (
-    !/^\*\*Door:\*\* (one-way|two-way)/m.test(text) ||
-    !/^\*\*Blast Radius:\*\* [^<\s]/m.test(text) ||
-    /<(diagram|screenshot|one-way|optional)[^>]*>/.test(text)
+  const { lines, hasDetails } = visibleBody(text)
+  const first = lines.findIndex(({ line, details }) => details || line.trim())
+  const lead = /^Closes #\d+\s*$/.test(lines[first]?.line ?? "")
+    ? lines.findIndex(
+        ({ line, details }, index) => index > first && (details || line.trim())
+      )
+    : first
+  const answer = lines[lead]?.line ?? ""
+  const proof = lines.findIndex(
+    ({ line, details }, index) => index > lead && (details || line.trim())
   )
-    problems.push("Fill in Door, Blast Radius and all template placeholders.")
+  const evidence = /^\*\*Now:\*\* \S/.test(answer)
+    ? proofOf(lines, proof)
+    : !/^\*\*(?:Now|Proof|Risk):\*\*/.test(answer) &&
+        /^\*\*\S(?:.*\S)?\*\*$/.test(answer) &&
+        hasDetails
+      ? text
+      : null
+  const problems = []
+  if (evidence === null)
+    problems.push(
+      "Start the PR body with **Now:** <text> followed by **Proof:** <text>, or a bold answer followed by a <details> block."
+    )
+  if (lines.filter(({ line }) => line.trim()).length > 25)
+    problems.push(
+      "The PR body allows at most 25 non-empty lines outside <details>. Fenced code lines count."
+    )
+  if (
+    facts.migrations?.files.length &&
+    !lines.some(({ line, code }) => !code && RISK_LINE.test(line))
+  )
+    problems.push(
+      "A PR with a migration needs a **Risk:** <text> line outside <details>."
+    )
+  if (/<(diagram|screenshot|one-way|optional)[^>]*>/.test(text))
+    problems.push("Fill in all template placeholders.")
   if (LOCAL_PATH.test(text))
     problems.push(
       "The PR body names a path on your machine (/home/ or ~/tmp). Show the command and its result, or link a picture."
     )
-  const evidence = sectionBody(text, "Evidence")
-  if (evidence && !hasRealEvidence(evidence))
+  if (evidence !== null && !hasRealEvidence(evidence))
     problems.push(
-      "Evidence needs a command with its result on the same line or in the output block under it (exit 0, N passed, 0 mismatches), an image, or a link to a CI run."
+      "Proof needs a command with its result on the same line or in the output block under it (exit 0, N passed, 0 mismatches), an image, or a link to a CI run."
     )
   if (FIX_TITLE.test(facts.pull?.title ?? "")) {
     if (!CAUGHT_BY.test(text))
@@ -201,9 +280,9 @@ export const jobRows = [
   }),
   row({
     id: "BAD_BODY",
-    says: "The PR body needs a Summary, Evidence and Merge Danger section with content, and no template placeholders. Evidence holds a command with its result on its line or in the output block under it, an image, or a link to a CI run. The body names no path under /home/ or ~/tmp. A fix or hotfix PR adds Caught by and Introduced by lines.",
+    says: "The PR body opens with Now and Proof, or a bold answer followed by a details block. Proof shows a command and result, an image, or a link to a CI run. At most 25 non-empty lines are visible, including fenced code lines. A PR with a migration names its Risk. Fill in all template placeholders. The body names no path under /home/ or ~/tmp. A fix or hotfix PR adds Caught by and Introduced by lines.",
     at: ["finish", "body"],
-    needs: ["body", "pull"],
+    needs: ["body", "pull", "migrations"],
     check: badBody,
   }),
   row({

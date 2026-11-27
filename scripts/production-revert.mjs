@@ -74,25 +74,23 @@ export function revertTitle(plan) {
 
 export function revertBody(plan) {
   return [
-    "## Summary",
+    `**Now:** Restore the code from ${plan.good}, the last commit that passed the deploy probe. This reverts every merge after it.`,
+    `**Proof:** \`git merge-base --is-ancestor ${plan.good} ${plan.bad}\`: exit 0. The deploy probe failed twice on ${plan.bad}. The range contains ${plan.commits.length} merge(s) to revert.`,
     "",
-    `The deploy probe failed twice on ${plan.bad}. This reverts every merge after the last commit the probe passed (${plan.good}), newest first. It reverts code only: every migration file under \`${MIGRATIONS}\` stays as it is on main, because migrations only add.`,
+    "Caught by: ci",
+    "Introduced by: unknown",
+    "",
+    plan.migrations.length === 0
+      ? "**Risk:** No migration in the reverted range. Merging deploys the code of the last passing commit."
+      : `**Risk:** Merging restores the last passing code and keeps the production schema, including ${plan.migrations.join(", ")}.`,
+    "",
+    "<details><summary>Reverted merges</summary>",
     "",
     ...plan.commits.map(
       (commit) => `- ${commit.sha.slice(0, 8)} ${commit.subject}`
     ),
     "",
-    "## Evidence",
-    "",
-    `The probe's failures are in the open \`production-red\` issue. Command: \`node scripts/production-revert.mjs ${plan.bad} --good ${plan.good} --apply\`.`,
-    "",
-    "## Merge Danger",
-    "",
-    plan.migrations.length === 0
-      ? "No migration in the reverted range. Merging deploys the code of the last passing commit."
-      : `Kept migrations: ${plan.migrations.map((path) => `\`${path}\``).join(", ")}. The database keeps their columns and tables; the reverted code does not read them. Merging deploys the code of the last passing commit.`,
-    "",
-    "No visible change. This restores screens to the last commit the probe passed.",
+    "</details>",
     "",
   ].join("\n")
 }

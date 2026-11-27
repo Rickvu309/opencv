@@ -22,16 +22,16 @@ test("body keeps the closing line when the new note lacks it", () => {
   const text = uploaded(f)
   assert.equal(text.match(/Closes #90/g).length, 1)
   assert.ok(text.startsWith("Closes #90\n\n"))
-  assert.match(text, /## Evidence/)
+  assert.match(text, /\*\*Proof:\*\*/)
   assert.equal(f.effects("gh", "pr edit")[0].args[2], "91")
 })
 
 test("body refuses a bad note with the body rule's own message", () => {
   const f = fixture({ intercept: editOk })
-  f.ctx.writeFile(`${f.ctx.cwd}/note.md`, "## Summary\n\nOnly this\n")
+  f.ctx.writeFile(`${f.ctx.cwd}/note.md`, "**Now:** Only this\n")
   const r = f.call("body", "91", "--body-file", "note.md")
   assert.equal(r.code, 2, r.text)
-  assert.match(r.text, /REFUSED BAD_BODY: .*The PR body needs ## Evidence\./)
+  assert.match(r.text, /REFUSED BAD_BODY: .*\*\*Now:\*\*.*\*\*Proof:\*\*/)
   assert.equal(f.effects("gh", "pr edit").length, 0)
 
   const fix = fixture({
@@ -67,6 +67,30 @@ test("body refuses a bad note with the body rule's own message", () => {
     /REFUSED BAD_BODY: A fix needs a line: Introduced by:/
   )
   assert.equal(introduced.effects("gh", "pr edit").length, 0)
+})
+
+test("body counts the closing line it adds to the published body", () => {
+  const f = fixture({ intercept: editOk })
+  f.ctx.writeFile(`${f.ctx.cwd}/note.md`, `${BODY}\n${"Visible.\n".repeat(23)}`)
+  const r = f.call("body", "91", "--body-file", "note.md")
+  assert.equal(r.code, 2, r.text)
+  assert.match(r.text, /at most 25 non-empty lines/)
+  assert.equal(f.effects("gh", "pr edit").length, 0)
+})
+
+test("body refuses to remove Risk from a migration pull request", () => {
+  const f = fixture({
+    intercept: editOk,
+    changed: ["apps/api/drizzle/new.sql"],
+    headFiles: {
+      "apps/api/drizzle/new.sql": 'CREATE TABLE "opencv_app"."new" (id int)',
+    },
+  })
+  f.ctx.writeFile(`${f.ctx.cwd}/note.md`, BODY)
+  const r = f.call("body", "91", "--body-file", "note.md")
+  assert.equal(r.code, 2, r.text)
+  assert.match(r.text, /REFUSED BAD_BODY: .*migration needs a \*\*Risk:\*\*/)
+  assert.equal(f.effects("gh", "pr edit").length, 0)
 })
 
 test("body does not add a second closing line", () => {
@@ -132,7 +156,7 @@ test("body refuses a branch that does not name an issue", () => {
 })
 
 test("a closing line for a longer issue number does not count as this issue", () => {
-  const note = `Closes #1027\n\n${BODY}`
+  const note = `${BODY}\n\nCloses #1027\n`
   const f = fixture({
     pull: {
       title: "feat: keep it (#102)",
