@@ -2,5 +2,5 @@
   "id": "unused-web-modules",
   "file": "scripts/unused-web-modules.test.mjs",
   "historic": null,
-  "reason": "whole-tree check, not a per-file detect; proven by the orphan fixture test and by firing on the nine unused web modules at HEAD until each is listed in its pending file"
+  "reason": "whole-tree check, not a per-file detect; proven by the orphan fixture test, by the .js import fixture that failed on the reach walk added in 9a37d7160 before the resolver learned .js to .ts and .tsx, and by firing on unused web modules at HEAD until each is listed in its pending file"
 }
