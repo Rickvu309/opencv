@@ -9,6 +9,7 @@ import {
 } from "@workspace/ui/components/page-header"
 import { toast } from "@workspace/ui/components/sonner"
 
+import { SAVE_LABEL, type PaperSync, type SyncView } from "@/lib/paper-sync.ts"
 import { useShortcut } from "@/lib/use-shortcut.ts"
 
 import type { Document } from "@workspace/domain/paper-doc"
@@ -18,6 +19,7 @@ import { FileMenu, type PaperDownload } from "./file-menu.tsx"
 import { pageSetupCommands } from "./format-commands.ts"
 import { PageSetupDialog } from "./page-setup-dialog.tsx"
 import { PaperToolbar } from "./paper-toolbar.tsx"
+import { RecoveryPanel } from "./recovery-panel.tsx"
 import { selectionFormat, type SelectionFormat } from "./selection-format.ts"
 import { ShortcutList } from "./shortcut-list.tsx"
 
@@ -39,15 +41,24 @@ type ChromeState = {
   editor: PaperEditor | null
   snapshot: Snapshot | null
   open: Dialog | null
+  saving: SyncView | null
 }
+
+export type ChromeSync = { paper: PaperSync; actor: string }
 
 type ChromeAction =
   | { type: "mounted"; editor: PaperEditor }
   | { type: "changed"; snapshot: Snapshot }
   | { type: "opened"; dialog: Dialog }
   | { type: "closed"; dialog: Dialog }
+  | { type: "synced"; view: SyncView | null }
 
-const INITIAL: ChromeState = { editor: null, snapshot: null, open: null }
+const INITIAL: ChromeState = {
+  editor: null,
+  snapshot: null,
+  open: null,
+  saving: null,
+}
 
 function chromeReducer(state: ChromeState, action: ChromeAction): ChromeState {
   if (action.type === "mounted")
@@ -58,6 +69,7 @@ function chromeReducer(state: ChromeState, action: ChromeAction): ChromeState {
     }
   if (action.type === "changed") return { ...state, snapshot: action.snapshot }
   if (action.type === "opened") return { ...state, open: action.dialog }
+  if (action.type === "synced") return { ...state, saving: action.view }
   return state.open === action.dialog ? { ...state, open: null } : state
 }
 
@@ -68,6 +80,7 @@ export function PaperChrome({
   photoReason,
   onEditor,
   onPrint,
+  sync,
 }: {
   doc: Document
   title: string
@@ -75,6 +88,7 @@ export function PaperChrome({
   photoReason: string
   onPrint?: () => void
   onEditor?: (editor: PaperEditor | null) => void
+  sync?: ChromeSync
 }) {
   const host = useRef<HTMLDivElement>(null)
   const [chrome, dispatch] = useReducer(chromeReducer, INITIAL)
@@ -90,19 +104,45 @@ export function PaperChrome({
   })
 
   useEffect(() => {
-    const mounted = mountPaperEditor(host.current!, { doc })
-    const unsubscribe = mounted.subscribe(() =>
+    const mounted = mountPaperEditor(host.current!, {
+      doc,
+      ...(sync
+        ? {
+            seat: {
+              state: sync.paper.current(),
+              client: sync.paper.writer,
+              actor: sync.actor,
+            },
+          }
+        : {}),
+    })
+    const unsubscribe = mounted.subscribe(() => {
+      sync?.paper.local()
       dispatch({ type: "changed", snapshot: snapshot(mounted) })
-    )
+    })
+    const detach = sync?.paper.attach({
+      state: mounted.state,
+      adopt: mounted.adopt,
+      caret: mounted.caret,
+    })
+    const showView = () => {
+      const view = sync?.paper.view() ?? null
+      mounted.showPeers(view?.peers.map((peer) => peer.pos) ?? [])
+      dispatch({ type: "synced", view })
+    }
+    const unwatch = sync?.paper.subscribe(showView)
+    showView()
     dispatch({ type: "mounted", editor: mounted })
     latest.current?.(mounted)
     mounted.focus()
     return () => {
+      unwatch?.()
+      detach?.()
       unsubscribe()
       latest.current?.(null)
       mounted.destroy()
     }
-  }, [doc])
+  }, [doc, sync])
 
   useShortcut({
     key: "p",
@@ -148,6 +188,15 @@ export function PaperChrome({
       <PageHeader data-slot="paper-chrome-header">
         <PageHeaderTitle>{title}</PageHeaderTitle>
         <PageHeaderActions>
+          {chrome.saving ? (
+            <p
+              className="writing-note text-sm text-muted-foreground"
+              title={SAVE_LABEL[chrome.saving.status]}
+              aria-live="polite"
+            >
+              {SAVE_LABEL[chrome.saving.status]}
+            </p>
+          ) : null}
           <FileMenu
             download={download}
             back={back}
@@ -167,6 +216,12 @@ export function PaperChrome({
             if (!open) editor.focus()
           }}
           photoReason={photoReason}
+        />
+      ) : null}
+      {sync && chrome.saving ? (
+        <RecoveryPanel
+          texts={chrome.saving.recovered}
+          onDismiss={(index) => sync.paper.dismiss(index)}
         />
       ) : null}
       <div className="paper-chrome-canvas">

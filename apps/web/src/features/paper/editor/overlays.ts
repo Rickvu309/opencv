@@ -89,6 +89,7 @@ export type OverlayFrame = {
   composition: PageRect[]
   found: PageRect[]
   active: PageRect[]
+  peers: PageRect[]
   focused: boolean
 }
 
@@ -146,6 +147,7 @@ export function createOverlays(): Overlays {
       syncRects(layer, "paper-composition", frame.composition, frame.pitchPx)
       syncRects(layer, "paper-find-hit", frame.found, frame.pitchPx)
       syncRects(layer, "paper-find-active", frame.active, frame.pitchPx)
+      syncRects(layer, "paper-peer-caret", frame.peers, frame.pitchPx)
       const show = frame.focused && frame.caret !== null
       caretEl.hidden = !show
       if (!frame.caret) return

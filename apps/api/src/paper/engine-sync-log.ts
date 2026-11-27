@@ -78,3 +78,8 @@ export function readEnginePaper(owner: UserId, docId: PaperId) {
     return { docId, name, kind, ...admitted(await engineLog.head(docId)) }
   })
 }
+
+export async function headOf(owner: UserId, docId: PaperId) {
+  const { doc, version } = await readEnginePaper(owner, docId)
+  return { doc, version }
+}
