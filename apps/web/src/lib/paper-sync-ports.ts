@@ -1,4 +1,5 @@
 import type { QueryClient } from "@tanstack/react-query"
+import { catalog } from "@workspace/domain/kernel"
 import { changeSchema, type BlockId } from "@workspace/domain/paper-doc"
 import { createEngine } from "@workspace/paper-engine"
 
@@ -34,7 +35,7 @@ function randomId(): string {
 
 export function catalogTransport(queryClient: QueryClient): SyncTransport {
   return {
-    head: (docId) => catalogClient.read("paper.head", { docId }),
+    head: (docId) => catalogClient.read(catalog["paper.head"].name, { docId }),
     async save(input) {
       try {
         const reply = await catalogClient.run(
@@ -56,7 +57,7 @@ export function catalogTransport(queryClient: QueryClient): SyncTransport {
       }
     },
     changes: (docId, since) =>
-      catalogClient.read("paper.changes", { docId, since }),
+      catalogClient.read(catalog["paper.changes"].name, { docId, since }),
     async follow(docId, since, onChange, signal) {
       const response = await apiRequest(
         `/api/paper/${docId}/changes?since=${since}`,

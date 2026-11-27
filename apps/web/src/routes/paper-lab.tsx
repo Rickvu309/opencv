@@ -57,7 +57,7 @@ async function createSavedCv(queryClient: QueryClient): Promise<string> {
   const created: unknown = await catalogClient.run(
     queryClient,
     "paper.create",
-    { kind: "cv", engine: 2 },
+    { kind: "cv", format: "rich", engine: 2 },
     { refresh: false }
   )
   if (

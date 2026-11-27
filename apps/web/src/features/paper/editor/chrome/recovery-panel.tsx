@@ -37,12 +37,16 @@ export function RecoveryPanel({
               key={`${index}:${text}`}
               className="flex items-start gap-2 rounded-md border border-border p-2"
             >
-              <p
-                className="min-w-0 flex-1 text-sm whitespace-pre-wrap"
+              <div
+                className="min-w-0 flex-1 text-sm break-words"
                 data-recovered-text=""
               >
-                {text}
-              </p>
+                {text.split("\n").map((line, lineIndex) => (
+                  <p key={lineIndex} className="min-h-5">
+                    {line}
+                  </p>
+                ))}
+              </div>
               <CopyButton
                 aria-label="Copy this text"
                 value={text}

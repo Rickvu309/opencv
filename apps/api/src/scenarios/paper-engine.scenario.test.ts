@@ -251,7 +251,7 @@ describe("only the owner's tabs write, in server order", () => {
     const ada = await world.person("Ada")
     const grace = await world.person("Grace")
     const { id: docId } = dataOf<{ id: string }>(
-      await ada.run("paper.create", { kind: "cv", engine: 2 })
+      await ada.run("paper.create", { kind: "cv", format: "rich", engine: 2 })
     )
     const opened = dataOf<{ doc: Document; version: number }>(
       await ada.read("paper.head", { docId })

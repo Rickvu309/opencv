@@ -38,9 +38,7 @@ export const operation = defineOperation({
     .refine(
       (input) =>
         input.engine === undefined ||
-        (input.templateId === undefined &&
-          input.lines === undefined &&
-          input.format === undefined),
+        (input.templateId === undefined && input.lines === undefined),
       "A Paper on the new engine starts blank."
     ),
   publicResult: z
