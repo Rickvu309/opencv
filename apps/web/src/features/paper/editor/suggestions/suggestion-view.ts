@@ -62,6 +62,7 @@ export function mapSuggestions(
   proposals: readonly Proposal[]
 ): SuggestionView {
   const view: SuggestionView = { open: [], stale: [], lines: new Map() }
+  if (proposals.length === 0) return view
   const base = engine.read(engine.load(doc, 0, "suggest-base")).doc
   const before = new Map(base.content.map((block) => [block.attrs.id, block]))
   const add = (at: BlockId, line: SuggestedLine) =>

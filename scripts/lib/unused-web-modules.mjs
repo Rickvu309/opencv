@@ -7,6 +7,12 @@ const TEST_ONLY =
   /\.(?:test|type-test|fixtures)\.[cm]?[jt]sx?$|^apps\/web\/src\/test\//
 const MODULE = /\.[cm]?[jt]sx?$/
 const RESOLVE_SUFFIXES = ["", ".ts", ".tsx", "/index.ts", "/index.tsx"]
+const SOURCES_FOR_JS_SPECIFIER = new Map([
+  [".js", [".ts", ".tsx"]],
+  [".jsx", [".tsx"]],
+  [".mjs", [".mts"]],
+  [".cjs", [".cts"]],
+])
 
 function isProductModule(file) {
   return (
@@ -30,6 +36,11 @@ function resolveSpecifier(fromFile, specifier, known) {
   }
   for (const suffix of RESOLVE_SUFFIXES) {
     if (known.has(base + suffix)) return base + suffix
+  }
+  const extension = path.posix.extname(base)
+  const stem = base.slice(0, base.length - extension.length)
+  for (const source of SOURCES_FOR_JS_SPECIFIER.get(extension) ?? []) {
+    if (known.has(stem + source)) return stem + source
   }
   return null
 }

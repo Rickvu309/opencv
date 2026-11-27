@@ -77,6 +77,28 @@ test("static, lazy, re-exported, index and fixture modules stay quiet", () => {
   assert.deepEqual(unusedWebModules(CLEAN), [])
 })
 
+test("a module reached only through a .js import counts as used", () => {
+  assert.deepEqual(
+    unusedWebModules([
+      {
+        path: "apps/web/src/main.tsx",
+        text: 'import "./router.js"\n',
+      },
+      {
+        path: "apps/web/src/router.tsx",
+        text: 'import { a } from "./lib/a.js"\nconst Page = lazy(() => import("@/features/jobs/jobs-page.js"))\n',
+      },
+      { path: "apps/web/src/lib/a.ts", text: "export const a = 1\n" },
+      {
+        path: "apps/web/src/features/jobs/jobs-page.tsx",
+        text: "export const JobsPage = 1\n",
+      },
+      { path: "apps/web/src/lib/orphan.ts", text: "export const orphan = 1\n" },
+    ]),
+    ["apps/web/src/lib/orphan.ts"]
+  )
+})
+
 test("an unreachable import cycle is reported", () => {
   const cycle = [
     { path: "apps/web/src/main.tsx", text: "" },

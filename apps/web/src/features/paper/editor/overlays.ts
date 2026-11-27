@@ -149,11 +149,15 @@ export function createOverlays(): Overlays {
       syncRects(layer, "paper-find-active", frame.active, frame.pitchPx)
       syncRects(layer, "paper-peer-caret", frame.peers, frame.pitchPx)
       const show = frame.focused && frame.caret !== null
-      caretEl.hidden = !show
+      if (caretEl.hidden === show) caretEl.hidden = !show
       if (!frame.caret) return
+      const { page, x, y, h } = frame.caret
+      const transform = `translate(${px(x)}px, ${page * frame.pitchPx + px(y)}px)`
+      const height = `${px(h)}px`
+      if (caretEl.style.transform !== transform)
+        caretEl.style.transform = transform
+      if (caretEl.style.height !== height) caretEl.style.height = height
       const key = JSON.stringify(frame.caret)
-      placeRect(caretEl, { ...frame.caret, w: 0 }, frame.pitchPx)
-      caretEl.style.width = ""
       if (key !== lastCaret) {
         lastCaret = key
         phase = !phase

@@ -1,0 +1,10 @@
+{
+  "id": "paper-keystroke-work",
+  "file": "scripts/paper-keystroke-work.test.mjs",
+  "detector": {
+    "module": "scripts/lib/paper-keystroke-work.mjs",
+    "export": "detect"
+  },
+  "historic": null,
+  "reason": "The detector takes runtime measurements from Chromium. The browser probe run against 6e3809f93 detected suggestion control writes and a React commit on each steady key. Its pure fixtures cover those counts and page and line work."
+}

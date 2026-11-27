@@ -231,10 +231,48 @@ describe("Coach suggestions on the page", () => {
     await page.context().close()
   }, 60_000)
 
-  it("keeps the buttons readable on a phone", async () => {
+  it("makes Accept all, Accept and Reject 44px tall on a phone", async () => {
     const page = await open("en-10", PHONE, true)
-    const buttons = await chip(page, "lab-proposal-1", "accept").boundingBox()
-    expect(buttons!.height).toBeGreaterThanOrEqual(27)
+    const accept = await chip(page, "lab-proposal-1", "accept").boundingBox()
+    const reject = await chip(page, "lab-proposal-1", "reject").boundingBox()
+    const all = await page.locator(".paper-suggest-all").boundingBox()
+    expect(accept!.height).toBeGreaterThanOrEqual(44)
+    expect(reject!.height).toBeGreaterThanOrEqual(44)
+    expect(all!.height).toBeGreaterThanOrEqual(44)
+    const width = await page.evaluate(
+      () => document.documentElement.scrollWidth
+    )
+    expect(width).toBeLessThanOrEqual(PHONE.width)
+    await page.context().close()
+  }, 60_000)
+
+  it("grows the Coach label and the buttons with 200 percent text", async () => {
+    const page = await open("en-10", PHONE, true)
+    const sizes = () =>
+      page.evaluate(() => ({
+        label: parseFloat(
+          getComputedStyle(document.querySelector(".paper-suggest-strip b")!)
+            .fontSize
+        ),
+        accept: parseFloat(
+          getComputedStyle(document.querySelector(".paper-suggest-accept")!)
+            .fontSize
+        ),
+        all: parseFloat(
+          getComputedStyle(document.querySelector(".paper-suggest-all")!)
+            .fontSize
+        ),
+      }))
+    const normal = await sizes()
+    await page.evaluate(() => {
+      document.documentElement.style.fontSize = "200%"
+    })
+    const large = await sizes()
+    expect(large.label).toBeGreaterThanOrEqual(normal.label * 2)
+    expect(large.accept).toBeGreaterThanOrEqual(normal.accept * 2)
+    expect(large.all).toBeGreaterThanOrEqual(normal.all * 2)
+    const accept = await chip(page, "lab-proposal-1", "accept").boundingBox()
+    expect(accept!.height).toBeGreaterThanOrEqual(44)
     const width = await page.evaluate(
       () => document.documentElement.scrollWidth
     )

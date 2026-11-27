@@ -56,7 +56,10 @@ export function createFindBar(
     const wasHidden = bar.hidden
     bar.hidden = false
     replaceRow.hidden = !showReplace
-    if (wasHidden) actions.changed(find.value)
+    if (wasHidden) {
+      actions.changed(find.value)
+      updateCount()
+    }
     const field = showReplace && !wasHidden ? replacement : find
     field.focus()
     field.select()
@@ -115,7 +118,7 @@ export function createFindBar(
     update(matches: number) {
       if (total !== matches) active = -1
       total = matches
-      updateCount()
+      if (!bar.hidden) updateCount()
     },
     destroy: () => bar.remove(),
   }

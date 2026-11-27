@@ -103,3 +103,71 @@ test("overlapping controls, a wrapped desktop row, a third phone row and short p
     ["Undo is shorter than 36px at 390px"]
   )
 })
+
+const narrow = {
+  viewport: 320,
+  scrollWidth: 320,
+  clientWidth: 320,
+  controls: [
+    ...row(58, 44, 44, ["Undo", "Text style", "Font", "More"]),
+    ...row(106, 44, 44, [
+      "Bold",
+      "Italic",
+      "Underline",
+      "Bulleted list",
+      "Numbered list",
+      "Align",
+    ]),
+  ],
+}
+
+test("a 320 phone may fold Redo and Link into More, but never headings or a desktop tool", () => {
+  assert.deepEqual(detect({ ...narrow, folded: ["Redo", "Link"] }), [])
+  assert.deepEqual(detect(narrow), [
+    "Redo is missing at 320px",
+    "Link is missing at 320px",
+  ])
+  const noStyle = narrow.controls.filter(
+    (control) => control.label !== "Text style"
+  )
+  assert.deepEqual(
+    detect({
+      ...narrow,
+      controls: noStyle,
+      folded: ["Redo", "Link", "Text style"],
+    }),
+    ["Text style is missing at 320px"]
+  )
+  const deskFolded = desk.controls.filter((control) => control.label !== "Redo")
+  assert.deepEqual(
+    detect({ ...desk, controls: deskFolded, folded: ["Redo"] }),
+    ["Redo is missing at 1440px"]
+  )
+})
+
+test("a label that cuts its text at large text sizes fails", () => {
+  const labels = [
+    { label: "Font", scrollWidth: 191, clientWidth: 116 },
+    { label: "Text style", scrollWidth: 90, clientWidth: 90 },
+  ]
+  assert.deepEqual(detect({ ...desk, labels }), [
+    "Font cuts its text at 1440px",
+  ])
+})
+
+test("Escape that leaves a menu without focus on its button fails", () => {
+  assert.deepEqual(
+    detect({
+      ...desk,
+      escape: [
+        { menu: "Font", focused: "Font" },
+        { menu: "File", focused: "Paper page" },
+        { menu: "More", focused: "" },
+      ],
+    }),
+    [
+      "Escape from File moves focus to Paper page at 1440px",
+      "Escape from More moves focus to nothing at 1440px",
+    ]
+  )
+})
