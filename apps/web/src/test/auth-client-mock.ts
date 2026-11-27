@@ -99,7 +99,37 @@ function installAuthMocks() {
   })
 }
 
+type MockSessionAtomValue = {
+  data: MockSession | null
+  error: { status?: number } | null
+  isPending: boolean
+}
+
+const sessionAtomListeners = new Set<(value: MockSessionAtomValue) => void>()
+let sessionAtomValue: MockSessionAtomValue = {
+  data: authMockState.data,
+  error: null,
+  isPending: false,
+}
+
+export function setMockSessionAtom(value: MockSessionAtomValue) {
+  sessionAtomValue = value
+  for (const listener of [...sessionAtomListeners]) listener(value)
+}
+
+const sessionAtom = {
+  get: () => sessionAtomValue,
+  listen: (listener: (value: MockSessionAtomValue) => void) => {
+    sessionAtomListeners.add(listener)
+    return () => {
+      sessionAtomListeners.delete(listener)
+    }
+  },
+}
+
 export function resetMockSession() {
+  sessionAtomListeners.clear()
+  sessionAtomValue = { data: signedInSession(), error: null, isPending: false }
   authMockState.data = signedInSession()
   authMockState.failure = null
   forgetSession()
@@ -142,7 +172,7 @@ export const authClient = {
   },
   $store: {
     notify: vi.fn(),
-    atoms: {},
+    atoms: { session: sessionAtom },
   },
 }
 

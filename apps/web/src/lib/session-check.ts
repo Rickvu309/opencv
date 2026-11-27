@@ -80,6 +80,33 @@ export async function checkSession(): Promise<SessionCheck> {
   return check
 }
 
+type SessionAtomValue = SessionReply & { isPending: boolean }
+
+type SessionAtom = {
+  get(): SessionAtomValue
+  listen(listener: (value: SessionAtomValue) => void): () => void
+}
+
+function loadedSessionReply(): Promise<SessionReply> {
+  const atom: SessionAtom = authClient.$store.atoms.session
+  const now = atom.get()
+  if (!now.isPending) return Promise.resolve(now)
+  return new Promise((resolve) => {
+    const stop = atom.listen((value) => {
+      if (value.isPending) return
+      stop()
+      resolve(value)
+    })
+  })
+}
+
+export async function loadedSessionCheck(): Promise<SessionCheck> {
+  const check = parseSessionReply(await loadedSessionReply(), knownSession())
+  if (check.kind === "unknown") return checkSession()
+  if (check.kind === "signed-in") rememberSession(check.session)
+  return check
+}
+
 export function sessionToKeep(check: SessionCheck): KnownSession | null {
   if (check.kind === "signed-in") return check.session
   if (check.kind === "unknown") return check.lastKnown

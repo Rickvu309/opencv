@@ -21,7 +21,7 @@ import {
 } from "@/lib/paper-engine-download.ts"
 import { openPaperSync } from "@/lib/paper-sync.ts"
 import { browserSyncPorts } from "@/lib/paper-sync-ports.ts"
-import { checkSession } from "@/lib/session-check.ts"
+import { loadedSessionCheck } from "@/lib/session-check.ts"
 
 declare global {
   interface Window {
@@ -94,7 +94,7 @@ async function openLab(queryClient: QueryClient): Promise<LabState> {
   const name = params.get("doc")
   if (!saved && name !== "blank")
     return { kind: "local", doc: labDocument(name) }
-  const check = await checkSession()
+  const check = await loadedSessionCheck()
   if (check.kind !== "signed-in") {
     if (saved) return { kind: "failed", message: "Sign in to open this Paper" }
     return { kind: "local", doc: labDocument(name) }
