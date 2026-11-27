@@ -454,7 +454,7 @@ describe("only the owner's tabs write, in server order", () => {
   )
 
   it.fails(
-    "keeps both tabs' text when they type at once, and stores a tab's resend once (#2218)",
+    "keeps both tabs' text when they type at once, and stores a tab's resend once (#2207)",
     async () => {
       const ada = await world.person("Ada")
       const { docId, blocks } = await paper.written(ada, ["Analyst"])
