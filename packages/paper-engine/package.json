@@ -13,17 +13,23 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "replay": "vitest run src/audit-replay.test.ts --silent=false --reporter=dot"
+    "replay": "vitest run src/audit-replay.test.ts --silent=false --reporter=dot",
+    "layout-svg": "tsx --conditions=opencv-source cli/layout-svg.ts",
+    "keystroke-bench": "tsx --conditions=opencv-source cli/keystroke-bench.ts"
   },
   "dependencies": {
     "@workspace/domain": "workspace:*",
+    "@workspace/paper-fonts": "workspace:*",
+    "linebreak": "1.1.0",
     "prosemirror-model": "1.25.12",
     "prosemirror-state": "1.4.4",
     "prosemirror-transform": "1.12.4"
   },
   "devDependencies": {
     "@types/node": "^24",
+    "@workspace/paper-corpus": "workspace:*",
     "fast-check": "4.10.2",
+    "tsx": "4.23.15",
     "typescript": "~6",
     "vitest": "^5.0.5"
   }
