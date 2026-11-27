@@ -1,0 +1,14 @@
+{
+  "id": "paper-marker-metrics",
+  "file": "packages/paper-engine/src/layout/layout-markers.test.ts",
+  "detector": {
+    "module": "scripts/lib/paper-font-metrics.mjs",
+    "export": "detectMissingListGlyphs"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "073d74e86",
+    "path": "packages/paper-fonts/metrics/liberation-sans-regular.json"
+  },
+  "reason": "Commit 073d74e86 generated the font metrics from the corpus code points alone, so the bullet list markers U+2022, U+25E6 and U+25AA and the fallback glyph U+003F had no advance and every list bullet was measured at the guessed width of 0. The detect fires on that commit's metrics and stays quiet on the regenerated ones. The guard file drives nextCounters and numberLabel for the markers the layout really emits and checks every glyph against every stored face."
+}
