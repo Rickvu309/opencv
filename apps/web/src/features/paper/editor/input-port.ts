@@ -131,6 +131,13 @@ export type InputPort = {
   destroy(): void
 }
 
+const COMMIT_AFTER_END: Record<string, boolean> = {
+  insertCompositionText: true,
+  insertFromComposition: true,
+  deleteCompositionText: false,
+  "": false,
+}
+
 const isHighSurrogate = (code: number) => code >= 0xd800 && code <= 0xdbff
 
 export function textareaDiff(
@@ -213,9 +220,9 @@ export function createInputPort(sink: InputSink): InputPort {
       take({ kind: "composition", id: composition.id, oneShot: false })
       return
     }
-    if (ended && data.inputType === "insertCompositionText") {
+    if (ended && data.inputType in COMMIT_AFTER_END) {
       take({ kind: "composition", id: ended.id, oneShot: ended.inputs === 0 })
-      ended = null
+      if (COMMIT_AFTER_END[data.inputType]) ended = null
       write()
       return
     }

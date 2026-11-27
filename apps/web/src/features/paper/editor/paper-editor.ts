@@ -371,7 +371,7 @@ export function mountPaperEditor(
             }
           : { kind: "typing", caret: caretPos }
       run([command], inputEdit)
-      if (input.kind === "composition") {
+      if (input.kind === "composition" && port.isComposing()) {
         const start =
           composition && comparePos(index, composition.from, range.from) < 0
             ? composition.from
@@ -379,7 +379,9 @@ export function mountPaperEditor(
         composition = { from: start, to: shift(range.from, text.length) }
         draw()
       }
-      revealCaret()
+      revealAfterTyping.unobserve(port.element)
+      revealAfterTyping.takeRecords()
+      revealAfterTyping.observe(port.element)
     },
     action(action) {
       keys.act(action)
@@ -431,6 +433,13 @@ export function mountPaperEditor(
 
   const port = createInputPort(sink)
   overlays.layer.append(port.element)
+  const revealAfterTyping = new IntersectionObserver(
+    ([entry]) => {
+      revealAfterTyping.unobserve(port.element)
+      if (focused && entry && entry.intersectionRatio < 1) revealCaret()
+    },
+    { threshold: 1 }
+  )
 
   const onFocus = () => {
     focused = true
@@ -525,10 +534,7 @@ export function mountPaperEditor(
       port.sync()
       return done
     },
-    history: () => ({
-      undo: engine.undo(state) !== null,
-      redo: engine.redo(state) !== null,
-    }),
+    history: () => engine.history(state),
     subscribe(listener) {
       listeners.add(listener)
       return () => listeners.delete(listener)
@@ -551,6 +557,7 @@ export function mountPaperEditor(
     destroy() {
       suggestions.destroy()
       resize.disconnect()
+      revealAfterTyping.disconnect()
       detachPointer()
       port.element.removeEventListener("focus", onFocus)
       port.element.removeEventListener("blur", onBlur)

@@ -1,0 +1,10 @@
+{
+  "id": "sweep-browser-launch",
+  "file": "scripts/sweep-browser-launch.test.mjs",
+  "detector": {
+    "module": "scripts/lib/sweep-browser-launch.mjs",
+    "export": "detect"
+  },
+  "historic": null,
+  "reason": "The 200% text and open-menu probes launched Playwright's bundled Chromium directly, which the ordinary guards job never installs, so both failed on CI with browserType.launch: Executable doesn't exist. The mistake only existed inside PR #2271 and never reached main, so there is no main commit to replay; the detector's mistake and clean fixtures prove it fires on a direct launch and stays quiet with launchBrowser."
+}

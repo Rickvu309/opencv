@@ -4,6 +4,7 @@ import type {
   FaceKey,
   Layout,
   LineBox,
+  Page,
   Segment,
 } from "@workspace/paper-engine"
 
@@ -50,8 +51,18 @@ function factsOf(doc: Document | undefined): Map<string, BlockFacts> {
   return facts
 }
 
-type Painted = { el: HTMLElement; box: Box; content: string; place: string }
-type PageSlot = { el: HTMLElement; lines: Map<string, Painted> }
+type Painted = {
+  el: HTMLElement
+  box: Box
+  facts: BlockFacts | undefined
+  content: string
+  place: string
+}
+type PageSlot = {
+  el: HTMLElement
+  page: Page | null
+  lines: Map<string, Painted>
+}
 
 function glyphSpan(
   metrics: FaceHeights,
@@ -83,17 +94,56 @@ function glyphSpan(
   return span
 }
 
+function keepPlainRun(
+  el: HTMLElement,
+  before: LineBox | undefined,
+  after: LineBox
+): boolean {
+  if (
+    !before ||
+    before.marker ||
+    after.marker ||
+    before.segments.length !== 1 ||
+    after.segments.length !== 1
+  )
+    return false
+
+  const previous = before.segments[0]!
+  const next = after.segments[0]!
+  const text = el.firstChild?.firstChild
+  if (
+    !(text instanceof Text) ||
+    previous.x - before.rect.x !== next.x - after.rect.x ||
+    before.baseline - before.rect.y !== after.baseline - after.rect.y ||
+    previous.font !== next.font ||
+    previous.sizeMpt !== next.sizeMpt ||
+    previous.color !== next.color ||
+    previous.underline !== next.underline ||
+    previous.strike !== next.strike ||
+    previous.href !== next.href
+  )
+    return false
+  const value = next.text.replaceAll("\t", "")
+  if (text.data !== value) text.data = value
+  return true
+}
+
 function fillLine(
   el: HTMLElement,
   metrics: FaceHeights,
   box: LineBox,
-  facts: BlockFacts | undefined
+  facts: BlockFacts | undefined,
+  before: LineBox | undefined
 ) {
-  el.dataset.block = box.block
-  el.dataset.kind = facts?.kind ?? ""
-  el.dataset.list = facts?.list ?? ""
-  el.dataset.level = String(facts?.level ?? 0)
-  el.dataset.from = String(box.from)
+  const kind = facts?.kind ?? ""
+  const list = facts?.list ?? ""
+  const level = String(facts?.level ?? 0)
+  const from = String(box.from)
+  if (el.dataset.kind !== kind) el.dataset.kind = kind
+  if (el.dataset.list !== list) el.dataset.list = list
+  if (el.dataset.level !== level) el.dataset.level = level
+  if (el.dataset.from !== from) el.dataset.from = from
+  if (keepPlainRun(el, before, box)) return
   const children: HTMLElement[] = []
   if (box.marker) {
     const marker = glyphSpan(metrics, box, box.marker, {})
@@ -139,6 +189,8 @@ function keyOf(box: Box, counters: Map<string, number>): string {
 function contentOf(box: Box, facts: BlockFacts | undefined): string {
   if (box.kind === "line")
     return JSON.stringify([
+      box.from,
+      box.rect.x,
       box.segments,
       box.marker,
       box.baseline - box.rect.y,
@@ -147,6 +199,26 @@ function contentOf(box: Box, facts: BlockFacts | undefined): string {
   if (box.kind === "cell") return box.borders
   if (box.kind === "image") return box.fileId
   return ""
+}
+
+function sameLine(
+  old: Painted,
+  box: Box,
+  facts: BlockFacts | undefined
+): boolean {
+  const before = old.box
+  return (
+    before.kind === "line" &&
+    box.kind === "line" &&
+    before.segments === box.segments &&
+    before.marker === box.marker &&
+    before.from === box.from &&
+    before.rect.x === box.rect.x &&
+    before.baseline - before.rect.y === box.baseline - box.rect.y &&
+    old.facts?.kind === facts?.kind &&
+    old.facts?.list === facts?.list &&
+    old.facts?.level === facts?.level
+  )
 }
 
 export type Painter = {
@@ -161,39 +233,52 @@ export function createPainter(
   registerPaperFaces()
   const pages: PageSlot[] = []
   let touched = 0
+  let size: Page["size"] | undefined
   return {
     touched: () => touched,
     paint(layout, doc) {
       touched = 0
-      const facts = factsOf(doc)
+      let facts: Map<string, BlockFacts> | undefined
+      const nextSize = layout.pages[0]!.size
+      const resized = size?.w !== nextSize.w || size?.h !== nextSize.h
+      size = nextSize
       const { heightPx, widthPx, pitchPx } = placement(layout)
-      const counters = new Map<string, number>()
       layout.pages.forEach((page, index) => {
         let slot = pages[index]
         if (!slot) {
           const el = document.createElement("div")
           el.className = "paper-editor-page"
           el.dataset.page = String(index)
-          el.style.top = `${index * pitchPx}px`
           stage.insertBefore(el, stage.lastElementChild)
-          slot = { el, lines: new Map() }
+          slot = { el, page: null, lines: new Map() }
           pages[index] = slot
           touched += 1
         }
-        slot.el.style.width = `${widthPx}px`
-        slot.el.style.height = `${heightPx}px`
+        if (resized || !slot.page) {
+          slot.el.style.top = `${index * pitchPx}px`
+          slot.el.style.width = `${widthPx}px`
+          slot.el.style.height = `${heightPx}px`
+        }
+        if (slot.page === page) return
+        slot.page = page
+        facts ??= factsOf(doc)
         const seen = new Set<string>()
+        const counters = new Map<string, number>()
         for (const box of page.boxes) {
           const key = keyOf(box, counters)
           seen.add(key)
           const old = slot.lines.get(key)
           if (old && old.box === box) continue
           const blockFacts = facts.get(box.block)
-          const content = contentOf(box, blockFacts)
+          const content =
+            old && sameLine(old, box, blockFacts)
+              ? old.content
+              : contentOf(box, blockFacts)
           const place = `${box.rect.x},${box.rect.y},${box.rect.w},${box.rect.h}`
           const painted: Painted = old ?? {
             el: document.createElement("div"),
             box,
+            facts: blockFacts,
             content: "",
             place: "",
           }
@@ -207,7 +292,13 @@ export function createPainter(
           }
           if (painted.content !== content || !old) {
             if (box.kind === "line")
-              fillLine(painted.el, metrics, box, blockFacts)
+              fillLine(
+                painted.el,
+                metrics,
+                box,
+                blockFacts,
+                old?.box.kind === "line" ? old.box : undefined
+              )
             if (box.kind === "cell") painted.el.dataset.borders = box.borders
             painted.content = content
             touched += 1
@@ -218,6 +309,7 @@ export function createPainter(
             touched += 1
           }
           painted.box = box
+          painted.facts = blockFacts
         }
         for (const [key, painted] of slot.lines) {
           if (seen.has(key)) continue

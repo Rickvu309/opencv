@@ -1,4 +1,11 @@
-import { closeHistory, history, redo, undo } from "prosemirror-history"
+import {
+  closeHistory,
+  history,
+  redo,
+  redoDepth,
+  undo,
+  undoDepth,
+} from "prosemirror-history"
 import type { Node } from "prosemirror-model"
 import {
   EditorState as PmState,
@@ -60,6 +67,7 @@ export interface PaperEngine {
     origin: Origin,
     input?: InputEdit
   ): EditResult | { refusal: Refusal }
+  history(state: EditorState): { undo: boolean; redo: boolean }
   undo(state: EditorState): EditResult | null
   redo(state: EditorState): EditResult | null
   revert: typeof revert
@@ -182,7 +190,7 @@ export function createEngine(ports: Ports): PaperEngine {
       occupied.add(id)
       return id
     }
-    const ctx: CommandContext = { tr, newId, caret: null }
+    const ctx: CommandContext = { tr, newId, caret: null, keptMarks: null }
     for (const command of commands) {
       const parsed = docCommandSchema.safeParse(command)
       if (!parsed.success) {
@@ -194,6 +202,7 @@ export function createEngine(ports: Ports): PaperEngine {
         }
       }
       let refusal: Refusal | null
+      ctx.keptMarks = null
       try {
         refusal = applyCommand(ctx, parsed.data)
       } catch (error) {
@@ -212,6 +221,12 @@ export function createEngine(ports: Ports): PaperEngine {
     if (local && origin.kind === "person") {
       const caret = input?.caret ? toPm(tr.doc, input.caret) : ctx.caret
       if (caret !== null) tr.setSelection(caretSelection(tr.doc, caret))
+      if (
+        ctx.keptMarks &&
+        tr.selection.empty &&
+        tr.selection.head === ctx.caret
+      )
+        tr.setStoredMarks(ctx.keptMarks)
     }
     const group = groupHistory({
       tr,
@@ -327,6 +342,11 @@ export function createEngine(ports: Ports): PaperEngine {
       return runInner(unwrap(state), commands, origin, input)
     },
 
+    history(state) {
+      const { pm } = unwrap(state)
+      return { undo: undoDepth(pm) > 0, redo: redoDepth(pm) > 0 }
+    },
+
     undo(state) {
       return runHistory(state, undo)
     },
@@ -344,10 +364,16 @@ export function createEngine(ports: Ports): PaperEngine {
       const { doc, selection } = inner.pm
       const next = applySelection(doc, selection, command)
       if (!next || next.eq(selection)) return state
+      const fromGroupCaret =
+        inner.group !== null &&
+        !next.empty &&
+        next.anchor === inner.group.caret &&
+        next.$anchor.sameParent(next.$head)
+      const tr = inner.pm.tr.setSelection(next)
       return wrap({
         ...inner,
-        pm: inner.pm.apply(closeHistory(inner.pm.tr.setSelection(next))),
-        group: null,
+        pm: inner.pm.apply(fromGroupCaret ? tr : closeHistory(tr)),
+        group: fromGroupCaret ? inner.group : null,
       })
     },
 
