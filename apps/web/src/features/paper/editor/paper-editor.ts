@@ -54,6 +54,10 @@ import { copySelection, plainFragment } from "./clipboard.ts"
 import { createEditorTools } from "./editor-tools.ts"
 import { pasteHtml } from "./paste-html.ts"
 import { createOverlays, rangeRects, type PageRect } from "./overlays.ts"
+import { createSuggestionLayer } from "./suggestions/suggestion-layer.ts"
+import { verticalTarget } from "./vertical-move.ts"
+import { randomId } from "./random-id.ts"
+import { coachOrigin } from "./suggestions/suggestion-view.ts"
 import {
   createPainter,
   MPT_PER_PX,
@@ -73,17 +77,13 @@ export type PaperEditor = {
   layout(): Layout
   scale(): number
   focus(): void
+  suggest: ReturnType<typeof createSuggestionLayer>["set"]
   destroy(): void
 }
 
 const MIRROR_WINDOW = 2000
 const STAND_IN_LIMIT = 1000
 const NARROW_PX = 600
-
-function randomId(): string {
-  const bytes = crypto.getRandomValues(new Uint8Array(16))
-  return [...bytes].map((byte) => byte.toString(16).padStart(2, "0")).join("")
-}
 
 export function mountPaperEditor(
   host: HTMLElement,
@@ -120,6 +120,18 @@ export function mountPaperEditor(
   stage.append(overlays.layer)
   host.append(stage)
   const painter = createPainter(stage, metrics)
+  const suggestions = createSuggestionLayer(host, overlays.layer, engine, {
+    land(commands, ids) {
+      focusEditor()
+      return run(commands, undefined, coachOrigin(client, ids))
+    },
+    undo: () => act({ do: "undo" }),
+    changed() {
+      relayout()
+      fit()
+      draw()
+    },
+  })
 
   function currentRange(): Range {
     return ordered(index, selectionRange(doc, selection))
@@ -146,10 +158,10 @@ export function mountPaperEditor(
     const gutter = width < NARROW_PX ? 16 : 32
     scale = pageScale(width - 2 * gutter, widthPx)
     stageLeft = Math.max(gutter, (width - widthPx * scale) / 2)
-    stageTop = gutter
+    stageTop = gutter + suggestions.stripHeight()
     stage.style.transform = `translate(${stageLeft}px, ${stageTop}px) scale(${scale})`
     stage.style.width = `${widthPx}px`
-    host.style.height = `${(layout.pages.length * pitchPx - PAGE_GAP_PX) * scale + 2 * gutter}px`
+    host.style.height = `${(layout.pages.length * pitchPx - PAGE_GAP_PX) * scale + 2 * gutter + suggestions.stripHeight()}px`
     fittedWidth = width
   }
 
@@ -207,6 +219,7 @@ export function mountPaperEditor(
       focused,
     })
     placeInput(headRect)
+    suggestions.draw(layout, pitchPx, scale)
     tools.update(doc, selection, layout, head(), headRect, collapsed(), scale)
   }
 
@@ -227,16 +240,27 @@ export function mountPaperEditor(
     selection = read.selection
     if (docChanged) {
       index = indexDoc(doc)
-      const pages = layout.pages.length
-      layout = layouter.layout(doc, layout)
-      painter.paint(layout, doc)
-      if (layout.pages.length !== pages) fit()
+      relayout()
     }
     draw()
   }
 
-  function run(commands: DocCommand[], input?: InputEdit): boolean {
-    const result = engine.run(state, commands, origin, input)
+  function relayout() {
+    const pages = layout.pages.length
+    const shown = suggestions.display(doc, scale)
+    layout = layouter.layout(shown, layout)
+    painter.paint(layout, shown)
+    if (layout.pages.length !== pages) fit()
+  }
+
+  function locateReal(point: PagePoint): Pos {
+    const pos = locate(metrics, layout, point)
+    const owner = suggestions.owner(pos.block)
+    return owner ? { block: owner, offset: 0 } : pos
+  }
+
+  function run(commands: DocCommand[], input?: InputEdit, by = origin) {
+    const result = engine.run(state, commands, by, input)
     if ("refusal" in result) return false
     adopt(result.state)
     return true
@@ -344,37 +368,17 @@ export function mountPaperEditor(
   }
 
   function vertical(dir: -1 | 1, extend: boolean) {
-    const from = head()
-    const rect = caret(metrics, layout, from)
-    if (goalX === null) goalX = rect.x
-    const goal = goalX
-    const page = layout.pages[rect.page]!
-    const tryPoint = (point: PagePoint) => {
-      const pos = locate(metrics, layout, point)
-      const moved = caret(metrics, layout, pos)
-      return moved.page === rect.page && moved.y === rect.y ? null : pos
-    }
-    let target =
-      dir > 0
-        ? tryPoint({ page: rect.page, x: goal, y: rect.y + rect.h + 1 })
-        : rect.y - 1 >= page.content.y
-          ? tryPoint({ page: rect.page, x: goal, y: rect.y - 1 })
-          : null
-    const nextPage = layout.pages[rect.page + dir]
-    if (!target && nextPage)
-      target = tryPoint({
-        page: nextPage.index,
-        x: goal,
-        y:
-          dir > 0
-            ? nextPage.content.y
-            : nextPage.content.y + nextPage.content.h - 1,
-      })
-    if (!target) {
-      selectCommand({ op: "move", unit: "doc", dir, extend })
-    } else {
-      select(extend ? anchor() : target, target)
-    }
+    const goal = goalX ?? caret(metrics, layout, head()).x
+    const target = verticalTarget(
+      metrics,
+      layout,
+      head(),
+      goal,
+      dir,
+      locateReal
+    )
+    if (!target) selectCommand({ op: "move", unit: "doc", dir, extend })
+    else select(extend ? anchor() : target, target)
     goalX = goal
   }
 
@@ -640,7 +644,7 @@ export function mountPaperEditor(
         port.sync()
         return
       }
-      const pos = locate(metrics, layout, point)
+      const pos = locateReal(point)
       if (clicks === 3) {
         const found = containerAt(index, pos)
         const length = found?.container.text.length ?? 0
@@ -654,7 +658,7 @@ export function mountPaperEditor(
     },
     drag(point) {
       if (!dragAnchor) return
-      select(dragAnchor, locate(metrics, layout, point))
+      select(dragAnchor, locateReal(point))
       port.sync()
     },
     focus() {
@@ -665,6 +669,7 @@ export function mountPaperEditor(
   const resize = new ResizeObserver(() => {
     if (host.clientWidth !== fittedWidth) {
       fit()
+      relayout()
       draw()
     }
   })
@@ -680,7 +685,9 @@ export function mountPaperEditor(
     layout: () => layout,
     scale: () => scale,
     focus: focusEditor,
+    suggest: suggestions.set,
     destroy() {
+      suggestions.destroy()
       resize.disconnect()
       detachPointer()
       port.element.removeEventListener("focus", onFocus)
