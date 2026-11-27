@@ -517,15 +517,10 @@ describe("only the owner's tabs write, in server order", () => {
     const docId = await enginePaper(ada)
     const client = "tab-a"
     const origin = { kind: "person", actor: ada.id, client } as const
+    const pos = { block: blank.content[0]!.attrs.id, offset: 0 }
     const edit = editor.run(
       editor.load(blank, 0, client),
-      [
-        {
-          op: "insertText",
-          range: span(blank.content[0]!.attrs.id, 0, 0),
-          text: "Draft",
-        },
-      ],
+      [{ op: "insertText", range: { from: pos, to: pos }, text: "Draft" }],
       origin
     )
     if ("refusal" in edit) throw new Error(JSON.stringify(edit.refusal))
