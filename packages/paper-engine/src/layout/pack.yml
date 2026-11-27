@@ -1,0 +1,3 @@
+layer: platform
+public: [index.ts]
+dependencies: [packages/domain/src/paper-doc, packages/paper-fonts]
