@@ -6,3 +6,4 @@ export {
   textContainers,
   type TextContainer,
 } from "./document-text.js"
+export type { InputEdit } from "./history.js"

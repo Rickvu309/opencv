@@ -1,7 +1,9 @@
+import { closeHistory, history, redo, undo } from "prosemirror-history"
 import {
   EditorState as PmState,
   Selection as PmSelection,
   TextSelection,
+  type Transaction,
 } from "prosemirror-state"
 import {
   docCommandSchema,
@@ -15,7 +17,12 @@ import {
   type SelectionCommand,
 } from "@workspace/domain/paper-doc"
 
-import { applyCommand, type CommandContext } from "./commands.js"
+import type { CommandContext } from "./command-context.js"
+import { applyCommand } from "./commands.js"
+import { groupHistory, type HistoryGroup, type InputEdit } from "./history.js"
+import { posIndex, toPm } from "./positions.js"
+import { revert } from "./revert.js"
+import { transactionSteps } from "./wire-steps.js"
 import { fromDocument, invariantProblem, toDocument } from "./document-json.js"
 import type { Ports } from "./ports.js"
 import { applySelection, readSelection } from "./selection.js"
@@ -23,13 +30,19 @@ import { paperSchema } from "./schema.js"
 
 export type EditorState = { readonly brand: "EditorState" }
 
+type EditResult = { state: EditorState; change: Change }
+
 export interface PaperEngine {
   load(doc: Document, version: number, client: string): EditorState
   run(
     state: EditorState,
     commands: readonly DocCommand[],
-    origin: Origin
-  ): { state: EditorState; change: Change } | { refusal: Refusal }
+    origin: Origin,
+    input?: InputEdit
+  ): EditResult | { refusal: Refusal }
+  undo(state: EditorState): EditResult | null
+  redo(state: EditorState): EditResult | null
+  revert: typeof revert
   select(state: EditorState, command: SelectionCommand): EditorState
   read(state: EditorState): {
     doc: Document
@@ -38,7 +51,13 @@ export interface PaperEngine {
   }
 }
 
-type Inner = { pm: PmState; version: number; client: string }
+type Inner = {
+  pm: PmState
+  version: number
+  client: string
+  actor: string
+  group: HistoryGroup | null
+}
 
 const inners = new WeakMap<EditorState, Inner>()
 
@@ -63,6 +82,54 @@ function caretSelection(doc: PmState["doc"], pm: number): PmSelection {
 }
 
 export function createEngine(ports: Ports): PaperEngine {
+  let historyToken = 0
+
+  function commit(
+    inner: Inner,
+    tr: Transaction,
+    origin: Origin,
+    commands: readonly DocCommand[],
+    group: HistoryGroup | null
+  ): EditResult {
+    const change: Change = {
+      edit: editIdSchema.parse(ports.ids()),
+      origin,
+      base: inner.version,
+      ...transactionSteps(tr),
+      commands: [...commands],
+    }
+    let pm = inner.pm.apply(tr)
+    if (!group) pm = pm.apply(closeHistory(pm.tr))
+    const actor =
+      origin.kind === "person" && origin.client === inner.client
+        ? origin.actor
+        : inner.actor
+    return { state: wrap({ ...inner, pm, actor, group }), change }
+  }
+
+  function runHistory(
+    state: EditorState,
+    command: typeof undo
+  ): EditResult | null {
+    const inner = unwrap(state)
+    let result: EditResult | null = null
+    command(inner.pm, (tr) => {
+      if (invariantProblem(tr.doc)) return
+      result = commit(
+        inner,
+        tr,
+        {
+          kind: "person",
+          actor: inner.actor,
+          client: inner.client,
+        },
+        [],
+        null
+      )
+    })
+    return result
+  }
+
   return {
     load(doc, version, client) {
       const node = fromDocument(doc)
@@ -70,14 +137,22 @@ export function createEngine(ports: Ports): PaperEngine {
         schema: paperSchema,
         doc: node,
         selection: PmSelection.atStart(node),
+        plugins: [history({ depth: Infinity })],
       })
-      return wrap({ pm, version, client })
+      return wrap({ pm, version, client, actor: client, group: null })
     },
 
-    run(state, commands, origin) {
+    run(state, commands, origin, input) {
       const inner = unwrap(state)
       const tr = inner.pm.tr
-      const ctx: CommandContext = { tr, newId: ports.ids, caret: null }
+      const occupied = new Set(posIndex(tr.doc).blocks.keys())
+      const newId = () => {
+        let id = ports.ids()
+        while (occupied.has(id)) id = ports.ids()
+        occupied.add(id)
+        return id
+      }
+      const ctx: CommandContext = { tr, newId, caret: null }
       for (const command of commands) {
         const parsed = docCommandSchema.safeParse(command)
         if (!parsed.success) {
@@ -101,30 +176,46 @@ export function createEngine(ports: Ports): PaperEngine {
       }
       const problem = invariantProblem(tr.doc)
       if (problem) return { refusal: { code: "schema", detail: problem } }
-      if (origin.kind === "person" && ctx.caret !== null) {
-        tr.setSelection(caretSelection(tr.doc, ctx.caret))
+      const local =
+        origin.client === inner.client &&
+        (origin.kind === "person" || origin.proposal !== undefined)
+      if (local && origin.kind === "person") {
+        const caret = input?.caret ? toPm(tr.doc, input.caret) : ctx.caret
+        if (caret !== null) tr.setSelection(caretSelection(tr.doc, caret))
       }
-      const change: Change = {
-        edit: editIdSchema.parse(ports.ids()),
-        origin,
-        base: inner.version,
-        steps: tr.steps.map((step) => step.toJSON()),
-        inverse: tr.steps
-          .map((step, index) => step.invert(tr.docs[index]!).toJSON())
-          .reverse(),
-        commands: [...commands],
-      }
-      return { state: wrap({ ...inner, pm: inner.pm.apply(tr) }), change }
+      const group = groupHistory({
+        tr,
+        commands,
+        input,
+        previous: inner.group,
+        local,
+        person: origin.kind === "person" && origin.proposal === undefined,
+        beforeCaret: inner.pm.selection.head,
+        time: ports.now(),
+        nextToken: () => ++historyToken,
+      })
+      return commit(inner, tr, origin, commands, group)
     },
+
+    undo(state) {
+      return runHistory(state, undo)
+    },
+
+    redo(state) {
+      return runHistory(state, redo)
+    },
+
+    revert,
 
     select(state, command) {
       const inner = unwrap(state)
       const { doc, selection } = inner.pm
       const next = applySelection(doc, selection, command)
-      if (!next) return state
+      if (!next || next.eq(selection)) return state
       return wrap({
         ...inner,
-        pm: inner.pm.apply(inner.pm.tr.setSelection(next)),
+        pm: inner.pm.apply(closeHistory(inner.pm.tr.setSelection(next))),
+        group: null,
       })
     },
 
