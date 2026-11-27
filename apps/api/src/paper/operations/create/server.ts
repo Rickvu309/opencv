@@ -20,15 +20,14 @@ export const implementation = {
       ...(input.templateId ? { templateId: input.templateId } : {}),
       paper: startingPaper(input),
     })
-    if (input.engine === 2)
-      admitted(
-        await engineLog.start(
-          created.id,
-          input.kind === "cv"
-            ? paperEngineBlank.blankCv()
-            : paperEngineBlank.blankLetter()
-        )
+    admitted(
+      await engineLog.start(
+        created.id,
+        input.kind === "cv"
+          ? paperEngineBlank.blankCv()
+          : paperEngineBlank.blankLetter()
       )
+    )
     if (input.jobId)
       await registry.execute({
         name: catalog["job.linkPaper"].name,

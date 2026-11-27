@@ -277,68 +277,31 @@ export function createPaperRoutes(signedIn: SignedIn) {
         bytes,
         kind: kind.data,
       }
-      if (c.req.query("engine") === "2") {
-        const output = await transaction(async () => {
-          const owner = parseUserId(c.var.userId)
-          refuseCancelledImport(c.req.raw.signal)
-          const saved = await saveFile({
-            ...upload,
-            userId: owner,
-            purpose: "import",
-            id: importFileId(owner, requestKey),
-          })
-          const result = await registry.execute({
-            name: catalog["paper.import"].name,
-            input: {
-              fileId: saved.id,
-              kind: kind.data,
-              name: importedPageName(file.name),
-              paper: null,
-              engine: 2,
-            },
-            actor: person(owner),
-            idempotencyKey: `import:${requestKey}`,
-          })
-          refuseCancelledImport(c.req.raw.signal)
-          return result.output
+      const output = await transaction(async () => {
+        const owner = parseUserId(c.var.userId)
+        refuseCancelledImport(c.req.raw.signal)
+        const saved = await saveFile({
+          ...upload,
+          userId: owner,
+          purpose: "import",
+          id: importFileId(owner, requestKey),
         })
-        return c.json(paperImportResponseSchema.parse(successEnvelope(output)))
-      }
-      const imported = await importedPaper(upload, {
-        owner: c.var.userId,
-        signal: c.req.raw.signal,
+        const result = await registry.execute({
+          name: catalog["paper.import"].name,
+          input: {
+            fileId: saved.id,
+            kind: kind.data,
+            name: importedPageName(file.name),
+            paper: null,
+            engine: 2,
+          },
+          actor: person(owner),
+          idempotencyKey: `import:${requestKey}`,
+        })
+        refuseCancelledImport(c.req.raw.signal)
+        return result.output
       })
-      refuseCancelledImport(c.req.raw.signal)
-      const saved = await saveFile({
-        userId: parseUserId(c.var.userId),
-        name: file.name,
-        mediaType: upload.mediaType,
-        bytes,
-        purpose: "import",
-        id: importFileId(c.var.userId, requestKey),
-      })
-      bytes = undefined
-      void bytes
-      refuseCancelledImport(c.req.raw.signal)
-      const created = await registry.execute({
-        name: catalog["paper.import"].name,
-        input: {
-          fileId: saved.id,
-          kind: kind.data,
-          name: imported.name,
-          paper: imported.paper,
-        },
-        actor: person(c.var.userId),
-        idempotencyKey: `import:${requestKey}`,
-      })
-      return c.json(
-        paperImportResponseSchema.parse(
-          successEnvelope({
-            ...catalog["paper.import"].publicResult.parse(created.output),
-            ...(imported.notice ? { notice: imported.notice } : {}),
-          })
-        )
-      )
+      return c.json(paperImportResponseSchema.parse(successEnvelope(output)))
     } catch (error) {
       bytes = undefined
       void bytes

@@ -293,7 +293,8 @@ describe("opencv_app migrations", () => {
       const before = await client.query(
         `select ${columns} from "opencv_app"."paper_docs"`
       )
-      await runMigrations(db as unknown as AppDatabase)
+      for (const statement of migrations[logAt]!.sql)
+        await client.exec(statement)
       const after = await client.query(
         `select ${columns}, engine, head_version, snapshot, snapshot_version, first_page
          from "opencv_app"."paper_docs"`
@@ -320,6 +321,108 @@ describe("opencv_app migrations", () => {
             'person', 'a', '[]', '[]', '[]')
         `)
       ).rejects.toThrow(/paper_changes_versions_ascend/)
+    } finally {
+      await client.close()
+    }
+  })
+
+  it("resets every Paper to an empty page on the new engine and keeps its name", async () => {
+    const client = new PGlite()
+    const db = drizzle({ client })
+    try {
+      const migrations = readMigrationFiles(migrationConfig())
+      const resetAt = migrations.findIndex((migration) =>
+        migration.sql.some((statement) =>
+          statement.includes('SET "engine" = 2')
+        )
+      )
+      expect(resetAt).toBeGreaterThan(0)
+      const previous = migrations.slice(0, resetAt)
+      for (const migration of previous) {
+        for (const statement of migration.sql) await client.exec(statement)
+      }
+      const last = previous.at(-1)!
+      await client.exec(`
+        create table "opencv_app"."migrations" (
+          id serial primary key, hash text not null, created_at bigint
+        );
+        insert into "opencv_app"."user" (id, name, email)
+          values ('engine-reset', 'Ada', 'engine-reset@example.com');
+        insert into "opencv_app"."paper_docs"
+          (id, user_id, name, kind, crdt_document, content_version, updated_at,
+            engine, head_version, snapshot, snapshot_version, first_page)
+          values
+          ('00000000-0000-4000-8000-000000002287', 'engine-reset', 'Old CV',
+            'cv', '{"version":4,"schemaRevision":2,"kind":"cv"}', 7,
+            '2026-01-01T00:00:00Z', 1, 0, null, 0, null),
+          ('00000000-0000-4000-8000-000000002288', 'engine-reset', 'New Letter',
+            'letter', null, 1, '2026-01-01T00:00:00Z', 2, 3,
+            '{"type":"doc","content":[]}', 3, '{"lines":[]}');
+        insert into "opencv_app"."paper_changes"
+          (doc_id, from_version, to_version, edit_id, client_id, origin_kind,
+            origin_actor, steps, inverse, commands)
+          values ('00000000-0000-4000-8000-000000002288', 0, 3, 'e', 'c',
+            'person', 'engine-reset', '[]', '[]', '[]');
+      `)
+      await db.execute(sql`
+        insert into "opencv_app"."migrations" (hash, created_at)
+        values (${last.hash}, ${last.folderMillis})
+      `)
+      await runMigrations(db as unknown as AppDatabase)
+      const after = await client.query<{
+        name: string
+        engine: number
+        head_version: number
+        snapshot_version: number
+        first_page: unknown
+        snapshot: {
+          attrs: { template: string; page: { size: string } }
+          content: { type: string; attrs: { id: string }; content?: unknown }[]
+        }
+      }>(
+        `select name, engine, head_version, snapshot_version, first_page, snapshot
+         from "opencv_app"."paper_docs" order by name`
+      )
+      expect(
+        after.rows.map((row) => ({
+          name: row.name,
+          engine: row.engine,
+          head: row.head_version,
+          snapshotVersion: row.snapshot_version,
+          firstPage: row.first_page,
+          template: row.snapshot.attrs.template,
+          size: row.snapshot.attrs.page.size,
+          blocks: row.snapshot.content.map((block) => [
+            block.type,
+            block.attrs.id,
+            block.content ?? null,
+          ]),
+        }))
+      ).toEqual([
+        {
+          name: "New Letter",
+          engine: 2,
+          head: 0,
+          snapshotVersion: 0,
+          firstPage: null,
+          template: "letter",
+          size: "A4",
+          blocks: [["text_block", "letter-1", null]],
+        },
+        {
+          name: "Old CV",
+          engine: 2,
+          head: 0,
+          snapshotVersion: 0,
+          firstPage: null,
+          template: "classic",
+          size: "A4",
+          blocks: [["text_block", "paragraph-1", null]],
+        },
+      ])
+      expect(
+        (await client.query('select * from "opencv_app"."paper_changes"')).rows
+      ).toEqual([])
     } finally {
       await client.close()
     }

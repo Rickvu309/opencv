@@ -41,9 +41,9 @@ export const WALK_COMMAND = {
       )
     const rows = pickRows(walk.rows, flags.row ?? [])
     const route = flags.route ?? walk.route
-    const surface = route === LAB_ROUTE ? SURFACES.lab : SURFACES.rich
+    const surface = route === LAB_ROUTE ? SURFACES.lab : SURFACES.paper
     const pins = JSON.parse(ctx.fs.read(join(ctx.repo, EXPECTED_FAILURES)))
-    const expected = surface === SURFACES.lab ? {} : pins
+    const expected = pins
     const stale = unknownPins(walk.rows, pins)
     if (stale.length)
       throw new UsageError(

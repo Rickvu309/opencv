@@ -22,7 +22,16 @@ import {
   type Person,
   type World,
 } from "./person.test-support.js"
-import { engineHelpers, at, span, texts } from "./paper-engine.test-support.js"
+import {
+  engineHelpers,
+  importCorpus,
+  at,
+  span,
+  texts,
+} from "./paper-engine.test-support.js"
+import { eq } from "drizzle-orm"
+import { getDb } from "../db/context.js"
+import { paperDocs } from "../db/schema.js"
 
 let world: World
 let paper: ReturnType<typeof engineHelpers>
@@ -50,9 +59,22 @@ const editor = createEngine({
 const log = createPaperLog({ store: postgresLogStore, engine: editor })
 const blank = paperEngineBlank.blankCv()
 
+async function firstEnginePaper(owner: Person) {
+  const id = await paper.blank(owner)
+  await world.inside(() =>
+    getDb()
+      .update(paperDocs)
+      .set({ engine: 1, snapshot: null })
+      .where(eq(paperDocs.id, id))
+  )
+  return id
+}
+
 async function enginePaper(owner: Person) {
   const id = await paper.blank(owner)
-  expect(await world.inside(() => log.start(id, blank))).toEqual({ ok: true })
+  expect(await world.inside(() => log.start(id, blank))).toEqual({
+    refusal: { code: "schema", detail: "This Paper already has a log" },
+  })
   return id
 }
 
@@ -291,6 +313,24 @@ describe("only the owner's tabs write, in server order", () => {
     expect(JSON.stringify(head.doc)).toContain("Kept")
   })
 
+  it("opens a new and an imported Paper on the new page", async () => {
+    const ada = await world.person("Ada")
+    const created = await paper.blank(ada)
+    const imported = (await importCorpus(ada, "en-01")).docId
+    for (const docId of [created, imported]) {
+      expect(
+        dataOf<{ format: string }>(
+          await ada.read("paper.read", { docId, view: "info" })
+        ).format
+      ).toBe("rich")
+      expect(
+        dataOf<{ doc: { type: string } }>(
+          await ada.read("paper.read", { docId, view: "engine" })
+        ).doc.type
+      ).toBe("doc")
+    }
+  })
+
   it("refuses access from another account and changes with a Coach origin", async () => {
     const ada = await world.person("Ada")
     const grace = await world.person("Grace")
@@ -310,7 +350,7 @@ describe("only the owner's tabs write, in server order", () => {
     expect(
       failureOf(
         await ada.read("paper.changes", {
-          docId: await paper.blank(ada),
+          docId: await firstEnginePaper(ada),
           since: 0,
         })
       ).code
