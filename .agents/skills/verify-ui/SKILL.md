@@ -28,7 +28,7 @@ Pick the screens for steps 3 to 5 from `screens`: every screen whose route or st
 
 If you touched `packages/ui` (buttons, menus, dialogs, toasts), also shoot one screen that opens a dialog at every size in this grid: `--width 1440,1024,820,390`. A dialog must keep its close button pinned and inside the window at each width.
 
-Open every PNG with your image reader before you hand back, compare it with the design the owner approved, and say in the PR what you saw. A picture you did not look at is not evidence. Put the screenshots of the changed screens under Evidence.
+Open every PNG from `node scripts/ui.mjs shot <screen>` with your image reader, compare it with the approved design, and say in the PR what you saw. Publish it with `node scripts/ocv-tools.mjs shot <png> --no-comment` and paste the printed Markdown image links under `## Before / after` in the PR body. If the screen looks the same, write `No visible change: <why>` under that heading with a reason of at least four words.
 
 ## What the tool cannot verify
 

@@ -142,6 +142,24 @@ test("finish rejects malformed body and missing flags", () => {
   assert.match(f.call("finish", "--bogus").text, /UNKNOWN_FLAG/)
 })
 
+test("finish and its dry run refuse a screen pull request without screenshots or a reason", () => {
+  for (const flags of [[], ["--dry-run"]]) {
+    const f = fixture({ changed: ["packages/ui/src/components/button.tsx"] })
+    const refused = finish(f, ...flags)
+    assert.equal(refused.code, 2, refused.text)
+    assert.match(refused.text, /REFUSED NO_BEFORE_AFTER/)
+    assert.equal(f.effects("git", "push").length, 0)
+    assert.equal(f.effects("gh", "pr create").length, 0)
+
+    f.ctx.writeFile(
+      `${f.ctx.cwd}/body.md`,
+      `${BODY}\n## Before / after\n\nNo visible change: The button markup moved unchanged.\n`
+    )
+    const accepted = finish(f, ...flags)
+    assert.equal(accepted.code, 0, accepted.text)
+  }
+})
+
 test("finish reports a failed create and refuses a branch with no new commits", () => {
   const f = fixture({ createOk: false })
   assert.equal(finish(f).code, 1)

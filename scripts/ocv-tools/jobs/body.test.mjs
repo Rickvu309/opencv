@@ -26,6 +26,26 @@ test("body keeps the closing line when the new note lacks it", () => {
   assert.equal(f.effects("gh", "pr edit")[0].args[2], "91")
 })
 
+test("body refuses to remove the screenshot section from a screen pull request", () => {
+  const f = fixture({
+    intercept: editOk,
+    changed: ["apps/web/src/features/paper/paper-library-sections.tsx"],
+  })
+  const note = `${f.ctx.cwd}/note.md`
+  f.ctx.writeFile(note, BODY)
+  const refused = f.call("body", "91", "--body-file", "note.md")
+  assert.equal(refused.code, 2, refused.text)
+  assert.match(refused.text, /REFUSED NO_BEFORE_AFTER/)
+  assert.equal(f.effects("gh", "pr edit").length, 0)
+
+  const picture =
+    "![Paper](https://github.com/Rickvu309/opencv/releases/download/screenshots/paper.png)"
+  f.ctx.writeFile(note, `${BODY}\n## Before / after\n\n${picture}\n`)
+  const accepted = f.call("body", "91", "--body-file", "note.md")
+  assert.equal(accepted.code, 0, accepted.text)
+  assert.ok(uploaded(f).includes(picture))
+})
+
 test("body refuses a bad note with the body rule's own message", () => {
   const f = fixture({ intercept: editOk })
   f.ctx.writeFile(`${f.ctx.cwd}/note.md`, "**Now:** Only this\n")
@@ -197,16 +217,4 @@ test("help lists body", () => {
   const { text } = fixture().call("help")
   assert.match(text, /body <pr> --body-file <file>/)
   assert.match(text, /instead of gh pr edit --body-file/)
-})
-
-test("body takes a screen change without a Before / after section", () => {
-  const f = fixture({
-    intercept: editOk,
-    changed: ["apps/web/src/features/auth/sign-in-screen.tsx"],
-  })
-  f.ctx.writeFile(`${f.ctx.cwd}/note.md`, BODY)
-  const r = f.call("body", "91", "--body-file", "note.md")
-  assert.equal(r.code, 0, r.text)
-  assert.doesNotMatch(r.text, /NO_BEFORE_AFTER/)
-  assert.equal(f.effects("gh", "pr edit").length, 1)
 })
