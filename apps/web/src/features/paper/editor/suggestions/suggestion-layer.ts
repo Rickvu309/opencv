@@ -24,8 +24,9 @@ export type SuggestionHost = {
   changed(): void
 }
 
-const STRIP_PX = 44
+const TOUCH_LAYOUT = "(max-width: 767px), (pointer: coarse)"
 const GAP_SCREEN_PX = 41
+const TOUCH_GAP_SCREEN_PX = 52
 const GAP_LINE_PX = 20
 const GAP_AFTER_PX = 32 / 3
 const TOAST_MS = 6000
@@ -59,6 +60,12 @@ function button(className: string, label: string, paths: string[] | null) {
   if (paths) el.append(icon(paths))
   el.append(label)
   return el
+}
+
+function gapScreenPx() {
+  return window.matchMedia(TOUCH_LAYOUT).matches
+    ? TOUCH_GAP_SCREEN_PX
+    : GAP_SCREEN_PX
 }
 
 const plural = (n: number) => `${n} ${n === 1 ? "change" : "changes"}`
@@ -253,10 +260,10 @@ export function createSuggestionLayer(
       status.textContent = ""
       deps.changed()
     },
-    stripHeight: () => (strip.hidden ? 0 : STRIP_PX),
+    stripHeight: () => (strip.hidden ? 0 : strip.offsetHeight),
     display(doc: Document, scale: number): Document {
       lastDoc = doc
-      const room = GAP_SCREEN_PX / scale - GAP_AFTER_PX
+      const room = gapScreenPx() / scale - GAP_AFTER_PX
       const spacing = Math.max(0.1, room / GAP_LINE_PX)
       display = displayDocument(doc, currentView(), spacing)
       decorate(display.roles)
