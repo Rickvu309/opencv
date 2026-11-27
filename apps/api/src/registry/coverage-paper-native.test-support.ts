@@ -1,11 +1,14 @@
 import { parseUserId } from "@workspace/domain/kernel"
+import { operation as saveOperation } from "@workspace/domain/operations/paper/save"
 import {
   nativeProvenance,
   nativeSyncOutputSchema,
+  paperEngineBlank,
   paperPhotoRef,
   RICH_NATIVE_WRITER,
   type RichPaperDocument,
 } from "@workspace/domain/paper-doc"
+import { createEngine, fixedClock, seededIds } from "@workspace/paper-engine"
 import {
   openRichPaperClient,
   type PaperClient,
@@ -17,6 +20,7 @@ import { expect } from "vitest"
 import { paperDocs } from "../db/schema.js"
 import { seedColumns } from "../paper/content/content-document.js"
 import { saveFile } from "../paper/index.js"
+import { createPaperLog, postgresLogStore } from "../paper/log/index.js"
 import { png } from "../paper/photo.fixtures.js"
 import { bytesOf, encoded } from "../test/paper-content.js"
 import {
@@ -101,6 +105,40 @@ export function nativePaperCases(tools: CoverageTools): CoverageCase[] {
           .where(eq(paperDocs.id, docId))
         expect(row?.crdtDocument).toEqual(client!.document())
         client!.ydoc.destroy()
+
+        expect(saveOperation.version).toBe(3)
+        const engineId = idOf(
+          (await run("paper.create", { kind: "cv" })).output
+        )
+        const engine = createEngine({
+          ids: seededIds("registry"),
+          now: fixedClock(),
+        })
+        const log = createPaperLog({ store: postgresLogStore, engine })
+        const blank = paperEngineBlank.blankCv()
+        expect(await log.start(engineId, blank)).toEqual({ ok: true })
+        const tab = "coverage-tab"
+        const pos = { block: blank.content[0]!.attrs.id, offset: 0 }
+        const written = engine.run(
+          engine.load(blank, 0, tab),
+          [{ op: "insertText", range: { from: pos, to: pos }, text: "Saved" }],
+          { kind: "person", actor: userId, client: tab }
+        )
+        if ("refusal" in written)
+          throw new Error(JSON.stringify(written.refusal))
+        const saved = await run(paperSave.name, {
+          docId: engineId,
+          client: tab,
+          base: 0,
+          changes: [written.change],
+        })
+        expect(saved.output).toEqual({ ok: true, head: 1 })
+        expect(saved.activityId).toBeNull()
+        expect(saved.reversal).toBeNull()
+        expect(await log.head(engineId)).toEqual({
+          version: 1,
+          doc: engine.read(written.state).doc,
+        })
       },
     },
   ]

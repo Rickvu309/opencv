@@ -57,6 +57,7 @@ import { implementation as job$unlinkPaper } from "../job/operations/unlink-pape
 import { implementation as job$update } from "../job/operations/update/server.js"
 import { implementation as link$get } from "../coach/operations/link/get/server.js"
 import { implementation as notify$request } from "../account/operations/notify/request/server.js"
+import { implementation as paper$changes } from "../paper/operations/changes/server.js"
 import { implementation as paper$create } from "../paper/operations/create/server.js"
 import { implementation as paper$delete } from "../paper/operations/delete/server.js"
 import { implementation as paper$deleteFile } from "../paper/operations/delete-file/server.js"
@@ -135,6 +136,7 @@ export const implementations = {
   "job.update": job$update,
   "link.get": link$get,
   "notify.request": notify$request,
+  "paper.changes": paper$changes,
   "paper.create": paper$create,
   "paper.delete": paper$delete,
   "paper.deleteFile": paper$deleteFile,
