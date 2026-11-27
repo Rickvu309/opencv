@@ -1,32 +1,72 @@
 import { parsePaperId } from "@workspace/domain/kernel"
-import { RICH_NATIVE_WRITER } from "@workspace/domain/paper-doc"
+import {
+  RICH_NATIVE_WRITER,
+  type AgentCommand,
+} from "@workspace/domain/paper-doc"
 import { operation } from "@workspace/domain/operations/paper/edit"
 
 import {
   undoOnlyReversal,
   type OperationBinding,
 } from "../../../registry/bind.js"
+import {
+  applyEngineEdit,
+  dryRunEngineEdit,
+  PAPER_CHANGED_SINCE,
+} from "../../engine-paper.js"
 import { readOutline } from "../../outline.js"
 import { editRichPaper, RICH_UNDO_MOVED } from "../../rich-edit.js"
 
-type EditOutput = Awaited<ReturnType<typeof editRichPaper>>
+type EditOutput =
+  | Awaited<ReturnType<typeof editRichPaper>>
+  | Awaited<ReturnType<typeof applyEngineEdit>>
 
 export const implementation = {
   operation,
-  execute: (input, actor) =>
-    editRichPaper(actor.userId, {
-      ...input,
-      writer: input.writer ?? RICH_NATIVE_WRITER,
-      docId: parsePaperId(input.docId),
-    }),
+  execute: (input, actor): Promise<EditOutput> =>
+    input.commands
+      ? applyEngineEdit(
+          {
+            ...input,
+            docId: parsePaperId(input.docId),
+            commands: input.commands as AgentCommand[],
+          },
+          actor
+        )
+      : editRichPaper(actor.userId, {
+          ...input,
+          writer: input.writer ?? RICH_NATIVE_WRITER,
+          docId: parsePaperId(input.docId),
+          edits: input.edits ?? [],
+        }),
   basis: async (input, actor) =>
-    (await readOutline(actor.userId, parsePaperId(input.docId), undefined))
-      .revision,
+    input.commands
+      ? dryRunEngineEdit(
+          {
+            ...input,
+            docId: parsePaperId(input.docId),
+            commands: input.commands as AgentCommand[],
+          },
+          actor
+        )
+      : (await readOutline(actor.userId, parsePaperId(input.docId), undefined))
+          .revision,
   reversal: (input, output) => {
     if (!output.editId)
       return {
         irreversible: "Nothing was written, so there is nothing to undo.",
       }
+    if (input.commands)
+      return undoOnlyReversal({
+        command: "paper.revert",
+        input: { docId: input.docId, edit: output.editId },
+        expect: {
+          query: "paper.outline",
+          input: { docId: input.docId },
+          matches: { engine: 2 },
+          skipped: PAPER_CHANGED_SINCE,
+        },
+      })
     return undoOnlyReversal({
       command: "paper.undoEdit",
       input: {

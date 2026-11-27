@@ -1,7 +1,14 @@
 import { delegateActorSchema } from "@workspace/domain/kernel"
+import {
+  paperEngineBlank,
+  type DocCommand,
+  type Document,
+} from "@workspace/domain/paper-doc"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 
+import { createDemoCoachRuntime } from "../coach/index.js"
 import { agentConnections, oauthClient } from "../db/schema.js"
+import { serverEngine, serverPaperLog } from "../paper/log/index.js"
 import { createId } from "../platform/id.js"
 import {
   dataOf,
@@ -22,7 +29,7 @@ let world: World
 let paper: ReturnType<typeof engineHelpers>
 
 beforeAll(async () => {
-  world = await openWorld()
+  world = await openWorld({ coach: createDemoCoachRuntime() })
   paper = engineHelpers()
 })
 
@@ -72,9 +79,65 @@ async function connectAgent(person: Person) {
   })
 }
 
+async function engineLines(person: Person, docId: string) {
+  const read = dataOf<{ revision: number; outline: string; engine?: number }>(
+    await person.read("paper.outline", { docId })
+  )
+  expect(read.engine).toBe(2)
+  const blocks = JSON.parse(read.outline) as { id: string; text: string }[]
+  return {
+    version: read.revision,
+    blocks,
+    texts: blocks.map((block) => block.text),
+  }
+}
+
+async function engineWritten(person: Person, lines: string[]) {
+  const docId = dataOf<{ id: string }>(
+    await person.run("paper.create", { kind: "cv", name: "Engine CV" })
+  ).id
+  const blank = paperEngineBlank.blankCv()
+  const template = blank.content[0]!
+  const doc = {
+    ...blank,
+    content: lines.map((text, index) => ({
+      ...template,
+      attrs: { ...template.attrs, id: `line-${index + 1}` },
+      content: [{ type: "text", text }],
+    })),
+  } as unknown as Document
+  expect(await world.inside(() => serverPaperLog.start(docId, doc))).toEqual({
+    ok: true,
+  })
+  return { docId, blocks: (await engineLines(person, docId)).blocks }
+}
+
+async function personEdit(person: Person, docId: string, commands: Command[]) {
+  const { version } = await engineLines(person, docId)
+  return dataOf<{ revision: number }>(
+    await person.run("paper.edit", { docId, basedOn: version, commands })
+  )
+}
+
+async function typed(docId: string, commands: Command[]) {
+  const head = (await world.inside(() => serverPaperLog.head(docId))) as {
+    doc: Document
+    version: number
+  }
+  const result = serverEngine.run(
+    serverEngine.load(head.doc, head.version, "tab-a"),
+    commands as DocCommand[],
+    { kind: "person", actor: "ada", client: "tab-a" }
+  )
+  if ("refusal" in result) throw new Error(JSON.stringify(result.refusal))
+  expect(
+    await world.inside(() => serverPaperLog.append(docId, result.change))
+  ).toMatchObject({ ok: true })
+}
+
 async function suggest(person: Person, docId: string, commands: Command[]) {
   const agent = await connectAgent(person)
-  const { version } = await paper.outline(person, docId)
+  const { version } = await engineLines(person, docId)
   const proposed = await world.inside(() =>
     world.registry.execute({
       name: "paper.edit",
@@ -251,111 +314,165 @@ describe("the Paper engine keeps its promises", () => {
 })
 
 describe("Coach and outside agents only suggest", () => {
-  it.fails(
-    "changes nothing until the person accepts, then lands once with its receipt (#2207)",
-    async () => {
-      const ada = await world.person("Ada")
-      const { docId, blocks } = await paper.written(ada, ["Built dashboards"])
-      const pendingActionId = await suggest(ada, docId, [
-        {
-          op: "insertText",
-          range: span(blocks[0]!.id, 0, 16),
-          text: "Built 12 dashboards used by 40 analysts",
-          expect: "Built dashboards",
-        },
-      ])
-      expect(texts(await paper.outline(ada, docId))).toEqual([
-        "Built dashboards",
-      ])
-      const accepted = dataOf<{ activityId: string }>(
-        await ada.run("actions.approve", { pendingActionId })
-      )
-      expect(texts(await paper.outline(ada, docId))).toEqual([
-        "Built 12 dashboards used by 40 analysts",
-      ])
-      expect((await ada.undo(accepted.activityId)).status).toBe(200)
-      expect(texts(await paper.outline(ada, docId))).toEqual([
-        "Built dashboards",
-      ])
-    }
-  )
+  it("changes nothing until the person accepts, then lands once with its receipt (#2247)", async () => {
+    const ada = await world.person("Ada")
+    const { docId, blocks } = await engineWritten(ada, ["Built dashboards"])
+    const pendingActionId = await suggest(ada, docId, [
+      {
+        op: "replaceText",
+        range: span(blocks[0]!.id, 0, 16),
+        text: "Built 12 dashboards used by 40 analysts",
+        expect: "Built dashboards",
+      },
+    ])
+    expect((await engineLines(ada, docId)).texts).toEqual(["Built dashboards"])
+    const accepted = dataOf<{ id: string }>(
+      await ada.run("actions.approve", { pendingActionId })
+    )
+    expect((await engineLines(ada, docId)).texts).toEqual([
+      "Built 12 dashboards used by 40 analysts",
+    ])
+    expect((await ada.undo(accepted.id)).status).toBe(200)
+    expect((await engineLines(ada, docId)).texts).toEqual(["Built dashboards"])
+  })
 
-  it.fails(
-    "refuses a Suggestion whose expected text is not on the Paper (#2207)",
-    async () => {
-      const ada = await world.person("Ada")
-      const { docId, blocks } = await paper.written(ada, ["Built dashboards"])
-      const agent = await connectAgent(ada)
-      const { version } = await paper.outline(ada, docId)
-      await expect(
-        world.inside(() =>
-          world.registry.execute({
-            name: "paper.edit",
-            input: {
-              docId,
-              basedOn: version,
-              commands: [
-                {
-                  op: "insertText",
-                  range: span(blocks[0]!.id, 0, 16),
-                  text: "Led a team of 30",
-                  expect: "Led a team of 3",
-                },
-              ],
-            },
-            actor: agent,
-          })
-        )
-      ).rejects.toThrow(/expect-mismatch/)
-    }
-  )
+  it("the fake Coach proposes commands that wait for the person, land on accept and go on Undo (#2247)", async () => {
+    const ada = await world.person("Ada")
+    const { docId } = await engineWritten(ada, ["Built dashboards"])
+    const chat = dataOf<{ id: string }>(await ada.run("chat.create", {}))
+    await ada.stream(`/api/chats/${chat.id}/turns`, {
+      text: "Tighten my CV",
+      focusDocId: docId,
+    })
+    const turn = dataOf<{
+      messages: { parts: { pendingActionId?: string }[] }[]
+    }>(await ada.read("chat.get", { chatId: chat.id }))
+    const pendingActionId = turn.messages
+      .flatMap((message) => message.parts)
+      .find((part) => part.pendingActionId)?.pendingActionId
+    expect(pendingActionId).toBeTruthy()
+    expect((await engineLines(ada, docId)).texts).toEqual(["Built dashboards"])
+    const accepted = dataOf<{ id: string }>(
+      await ada.run("actions.approve", { pendingActionId })
+    )
+    expect((await engineLines(ada, docId)).texts).toEqual([
+      "Reviewed by the Coach. Built dashboards",
+    ])
+    expect((await ada.undo(accepted.id)).status).toBe(200)
+    expect((await engineLines(ada, docId)).texts).toEqual(["Built dashboards"])
+  })
 
-  it.fails(
-    "takes back an accepted Suggestion after later edits elsewhere, and refuses once its text changed (#2207)",
-    async () => {
-      const ada = await world.person("Ada")
-      const { docId, blocks } = await paper.written(ada, [
-        "Built dashboards",
-        "Python",
-      ])
-      const pendingActionId = await suggest(ada, docId, [
-        {
-          op: "insertText",
-          range: span(blocks[0]!.id, 0, 5),
-          text: "Shipped",
-          expect: "Built",
-        },
-      ])
-      const accepted = dataOf<{ activityId: string }>(
-        await ada.run("actions.approve", { pendingActionId })
+  it("refuses a Suggestion whose expected text is not on the Paper (#2247)", async () => {
+    const ada = await world.person("Ada")
+    const { docId, blocks } = await engineWritten(ada, ["Built dashboards"])
+    const agent = await connectAgent(ada)
+    const { version } = await engineLines(ada, docId)
+    await expect(
+      world.inside(() =>
+        world.registry.execute({
+          name: "paper.edit",
+          input: {
+            docId,
+            basedOn: version,
+            commands: [
+              {
+                op: "replaceText",
+                range: span(blocks[0]!.id, 0, 16),
+                text: "Led a team of 30",
+                expect: "Led a team of 3",
+              },
+            ],
+          },
+          actor: agent,
+        })
       )
-      await paper.edit(ada, docId, [
-        { op: "insertText", range: span(blocks[1]!.id, 6, 6), text: ", SQL" },
-      ])
-      expect((await ada.undo(accepted.activityId)).status).toBe(200)
-      expect(texts(await paper.outline(ada, docId))).toEqual([
-        "Built dashboards",
-        "Python, SQL",
-      ])
+    ).rejects.toThrow(/expect-mismatch/)
+  })
 
-      const again = await suggest(ada, docId, [
-        {
-          op: "insertText",
-          range: span(blocks[1]!.id, 0, 6),
-          text: "Go",
-          expect: "Python",
-        },
-      ])
-      const second = dataOf<{ activityId: string }>(
-        await ada.run("actions.approve", { pendingActionId: again })
-      )
-      await paper.edit(ada, docId, [
-        { op: "deleteRange", range: span(blocks[1]!.id, 0, 2) },
-      ])
-      const refused = failureOf(await ada.undo(second.activityId))
-      expect(refused.message).toBe("The Paper changed there since")
-    }
-  )
+  it("refuses to accept a Suggestion once the person changed its text, and maps it past edits elsewhere (#2247)", async () => {
+    const ada = await world.person("Ada")
+    const { docId, blocks } = await engineWritten(ada, [
+      "Built dashboards",
+      "Python",
+    ])
+    const moved = await suggest(ada, docId, [
+      {
+        op: "replaceText",
+        range: span(blocks[0]!.id, 0, 5),
+        text: "Shipped",
+        expect: "Built",
+      },
+    ])
+    const elsewhere = await suggest(ada, docId, [
+      {
+        op: "replaceText",
+        range: span(blocks[1]!.id, 0, 6),
+        text: "Go",
+        expect: "Python",
+      },
+    ])
+    await personEdit(ada, docId, [
+      {
+        op: "replaceText",
+        range: span(blocks[0]!.id, 0, 5),
+        text: "Made",
+        expect: "Built",
+      },
+    ])
+    const refused = failureOf(
+      await ada.run("actions.approve", { pendingActionId: moved })
+    )
+    expect(refused.message).toBe("The Paper changed where Coach wanted to edit")
+    dataOf(await ada.run("actions.approve", { pendingActionId: elsewhere }))
+    expect((await engineLines(ada, docId)).texts).toEqual([
+      "Made dashboards",
+      "Go",
+    ])
+  })
+
+  it("takes back an accepted Suggestion after later edits elsewhere, and refuses once its text changed (#2247)", async () => {
+    const ada = await world.person("Ada")
+    const { docId, blocks } = await engineWritten(ada, [
+      "Built dashboards",
+      "Python",
+    ])
+    const pendingActionId = await suggest(ada, docId, [
+      {
+        op: "replaceText",
+        range: span(blocks[0]!.id, 0, 5),
+        text: "Shipped",
+        expect: "Built",
+      },
+    ])
+    const accepted = dataOf<{ id: string }>(
+      await ada.run("actions.approve", { pendingActionId })
+    )
+    await typed(docId, [
+      { op: "insertText", range: span(blocks[1]!.id, 6, 6), text: ", SQL" },
+    ])
+    expect((await ada.undo(accepted.id)).status).toBe(200)
+    expect((await engineLines(ada, docId)).texts).toEqual([
+      "Built dashboards",
+      "Python, SQL",
+    ])
+
+    const again = await suggest(ada, docId, [
+      {
+        op: "replaceText",
+        range: span(blocks[1]!.id, 0, 6),
+        text: "Go",
+        expect: "Python",
+      },
+    ])
+    const second = dataOf<{ id: string }>(
+      await ada.run("actions.approve", { pendingActionId: again })
+    )
+    await typed(docId, [
+      { op: "deleteRange", range: span(blocks[1]!.id, 0, 2) },
+    ])
+    const refused = failureOf(await ada.undo(second.id))
+    expect(refused.message).toBe("The Paper changed there since")
+  })
 })
 
 describe("only the owner's tabs write, in server order", () => {

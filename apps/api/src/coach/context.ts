@@ -45,6 +45,16 @@ async function paperFocus(
       actor
     )
   )
+  if (outline.engine === 2)
+    return {
+      id: docId,
+      name: outline.name,
+      kind: outline.kind,
+      status: outline.status,
+      outline: outline.outline,
+      revision: outline.revision,
+      engine: 2,
+    }
   const nativeBasis = nativeBasisSchema.parse(outline.nativeBasis)
   if (nativeBasis.revision !== outline.revision)
     throw new Error("Paper outline basis does not match its revision")

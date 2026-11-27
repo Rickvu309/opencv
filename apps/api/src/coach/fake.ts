@@ -158,9 +158,33 @@ function fakeRichEdits(outline: string) {
   ]
 }
 
+function fakeEngineCommands(outline: string) {
+  const blocks = JSON.parse(outline) as { id: string; text?: string }[]
+  const first = blocks.find((block) => typeof block.text === "string")
+  if (!first) throw new Error("A Paper proposal needs a text block")
+  const at = { block: first.id, offset: 0 }
+  return [
+    {
+      op: "replaceText",
+      range: { from: at, to: at },
+      expect: "",
+      text: `${FAKE_COACH_WORDS} `,
+    },
+  ]
+}
+
 export function fakePaperEdit(
-  focus: Pick<CoachFocusDoc, "id" | "revision" | "outline" | "nativeBasis">
+  focus: Pick<
+    CoachFocusDoc,
+    "id" | "revision" | "outline" | "nativeBasis" | "engine"
+  >
 ) {
+  if (focus.engine === 2)
+    return catalog["paper.edit"].input.parse({
+      docId: focus.id,
+      basedOn: focus.revision,
+      commands: fakeEngineCommands(focus.outline),
+    })
   if (focus.nativeBasis && focus.nativeBasis.revision !== focus.revision)
     throw new Error("Native Paper proposal needs a matching outline")
   return catalog["paper.edit"].input.parse({
