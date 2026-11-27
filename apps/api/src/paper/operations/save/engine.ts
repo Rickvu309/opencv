@@ -12,7 +12,6 @@ import {
   requireEngineLog,
 } from "../../engine-sync-log.js"
 import { MAX_CHANGE_BYTES, MAX_STEPS_PER_CHANGE } from "../../log/index.js"
-import { verifyCommands } from "./replay.js"
 
 function sameEdit(saved: Change, sent: Change) {
   return isDeepStrictEqual(saved, { ...sent, inverse: saved.inverse })
@@ -87,9 +86,6 @@ export async function saveEngineChanges(
       ? ({ ok: true, head } as const)
       : ({ stale: true, head, since: since.changes } as const)
   }
-
-  let doc = admitted(await engineLog.head(docId)).doc
-  for (const change of input.changes) doc = verifyCommands(doc, change)
 
   let version = head
   for (const change of input.changes) {

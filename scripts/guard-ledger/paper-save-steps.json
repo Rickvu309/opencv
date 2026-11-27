@@ -1,0 +1,10 @@
+{
+  "id": "paper-save-steps",
+  "file": "scripts/paper-save-steps.test.mjs",
+  "detector": {
+    "module": "scripts/lib/paper-save-steps.mjs",
+    "export": "detectPaperSaveCommandReplay"
+  },
+  "historic": null,
+  "reason": "The replay first appeared on PR #2249 at d5c207ea4 and was corrected before squash merge, so the faulty source is absent from main history. The mistake fixture preserves the offending call."
+}

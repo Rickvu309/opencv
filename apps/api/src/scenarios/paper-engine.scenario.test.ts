@@ -255,44 +255,53 @@ describe("the Paper engine keeps its promises", () => {
     expect(after.work.blocksLaidOut).toBe(1)
   })
 
-  it("refuses a batch containing a change that would break the Paper's shape", async () => {
+  it.each([
+    [
+      "a step with an unknown node",
+      [
+        {
+          stepType: "replace",
+          from: 0,
+          to: 0,
+          slice: { content: [{ type: "unknown" }] },
+        },
+      ],
+      "Unknown node type: unknown",
+    ],
+    [
+      "a duplicate block id",
+      [
+        {
+          stepType: "replace",
+          from: 0,
+          to: 0,
+          slice: { content: blank.content },
+        },
+      ],
+      "Block ids must be unique",
+    ],
+  ])("rolls back a batch containing %s", async (_label, steps, message) => {
     const ada = await world.person("Ada")
     const docId = await enginePaper(ada)
     const first = type(ada, "tab-a", "Hello")
     const hostile = {
       ...type(ada, "tab-a", "Hi", 1),
-      steps: [
-        {
-          stepType: "replace",
-          from: 0,
-          to: 0,
-          slice: {
-            content: [
-              {
-                type: "text_block",
-                attrs: {
-                  id: blank.content[0]!.attrs.id,
-                  kind: "banner",
-                  list: null,
-                  level: 3,
-                },
-              },
-            ],
-          },
-        },
-      ],
+      steps,
     }
-    expect(
-      failureOf(
-        await ada.run("paper.save", {
-          docId,
-          client: "tab-a",
-          base: 0,
-          changes: [first, hostile],
-        })
-      ).code
-    ).toBe("schema")
+    const result = failureOf(
+      await ada.run("paper.save", {
+        docId,
+        client: "tab-a",
+        base: 0,
+        changes: [first, hostile],
+      })
+    )
+    expect(result.code).toBe("schema")
+    expect(result.message).toContain(message)
     expect(await stored(docId)).toEqual({ doc: blank, version: 0 })
+    expect(
+      dataOf(await ada.get(`/api/paper/${docId}/changes?since=0`))
+    ).toEqual({ head: 0, changes: [] })
   })
 })
 
@@ -405,7 +414,7 @@ describe("Coach and outside agents only suggest", () => {
 })
 
 describe("only the owner's tabs write, in server order", () => {
-  it("refuses another person's change and steps that do not match their commands", async () => {
+  it("refuses access from another account and changes with a Coach origin", async () => {
     const ada = await world.person("Ada")
     const grace = await world.person("Grace")
     const docId = await enginePaper(ada)
@@ -426,16 +435,6 @@ describe("only the owner's tabs write, in server order", () => {
         await ada.get(`/api/paper/${await paper.blank(ada)}/changes?since=0`)
       ).code
     ).toBe("NOT_FOUND")
-    expect(
-      failureOf(
-        await save(ada, [
-          {
-            ...change,
-            steps: type(ada, "tab-a", "Hx").steps,
-          },
-        ])
-      ).code
-    ).toBe("schema")
     expect(
       failureOf(
         await save(ada, [
@@ -478,7 +477,7 @@ describe("only the owner's tabs write, in server order", () => {
     })
   })
 
-  it("keeps both tabs' text after a stale reply and saves a resend once", async () => {
+  it("accepts mapped steps after a stale reply and saves a resend once", async () => {
     const ada = await world.person("Ada")
     const docId = await enginePaper(ada)
     const initial = type(ada, "tab-a", "Analyst")
@@ -491,8 +490,8 @@ describe("only the owner's tabs write, in server order", () => {
       })
     expect(dataOf(await save(initial))).toEqual({ ok: true, head: 1 })
     const { doc } = await stored(docId)
-    const first = type(ada, "tab-a", " today", 1, 7, doc)
-    const second = type(ada, "tab-b", "Data ", 1, 0, doc)
+    const first = type(ada, "tab-a", "Data ", 1, 0, doc)
+    const second = type(ada, "tab-b", " today", 1, 7, doc)
     expect(dataOf(await save(first))).toEqual({ ok: true, head: 2 })
     expect(dataOf(await save(second))).toEqual({
       stale: true,
@@ -502,6 +501,8 @@ describe("only the owner's tabs write, in server order", () => {
     const state = editor.load(doc, 1, second.origin.client, [second])
     const { state: rebased } = editor.receive(state, [first])
     const [rebasedChange] = editor.sendable(rebased)
+    expect(rebasedChange?.steps).not.toEqual(second.steps)
+    expect(rebasedChange?.commands).toEqual(second.commands)
     expect(dataOf(await save(rebasedChange!))).toEqual({ ok: true, head: 3 })
     expect(dataOf(await save(first))).toEqual({ ok: true, head: 3 })
     expect(dataOf(await save(rebasedChange!))).toEqual({ ok: true, head: 3 })
@@ -509,5 +510,43 @@ describe("only the owner's tabs write, in server order", () => {
       version: 3,
       doc: { content: [{ content: [{ text: "Data Analyst today" }] }] },
     })
+  })
+
+  it("saves a tab's Undo with no commands", async () => {
+    const ada = await world.person("Ada")
+    const docId = await enginePaper(ada)
+    const client = "tab-a"
+    const origin = { kind: "person", actor: ada.id, client } as const
+    const edit = editor.run(
+      editor.load(blank, 0, client),
+      [
+        {
+          op: "insertText",
+          range: span(blank.content[0]!.attrs.id, 0, 0),
+          text: "Draft",
+        },
+      ],
+      origin
+    )
+    if ("refusal" in edit) throw new Error(JSON.stringify(edit.refusal))
+    const save = (change: typeof edit.change) =>
+      ada.run("paper.save", {
+        docId,
+        client,
+        base: change.base,
+        changes: [change],
+      })
+
+    expect(dataOf(await save(edit.change))).toEqual({ ok: true, head: 1 })
+    const confirmed = editor.receive(edit.state, [edit.change]).state
+    const undone = editor.undo(confirmed)
+    if (!undone || "refusal" in undone)
+      throw new Error("Expected an Undo change")
+    expect(undone.change.commands).toEqual([])
+    expect(dataOf(await save(undone.change))).toEqual({ ok: true, head: 2 })
+    expect(await stored(docId)).toEqual({ doc: blank, version: 2 })
+    expect(
+      dataOf(await ada.get(`/api/paper/${docId}/changes?since=1`))
+    ).toEqual({ head: 2, changes: [undone.change] })
   })
 })
