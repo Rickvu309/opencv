@@ -5,6 +5,7 @@ public:
     import-text-pool.ts,
     import-word.ts,
     package-xml.ts,
+    package-zip.ts,
     word-to-paper.ts,
   ]
 dependencies: [apps/api/src/platform]
