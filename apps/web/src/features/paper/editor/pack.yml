@@ -6,4 +6,5 @@ dependencies:
     packages/paper-corpus,
     apps/web/src/lib,
   ]
-public: [paper-editor.ts, lab-documents.ts, chrome/paper-chrome.tsx]
+public:
+  [paper-editor.ts, lab-documents.ts, chrome/paper-chrome.tsx, thumbnail.ts]

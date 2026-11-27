@@ -10,12 +10,19 @@ import { and, eq } from "drizzle-orm"
 import { getDb, transaction } from "../db/context.js"
 import { paperDocs } from "../db/schema.js"
 import { CommandError } from "../platform/errors.js"
-import { createPaperLog, NEW_ENGINE, postgresLogStore } from "./log/index.js"
+import {
+  createPaperLog,
+  keepFirstPage,
+  NEW_ENGINE,
+  postgresLogStore,
+} from "./log/index.js"
 
-export const engineLog = createPaperLog({
-  store: postgresLogStore,
-  engine: createEngine({ ids: seededIds("server"), now: fixedClock() }),
-})
+export const engineLog = keepFirstPage(
+  createPaperLog({
+    store: postgresLogStore,
+    engine: createEngine({ ids: seededIds("server"), now: fixedClock() }),
+  })
+)
 
 export async function lockOwnedPaper(
   owner: UserId,
