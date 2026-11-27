@@ -1,14 +1,14 @@
 import assert from "node:assert/strict"
 import test from "node:test"
 
-import { chromium } from "playwright-core"
+import { launchBrowser } from "./launch-browser.mjs"
 
 import { scaleTextInPage, textClipsInPage } from "./hig-probes.mjs"
 
 const LIMIT = 200
 
 async function textAt200(body) {
-  const browser = await chromium.launch({ headless: true })
+  const browser = await launchBrowser()
   try {
     const page = await browser.newPage({
       viewport: { width: 800, height: 600 },

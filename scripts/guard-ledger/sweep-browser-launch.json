@@ -1,0 +1,14 @@
+{
+  "id": "sweep-browser-launch",
+  "file": "scripts/sweep-browser-launch.test.mjs",
+  "detector": {
+    "module": "scripts/lib/sweep-browser-launch.mjs",
+    "export": "detect"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "20faa7803bee1678bf75084046c46caffd2e8535",
+    "path": "scripts/ui/sweep/hig-probes.test.mjs"
+  },
+  "reason": "The 200% text and open-menu probes launched Playwright's bundled Chromium directly, which the ordinary guards job never installs, so both failed on CI with browserType.launch: Executable doesn't exist (introduced by 20faa7803bee1678bf75084046c46caffd2e8535, #2269). detect fires on that direct launch in the probe and stays quiet once the probe uses launchBrowser, which falls back to the system Chrome the way apps/web's browser tests do."
+}

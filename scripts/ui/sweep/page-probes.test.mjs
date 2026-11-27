@@ -1,7 +1,7 @@
 import assert from "node:assert/strict"
 import test from "node:test"
 
-import { chromium } from "playwright-core"
+import { launchBrowser } from "./launch-browser.mjs"
 
 import { fitProblems } from "../../../packages/ui/src/lib/fit-rules.ts"
 import { measureInPage } from "./page-probes.mjs"
@@ -10,7 +10,7 @@ import { clearUnderOpenMenu } from "./runner.mjs"
 const VIEWPORT = { width: 800, height: 600 }
 
 async function fitOf(body) {
-  const browser = await chromium.launch({ headless: true })
+  const browser = await launchBrowser()
   try {
     const page = await browser.newPage({ viewport: VIEWPORT })
     await page.setContent(
