@@ -94,7 +94,7 @@
   position: absolute;
   left: 0;
   overflow: hidden;
-  background: #ffffff;
+  background: var(--card);
   box-shadow:
     0 0 0 1px var(--border),
     0 1px 3px rgb(0 0 0 / 0.06);
@@ -147,7 +147,7 @@
 
 .paper-selection {
   position: absolute;
-  background: rgb(26 115 232 / 0.22);
+  background: color-mix(in oklch, var(--primary) 22%, transparent);
 }
 
 .paper-composition {

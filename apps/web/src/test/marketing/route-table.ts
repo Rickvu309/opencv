@@ -27,6 +27,7 @@ export const ROUTE_TABLE: readonly RouteClass[] = [
   { id: "/sign-up", fullPath: "/sign-up", kind: "auth" },
   { id: "/oauth/consent", fullPath: "/oauth/consent", kind: "auth" },
   { id: "/oauth/connect", fullPath: "/oauth/connect", kind: "auth" },
+  { id: "/paper-lab", fullPath: "/paper-lab", kind: "app" },
   { id: "/u/$slug", fullPath: "/u/$slug", kind: "not-found" },
   { id: "/u/$slug/", fullPath: "/u/$slug/", kind: "not-found" },
   { id: "/app", fullPath: "/app", kind: "layout" },
