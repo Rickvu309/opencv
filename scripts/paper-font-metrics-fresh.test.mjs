@@ -14,6 +14,7 @@ import {
   faceMetrics,
   faceMetricsJson,
   kerningFeatures,
+  listGlyphCodePoints,
   neededCodePoints,
   sha256Hex,
   TAB_CODE_POINT,
@@ -203,6 +204,15 @@ test("fonts.json lists the four families kept at gate G0 with Cambria mapped ove
   assert.deepEqual(manifest.wordImports, [
     { wordName: "Cambria", family: "liberation-serif" },
   ])
+})
+
+test("the needed code points include the list marker glyphs and the fallback glyph the layout emits", () => {
+  const needed = neededCodePoints(corpusTexts(root))
+  for (const codePoint of listGlyphCodePoints())
+    assert.ok(
+      needed.includes(codePoint),
+      `U+${codePoint.toString(16)} is missing from the needed set`
+    )
 })
 
 test("a corpus Vietnamese sentence has every code point in every face", () => {

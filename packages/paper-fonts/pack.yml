@@ -1,2 +1,2 @@
 layer: platform
-public: [metrics]
+public: [fonts.json, metrics]

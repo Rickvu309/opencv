@@ -72,12 +72,44 @@ export function corpusTexts(root) {
 
 const tabCodePoint = 0x0009
 
+const listBulletCodePoints = [0x2022, 0x25e6, 0x25aa]
+const listNumberCodePoints = [
+  ...rangeCodePoints([0x0030, 0x0039]),
+  ...rangeCodePoints([0x0061, 0x007a]),
+  0x002e,
+]
+const fallbackGlyphCodePoint = 0x003f
+
+export function listGlyphCodePoints() {
+  return [
+    ...new Set([
+      ...listBulletCodePoints,
+      ...listNumberCodePoints,
+      fallbackGlyphCodePoint,
+    ]),
+  ].sort((a, b) => a - b)
+}
+
 export function neededCodePoints(texts) {
-  const needed = new Set([0x0020, ...vietnameseCodePoints()])
+  const needed = new Set([
+    0x0020,
+    ...vietnameseCodePoints(),
+    ...listGlyphCodePoints(),
+  ])
   for (const text of texts)
     for (const char of text) needed.add(char.codePointAt(0))
   needed.delete(tabCodePoint)
   return [...needed].sort((a, b) => a - b)
+}
+
+export function detectMissingListGlyphs(metricsJson, file) {
+  const metrics = JSON.parse(metricsJson)
+  return listGlyphCodePoints()
+    .filter((codePoint) => !(String(codePoint) in metrics.advances))
+    .map(
+      (codePoint) =>
+        `${file} has no advance for U+${codePoint.toString(16)}: run node scripts/paper-font-metrics.mjs`
+    )
 }
 
 export const TAB_CODE_POINT = tabCodePoint
