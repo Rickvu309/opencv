@@ -71,7 +71,12 @@ export function FileMenu({
     <DropdownMenu>
       <DropdownMenuTrigger
         render={
-          <Button variant="ghost" className="paper-tool" aria-label="File" />
+          <Button
+            variant="ghost"
+            size="touch"
+            className="paper-tool"
+            aria-label="File"
+          />
         }
       >
         File

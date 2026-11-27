@@ -77,6 +77,7 @@ function ToolMenu({
         render={
           <Button
             variant="ghost"
+            size="touch"
             className={`paper-tool ${className}`}
             aria-label={label}
             title={label}

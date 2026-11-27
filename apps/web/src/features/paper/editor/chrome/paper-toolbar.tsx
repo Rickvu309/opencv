@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react"
+import { useReducer, type ReactNode } from "react"
 import {
   Bold,
   Italic,
@@ -68,6 +68,7 @@ function Tool({
   return (
     <Button
       variant="ghost"
+      size="touch"
       className="paper-tool"
       aria-label={label}
       title={shortcut ? `${label} (${shortcut})` : label}
@@ -84,6 +85,12 @@ function Tool({
 
 const Sep = () => <span className="paper-toolbar-sep" aria-hidden="true" />
 
+type LinkDraftAction = { type: "typed"; href: string } | { type: "cleared" }
+
+function linkDraft(_href: string, action: LinkDraftAction): string {
+  return action.type === "typed" ? action.href : ""
+}
+
 function LinkTool({
   open,
   onOpen,
@@ -93,13 +100,14 @@ function LinkTool({
   onOpen: (open: boolean) => void
   onApply: (href: string) => void
 }) {
-  const [href, setHref] = useState("")
+  const [href, dispatch] = useReducer(linkDraft, "")
   return (
     <Popover open={open} onOpenChange={onOpen}>
       <PopoverTrigger
         render={
           <Button
             variant="ghost"
+            size="touch"
             className="paper-tool"
             aria-label="Link"
             title="Link (Ctrl+K)"
@@ -119,7 +127,7 @@ function LinkTool({
           onSubmit={(event) => {
             event.preventDefault()
             onApply(href)
-            setHref("")
+            dispatch({ type: "cleared" })
           }}
         >
           <Input
@@ -129,9 +137,13 @@ function LinkTool({
             placeholder="Paste a link"
             aria-label="Link address"
             className="min-w-0 flex-1"
-            onChange={(event) => setHref(event.target.value)}
+            onChange={(event) =>
+              dispatch({ type: "typed", href: event.target.value })
+            }
           />
-          <Button type="submit">Apply</Button>
+          <Button type="submit" size="touch">
+            Apply
+          </Button>
         </form>
       </PopoverContent>
     </Popover>

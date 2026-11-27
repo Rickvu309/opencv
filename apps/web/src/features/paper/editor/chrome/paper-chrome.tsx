@@ -1,7 +1,12 @@
 import "./paper-toolbar.css"
 
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useReducer, useRef } from "react"
 
+import {
+  PageHeader,
+  PageHeaderActions,
+  PageHeaderTitle,
+} from "@workspace/ui/components/page-header"
 import { toast } from "@workspace/ui/components/sonner"
 
 import { useShortcut } from "@/lib/use-shortcut.ts"
@@ -28,6 +33,34 @@ function snapshot(editor: PaperEditor): Snapshot {
   }
 }
 
+type Dialog = "link" | "pageSetup" | "shortcuts"
+
+type ChromeState = {
+  editor: PaperEditor | null
+  snapshot: Snapshot | null
+  open: Dialog | null
+}
+
+type ChromeAction =
+  | { type: "mounted"; editor: PaperEditor }
+  | { type: "changed"; snapshot: Snapshot }
+  | { type: "opened"; dialog: Dialog }
+  | { type: "closed"; dialog: Dialog }
+
+const INITIAL: ChromeState = { editor: null, snapshot: null, open: null }
+
+function chromeReducer(state: ChromeState, action: ChromeAction): ChromeState {
+  if (action.type === "mounted")
+    return {
+      ...state,
+      editor: action.editor,
+      snapshot: snapshot(action.editor),
+    }
+  if (action.type === "changed") return { ...state, snapshot: action.snapshot }
+  if (action.type === "opened") return { ...state, open: action.dialog }
+  return state.open === action.dialog ? { ...state, open: null } : state
+}
+
 export function PaperChrome({
   doc,
   title,
@@ -42,11 +75,13 @@ export function PaperChrome({
   onEditor?: (editor: PaperEditor | null) => void
 }) {
   const host = useRef<HTMLDivElement>(null)
-  const [editor, setEditor] = useState<PaperEditor | null>(null)
-  const [state, setState] = useState<Snapshot | null>(null)
-  const [linkOpen, setLinkOpen] = useState(false)
-  const [pageSetupOpen, setPageSetupOpen] = useState(false)
-  const [shortcutsOpen, setShortcutsOpen] = useState(false)
+  const [chrome, dispatch] = useReducer(chromeReducer, INITIAL)
+  const { editor, snapshot: state } = chrome
+  const toggle = (dialog: Dialog) => (open: boolean) =>
+    dispatch({ type: open ? "opened" : "closed", dialog })
+  const setLinkOpen = toggle("link")
+  const setPageSetupOpen = toggle("pageSetup")
+  const setShortcutsOpen = toggle("shortcuts")
   const latest = useRef(onEditor)
   useEffect(() => {
     latest.current = onEditor
@@ -54,9 +89,10 @@ export function PaperChrome({
 
   useEffect(() => {
     const mounted = mountPaperEditor(host.current!, { doc })
-    const unsubscribe = mounted.subscribe(() => setState(snapshot(mounted)))
-    setEditor(mounted)
-    setState(snapshot(mounted))
+    const unsubscribe = mounted.subscribe(() =>
+      dispatch({ type: "changed", snapshot: snapshot(mounted) })
+    )
+    dispatch({ type: "mounted", editor: mounted })
     latest.current?.(mounted)
     mounted.focus()
     return () => {
@@ -106,21 +142,23 @@ export function PaperChrome({
 
   return (
     <div className="paper-chrome text-ui" data-paper-chrome="">
-      <header className="paper-chrome-top">
-        <h1 className="paper-chrome-title text-ui">{title}</h1>
-        <FileMenu
-          download={download}
-          back={back}
-          onPageSetup={() => setPageSetupOpen(true)}
-          onShortcuts={() => setShortcutsOpen(true)}
-        />
-      </header>
+      <PageHeader data-slot="paper-chrome-header">
+        <PageHeaderTitle>{title}</PageHeaderTitle>
+        <PageHeaderActions>
+          <FileMenu
+            download={download}
+            back={back}
+            onPageSetup={() => setPageSetupOpen(true)}
+            onShortcuts={() => setShortcutsOpen(true)}
+          />
+        </PageHeaderActions>
+      </PageHeader>
       {editor && state ? (
         <PaperToolbar
           editor={editor}
           format={state.format}
           history={state.history}
-          linkOpen={linkOpen}
+          linkOpen={chrome.open === "link"}
           onLinkOpen={(open) => {
             setLinkOpen(open)
             if (!open) editor.focus()
@@ -133,7 +171,7 @@ export function PaperChrome({
       </div>
       {editor && state ? (
         <PageSetupDialog
-          open={pageSetupOpen}
+          open={chrome.open === "pageSetup"}
           page={state.format.page}
           onOpenChange={setPageSetupOpen}
           onApply={(page) => {
@@ -143,7 +181,10 @@ export function PaperChrome({
           }}
         />
       ) : null}
-      <ShortcutList open={shortcutsOpen} onOpenChange={setShortcutsOpen} />
+      <ShortcutList
+        open={chrome.open === "shortcuts"}
+        onOpenChange={setShortcutsOpen}
+      />
     </div>
   )
 }

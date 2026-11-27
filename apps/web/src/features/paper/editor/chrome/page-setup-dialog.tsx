@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useReducer } from "react"
 
 import { Button } from "@workspace/ui/components/button"
 import {
@@ -31,6 +31,31 @@ function marginsInCm(page: PageSetup): Record<Side, string> {
   }
 }
 
+type Draft = {
+  shown: boolean
+  size: PageSetup["size"]
+  margins: Record<Side, string>
+}
+
+type DraftAction =
+  | { type: "shown"; open: boolean; page: PageSetup }
+  | { type: "size"; size: PageSetup["size"] }
+  | { type: "margin"; side: Side; value: string }
+
+function draftOf(page: PageSetup, shown = false): Draft {
+  return { shown, size: page.size, margins: marginsInCm(page) }
+}
+
+function draftReducer(draft: Draft, action: DraftAction): Draft {
+  if (action.type === "shown")
+    return action.open ? draftOf(action.page, true) : { ...draft, shown: false }
+  if (action.type === "size") return { ...draft, size: action.size }
+  return {
+    ...draft,
+    margins: { ...draft.margins, [action.side]: action.value },
+  }
+}
+
 export function PageSetupDialog({
   open,
   page,
@@ -42,16 +67,11 @@ export function PageSetupDialog({
   onOpenChange: (open: boolean) => void
   onApply: (page: PageSetup) => void
 }) {
-  const [size, setSize] = useState(page.size)
-  const [margins, setMargins] = useState(() => marginsInCm(page))
-  const [shown, setShown] = useState(open)
-  if (open !== shown) {
-    setShown(open)
-    if (open) {
-      setSize(page.size)
-      setMargins(marginsInCm(page))
-    }
-  }
+  const [draft, dispatch] = useReducer(draftReducer, page, (initial) =>
+    draftOf(initial, open)
+  )
+  if (open !== draft.shown) dispatch({ type: "shown", open, page })
+  const { size, margins } = draft
   const parsed = SIDES.map((side) => Number(margins[side]))
   const valid = parsed.every((cm) => Number.isFinite(cm) && cm >= 0 && cm <= 10)
   const apply = () => {
@@ -70,51 +90,71 @@ export function PageSetupDialog({
             Paper size and margins for Word and PDF.
           </DialogDescription>
         </DialogHeader>
-        <div className="flex flex-col gap-4">
-          <div className="flex flex-col gap-2">
-            <span className="text-ui font-medium">Paper size</span>
-            <div className="flex gap-2" role="group" aria-label="Paper size">
-              {SIZES.map((each) => (
-                <Button
-                  key={each}
-                  variant={size === each ? "secondary" : "outline"}
-                  aria-pressed={size === each}
-                  onClick={() => setSize(each)}
-                >
-                  {each === "A4" ? "A4 (default)" : "Letter"}
-                </Button>
+        <form
+          noValidate
+          className="flex flex-col gap-4"
+          onSubmit={(event) => {
+            event.preventDefault()
+            apply()
+          }}
+        >
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-2">
+              <span className="text-ui font-medium">Paper size</span>
+              <div className="flex gap-2" role="group" aria-label="Paper size">
+                {SIZES.map((each) => (
+                  <Button
+                    key={each}
+                    type="button"
+                    size="touch"
+                    variant={size === each ? "secondary" : "outline"}
+                    aria-pressed={size === each}
+                    onClick={() => dispatch({ type: "size", size: each })}
+                  >
+                    {each === "A4" ? "A4 (default)" : "Letter"}
+                  </Button>
+                ))}
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              {SIDES.map((side) => (
+                <div key={side} className="flex flex-col gap-1.5">
+                  <Label htmlFor={`paper-margin-${side}`}>
+                    {`${side[0]!.toUpperCase()}${side.slice(1)} margin (cm)`}
+                  </Label>
+                  <Input
+                    id={`paper-margin-${side}`}
+                    inputMode="decimal"
+                    value={margins[side]}
+                    aria-invalid={
+                      !Number.isFinite(Number(margins[side])) || undefined
+                    }
+                    onChange={(event) =>
+                      dispatch({
+                        type: "margin",
+                        side,
+                        value: event.target.value,
+                      })
+                    }
+                  />
+                </div>
               ))}
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            {SIDES.map((side) => (
-              <div key={side} className="flex flex-col gap-1.5">
-                <Label htmlFor={`paper-margin-${side}`}>
-                  {`${side[0]!.toUpperCase()}${side.slice(1)} margin (cm)`}
-                </Label>
-                <Input
-                  id={`paper-margin-${side}`}
-                  inputMode="decimal"
-                  value={margins[side]}
-                  aria-invalid={
-                    !Number.isFinite(Number(margins[side])) || undefined
-                  }
-                  onChange={(event) =>
-                    setMargins({ ...margins, [side]: event.target.value })
-                  }
-                />
-              </div>
-            ))}
-          </div>
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button disabled={!valid} onClick={apply}>
-            Apply
-          </Button>
-        </DialogFooter>
+          <DialogFooter>
+            <Button
+              type="button"
+              size="touch"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" size="touch" disabled={!valid}>
+              Apply
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   )
