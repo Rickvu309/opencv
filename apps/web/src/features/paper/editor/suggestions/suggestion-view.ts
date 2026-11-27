@@ -2,7 +2,6 @@ import type {
   AgentCommand,
   Block,
   BlockId,
-  DocCommand,
   Document,
   Origin,
 } from "@workspace/domain/paper-doc"
