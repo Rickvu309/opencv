@@ -1,15 +1,12 @@
 import "./paper-editor.css"
 
 import {
-  docCommandSchema,
-  type Block,
   type BlockId,
   type DocCommand,
   type Document,
   type Origin,
   type Pos,
   type Range,
-  type Run,
   type Selection,
   type SelectionCommand,
 } from "@workspace/domain/paper-doc"
@@ -30,11 +27,16 @@ import {
 
 import {
   allMarked,
+  at,
+  codeUnitsAfter,
+  codeUnitsBefore,
   comparePos,
   containerAt,
   indexDoc,
   ordered,
+  sameContainer,
   samePos,
+  shift,
   textBetween,
   textBlocksIn,
   type DocIndex,
@@ -48,6 +50,9 @@ import {
   type Mirror,
   type TextareaEdit,
 } from "./input-port.ts"
+import { copySelection, plainFragment } from "./clipboard.ts"
+import { createEditorTools } from "./editor-tools.ts"
+import { pasteHtml } from "./paste-html.ts"
 import { createOverlays, rangeRects, type PageRect } from "./overlays.ts"
 import {
   createPainter,
@@ -61,7 +66,6 @@ import {
 export type PaperEditorOptions = {
   doc: Document
   metrics?: Metrics
-  askLink?: (current: string) => string | null
 }
 
 export type PaperEditor = {
@@ -76,51 +80,9 @@ const MIRROR_WINDOW = 2000
 const STAND_IN_LIMIT = 1000
 const NARROW_PX = 600
 
-function at(block: BlockId, cell: Pos["cell"], offset: number): Pos {
-  return cell ? { block, cell, offset } : { block, offset }
-}
-
-const shift = (pos: Pos, by: number) => at(pos.block, pos.cell, pos.offset + by)
-
-const sameContainer = (a: Pos, b: Pos) =>
-  a.block === b.block &&
-  a.cell?.row === b.cell?.row &&
-  a.cell?.col === b.cell?.col
-
-function plainFragment(text: string): Block[] | Run[] {
-  const lines = text.split(/\r\n|\r|\n/)
-  if (lines.length === 1) return [{ type: "text", text }]
-  return lines.map((line): Block => ({
-    type: "text_block",
-    attrs: {
-      id: randomId() as BlockId,
-      kind: "paragraph",
-      list: null,
-      level: 0,
-      align: "left",
-      lineSpacing: null,
-      keepWithNext: null,
-    },
-    ...(line ? { content: [{ type: "text", text: line }] } : {}),
-  }))
-}
-
 function randomId(): string {
   const bytes = crypto.getRandomValues(new Uint8Array(16))
   return [...bytes].map((byte) => byte.toString(16).padStart(2, "0")).join("")
-}
-
-function codeUnitsBefore(text: string, offset: number): number {
-  const low = text.charCodeAt(offset - 1)
-  const high = text.charCodeAt(offset - 2)
-  return low >= 0xdc00 && low <= 0xdfff && high >= 0xd800 && high <= 0xdbff
-    ? 2
-    : 1
-}
-
-function codeUnitsAfter(text: string, offset: number): number {
-  const high = text.charCodeAt(offset)
-  return high >= 0xd800 && high <= 0xdbff ? 2 : 1
 }
 
 export function mountPaperEditor(
@@ -148,6 +110,8 @@ export function mountPaperEditor(
   let fittedWidth = -1
   let base: { pos: Pos } | { whole: Range } = { whole: currentRange() }
   let scrollQueued = false
+  let stageLeft = 0
+  let stageTop = 0
 
   host.classList.add("paper-editor")
   const stage = document.createElement("div")
@@ -181,8 +145,9 @@ export function mountPaperEditor(
     const { widthPx, pitchPx } = placement(layout)
     const gutter = width < NARROW_PX ? 16 : 32
     scale = pageScale(width - 2 * gutter, widthPx)
-    const left = Math.max(gutter, (width - widthPx * scale) / 2)
-    stage.style.transform = `translate(${left}px, ${gutter}px) scale(${scale})`
+    stageLeft = Math.max(gutter, (width - widthPx * scale) / 2)
+    stageTop = gutter
+    stage.style.transform = `translate(${stageLeft}px, ${stageTop}px) scale(${scale})`
     stage.style.width = `${widthPx}px`
     host.style.height = `${(layout.pages.length * pitchPx - PAGE_GAP_PX) * scale + 2 * gutter}px`
     fittedWidth = width
@@ -193,6 +158,30 @@ export function mountPaperEditor(
     port.element.style.transform = `translate(${px(rect.x)}px, ${rect.page * pitchPx + px(rect.y)}px)`
     port.element.style.height = `${px(rect.h)}px`
   }
+
+  function screenPoint(rect: PageRect) {
+    return {
+      x: stageLeft + px(rect.x) * scale,
+      y:
+        stageTop + (rect.page * placement(layout).pitchPx + px(rect.y)) * scale,
+    }
+  }
+
+  function focusEditor() {
+    port.sync()
+    port.element.focus({ preventScroll: true })
+  }
+
+  const tools = createEditorTools(host, overlays.layer, metrics, {
+    head,
+    blockOf,
+    run,
+    select,
+    draw,
+    sync: () => port.sync(),
+    focusEditor,
+    screenPoint,
+  })
 
   function draw() {
     const { pitchPx } = placement(layout)
@@ -214,9 +203,11 @@ export function mountPaperEditor(
       caret: collapsed() ? headRect : null,
       selection: selected,
       composition: composed,
+      ...tools.highlights(layout, index),
       focused,
     })
     placeInput(headRect)
+    tools.update(doc, selection, layout, head(), headRect, collapsed(), scale)
   }
 
   function revealCaret() {
@@ -429,20 +420,13 @@ export function mountPaperEditor(
           },
         ])
         return
-      case "link": {
-        if (collapsed()) selectCommand({ op: "selectWord" })
-        const target = currentRange()
-        if (samePos(target.from, target.to)) return
-        const href = (options.askLink ?? defaultAskLink)("")
-        if (href === null) return
-        const parsed = docCommandSchema.safeParse({
-          op: "setLink",
-          range: target,
-          href: href.trim() || null,
+      case "find":
+        return tools.openFind(action.replace)
+      case "link":
+        return tools.openLink(doc, head(), collapsed(), () => {
+          if (collapsed()) selectCommand({ op: "selectWord" })
+          return currentRange()
         })
-        if (parsed.success) run([parsed.data])
-        return
-      }
       case "clearFormatting":
         run([{ op: "clearFormatting", range }])
         return
@@ -563,23 +547,44 @@ export function mountPaperEditor(
     },
     action(action) {
       act(action)
-      revealCaret()
+      if (action.do !== "find" && action.do !== "link") revealCaret()
     },
-    pasteText(text) {
-      run([
-        {
-          op: "pasteFragment",
-          range: currentRange(),
-          fragment: plainFragment(text),
-        },
-      ])
-      revealCaret()
+    paste({ text, html }) {
+      const range = currentRange()
+      const fragment = html ? pasteHtml(html, layout.pages[0]!.content.w) : []
+      if (fragment.length && run([{ op: "pasteFragment", range, fragment }])) {
+        revealCaret()
+      } else if (text) {
+        run([
+          {
+            op: "pasteFragment",
+            range,
+            fragment: plainFragment(
+              text,
+              !!range.from.cell,
+              () => randomId() as BlockId
+            ),
+          },
+        ])
+        revealCaret()
+      }
     },
-    copyText: () => textBetween(index, currentRange()),
-    cutText() {
-      const text = textBetween(index, currentRange())
-      if (!collapsed()) deleteSelection()
-      return text
+    copy(cut) {
+      if (collapsed()) return null
+      const clipboard = copySelection(doc, index, selection, currentRange())
+      if (cut) {
+        if (selection.kind === "all")
+          run(
+            doc.content.map((block) => ({
+              op: "deleteBlock",
+              block: block.attrs.id,
+            }))
+          )
+        else if (selection.kind === "block")
+          run([{ op: "deleteBlock", block: selection.block }])
+        else deleteSelection()
+      }
+      return clipboard
     },
     composing(active) {
       if (active) return
@@ -602,7 +607,7 @@ export function mountPaperEditor(
   port.element.addEventListener("focus", onFocus)
   port.element.addEventListener("blur", onBlur)
 
-  const detachPointer = attachPointer(host, {
+  const detachPointer = attachPointer(stage, {
     pointAt(clientX, clientY) {
       const box = stage.getBoundingClientRect()
       const { pitchPx, heightPx } = placement(layout)
@@ -617,6 +622,24 @@ export function mountPaperEditor(
     },
     press(point, clicks, extend) {
       goalX = null
+      tools.dismissLink()
+      const image = layout.pages[point.page]?.boxes.find(
+        ({ kind, rect }) =>
+          kind === "image" &&
+          point.x >= rect.x &&
+          point.x <= rect.x + rect.w &&
+          point.y >= rect.y &&
+          point.y <= rect.y + rect.h
+      )
+      if (image && !extend) {
+        dragAnchor = null
+        selectCommand({
+          op: "select",
+          selection: { kind: "block", block: image.block },
+        })
+        port.sync()
+        return
+      }
       const pos = locate(metrics, layout, point)
       if (clicks === 3) {
         const found = containerAt(index, pos)
@@ -640,7 +663,10 @@ export function mountPaperEditor(
   })
 
   const resize = new ResizeObserver(() => {
-    if (host.clientWidth !== fittedWidth) fit()
+    if (host.clientWidth !== fittedWidth) {
+      fit()
+      draw()
+    }
   })
   resize.observe(host)
 
@@ -653,7 +679,7 @@ export function mountPaperEditor(
     read: () => ({ doc, selection }),
     layout: () => layout,
     scale: () => scale,
-    focus: () => port.element.focus({ preventScroll: true }),
+    focus: focusEditor,
     destroy() {
       resize.disconnect()
       detachPointer()
@@ -661,11 +687,8 @@ export function mountPaperEditor(
       port.element.removeEventListener("blur", onBlur)
       port.destroy()
       stage.remove()
+      tools.destroy()
       host.classList.remove("paper-editor")
     },
   }
-}
-
-function defaultAskLink(current: string): string | null {
-  return window.prompt("Link", current)
 }

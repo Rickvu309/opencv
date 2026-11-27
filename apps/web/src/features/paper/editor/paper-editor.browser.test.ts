@@ -349,3 +349,167 @@ describe("the new Paper page in a real browser", () => {
     await phone.context().close()
   })
 })
+
+async function pasteClipboard(page: Page, html: string, text = "") {
+  await page.locator(".paper-input").evaluate(
+    (target, clipboard) => {
+      const data = new DataTransfer()
+      data.setData("text/html", clipboard.html)
+      data.setData("text/plain", clipboard.text)
+      target.dispatchEvent(new ClipboardEvent("paste", { clipboardData: data }))
+    },
+    { html, text }
+  )
+}
+
+describe("Paper editing tools", () => {
+  it("copies and cuts both formats and pastes plain text with Ctrl+Shift+V", async () => {
+    const page = await open("blank")
+    try {
+      await pasteClipboard(
+        page,
+        '<h1>Draft</h1><p><strong>First</strong> <a href="https://example.com">link</a></p>'
+      )
+      const selection = page.locator(".paper-input")
+      await page.keyboard.press("Control+a")
+      for (const type of ["copy", "cut"]) {
+        const result = await selection.evaluate((target, type) => {
+          const data = new DataTransfer()
+          target.dispatchEvent(
+            new ClipboardEvent(type, { clipboardData: data })
+          )
+          return {
+            html: data.getData("text/html"),
+            text: data.getData("text/plain"),
+          }
+        }, type)
+        expect(result.text).toBe("Draft\nFirst link")
+        expect(result.html).toContain("<h1>Draft</h1>")
+        expect(result.html).toContain('<a href="https://example.com">link</a>')
+      }
+      expect(await texts(page)).toEqual([""])
+      await page.keyboard.down("Control")
+      await page.keyboard.down("Shift")
+      await page.keyboard.down("v")
+      await pasteClipboard(page, "<h1>Discarded</h1>", "One\nTwo")
+      await page.keyboard.up("v")
+      await page.keyboard.up("Shift")
+      await page.keyboard.up("Control")
+      expect(
+        (await blocks(page)).map(({ kind, text }) => [kind, text])
+      ).toEqual([
+        ["paragraph", "One"],
+        ["paragraph", "Two"],
+      ])
+    } finally {
+      await page.context().close()
+    }
+  })
+
+  it("finds literal matches and replaces all in one undo step", async () => {
+    const page = await open("blank")
+    try {
+      await typeLines(page, ["X. x. xxx", "x."])
+      await page.keyboard.press("Control+f")
+      const find = page.getByRole("textbox", { name: "Find", exact: true })
+      await find.fill("x.")
+      expect(await page.locator(".paper-find-hit").count()).toBe(3)
+      await page.keyboard.press("Control+h")
+      await page.getByRole("textbox", { name: "Replace with" }).fill("$1")
+      await page.getByRole("button", { name: "Replace all" }).click()
+      expect(await texts(page)).toEqual(["$1 $1 xxx", "$1"])
+      expect(await page.locator(".paper-find-hit").count()).toBe(0)
+      await page.keyboard.press("Escape")
+      await page.keyboard.press("Control+z")
+      expect(await texts(page)).toEqual(["X. x. xxx", "x."])
+    } finally {
+      await page.context().close()
+    }
+  })
+
+  it("opens the link bubble, edits the whole link and removes it", async () => {
+    const page = await open("blank")
+    try {
+      await page.keyboard.type("Portfolio")
+      await page.keyboard.press("Control+k")
+      const url = page.getByRole("textbox", { name: "Link URL" })
+      await url.fill("https://example.com")
+      await page.getByRole("button", { name: "Apply" }).click()
+      await page.keyboard.press("ArrowLeft")
+      const link = page.getByRole("link", { name: "Open link" })
+      expect(await link.getAttribute("href")).toBe("https://example.com")
+      expect(
+        await page
+          .locator(".paper-run[data-href]")
+          .evaluate((run) => getComputedStyle(run).textDecorationLine)
+      ).toBe("underline")
+      await page.getByRole("button", { name: "Edit link" }).click()
+      await url.fill("https://example.org")
+      await page.getByRole("button", { name: "Apply" }).click()
+      expect(
+        await page.getByRole("link", { name: "Open link" }).getAttribute("href")
+      ).toBe("https://example.org")
+      await page.getByRole("button", { name: "Remove link" }).click()
+      expect(await page.locator(".paper-run[data-href]").count()).toBe(0)
+      expect(await texts(page)).toEqual(["Portfolio"])
+    } finally {
+      await page.context().close()
+    }
+  })
+
+  it("resizes a photo corner with aspect lock and edits a pasted table", async () => {
+    const photo = await open("photo")
+    try {
+      await photo.locator(".paper-image").click()
+      const corner = await photo
+        .getByRole("button", { name: "Resize photo bottom right" })
+        .boundingBox()
+      if (!corner) throw new Error("The photo has no resize handle")
+      const x = corner.x + corner.width / 2
+      const y = corner.y + corner.height / 2
+      const dimensions = () =>
+        photo.evaluate(() => {
+          const block = window
+            .paperLab!.read()
+            .doc.content.find((block) => block.type === "image")
+          return block ? [block.attrs.widthMpt, block.attrs.heightMpt] : []
+        })
+      const before = await dimensions()
+      await photo.mouse.move(x, y)
+      await photo.mouse.down()
+      await photo.mouse.move(x + 50, y + 30)
+      await photo.mouse.up()
+      const after = await dimensions()
+      expect(after[0]).toBeGreaterThan(before[0]!)
+      expect(after[0]! / after[1]!).toBeCloseTo(before[0]! / before[1]!, 4)
+      await photo.keyboard.press("Control+z")
+      expect(await dimensions()).toEqual(before)
+    } finally {
+      await photo.context().close()
+    }
+
+    const table = await open("blank")
+    try {
+      await pasteClipboard(
+        table,
+        "<table><tr><th>Role</th><th>Year</th></tr><tr><td>Lead</td><td>2026</td></tr></table>"
+      )
+      await table
+        .locator(".paper-line")
+        .filter({ hasText: "Lead" })
+        .click({ force: true })
+      await table.getByRole("button", { name: "Add row" }).click()
+      expect(await table.locator(".paper-cell").count()).toBe(6)
+      await table.getByRole("button", { name: "Add column" }).click()
+      expect(await table.locator(".paper-cell").count()).toBe(9)
+      await table.getByRole("button", { name: "Delete row" }).click()
+      expect(await table.locator(".paper-cell").count()).toBe(6)
+      await table.getByRole("button", { name: "Delete column" }).click()
+      expect(await table.locator(".paper-cell").count()).toBe(4)
+      await table.getByRole("button", { name: "Delete table" }).click()
+      expect(await table.locator(".paper-cell").count()).toBe(0)
+    } finally {
+      await table.context().close()
+    }
+  })
+})
