@@ -1,0 +1,13 @@
+{
+  "id": "screen-session-reads",
+  "file": "scripts/screen-session-reads.test.mjs",
+  "detector": {
+    "module": "scripts/lib/screen-session-reads.mjs",
+    "export": "detect"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "79113af4861ab3b188de630c5b0a3508c67d7db7",
+    "path": "apps/web/src/routes/paper-lab.tsx"
+  }
+}
