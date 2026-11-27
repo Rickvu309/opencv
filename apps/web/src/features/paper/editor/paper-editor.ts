@@ -2,6 +2,7 @@ import "./paper-editor.css"
 
 import {
   type BlockId,
+  type Document,
   type DocCommand,
   type Origin,
   type Pos,
@@ -77,9 +78,14 @@ export function mountPaperEditor(
     now: () => Date.now(),
   })
   const layouter = createLayouter(metrics)
-  const client = `page-${randomId()}`
-  const origin: Origin = { kind: "person", actor: "person", client }
-  let state: EditorState = engine.load(options.doc, 0, client)
+  const client = options.seat?.client ?? `page-${randomId()}`
+  const origin: Origin = {
+    kind: "person",
+    actor: options.seat?.actor ?? "person",
+    client,
+  }
+  let state: EditorState =
+    options.seat?.state ?? engine.load(options.doc, 0, client)
   let doc = engine.read(state).doc
   let selection = engine.read(state).selection
   let index: DocIndex = indexDoc(doc)
@@ -94,6 +100,7 @@ export function mountPaperEditor(
   const listeners = new Set<() => void>()
   let stageLeft = 0
   let stageTop = 0
+  let peers: readonly Pos[] = []
 
   host.classList.add("paper-editor")
   const stage = document.createElement("div")
@@ -199,11 +206,22 @@ export function mountPaperEditor(
       selection: selected,
       composition: composed,
       ...tools.highlights(layout, index),
+      peers: peerRects(doc, peers),
       focused,
     })
     placeInput(headRect)
     suggestions.draw(layout, pitchPx, scale)
     tools.update(doc, selection, layout, head(), headRect, collapsed(), scale)
+  }
+
+  function peerRects(current: Document, carets: readonly Pos[]) {
+    return carets.flatMap((pos) => {
+      const found = containerAt(index, pos)
+      if (!found || pos.offset > found.container.text.length) return []
+      if (!current.content.some((block) => block.attrs.id === pos.block))
+        return []
+      return [{ ...caret(metrics, layout, pos), w: 2 * MPT_PER_PX }]
+    })
   }
 
   function revealCaret() {
@@ -518,6 +536,17 @@ export function mountPaperEditor(
     layout: () => layout,
     scale: () => scale,
     focus: focusEditor,
+    state: () => state,
+    adopt(next) {
+      if (next === state) return
+      adopt(next)
+      port.sync()
+    },
+    caret: head,
+    showPeers(carets) {
+      peers = carets
+      draw()
+    },
     suggest: suggestions.set,
     destroy() {
       suggestions.destroy()

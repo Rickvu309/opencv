@@ -1,9 +1,10 @@
 import { catalog, parseJobId } from "@workspace/domain/kernel"
 import { operation } from "@workspace/domain/operations/paper/create"
-import { templatePageName } from "@workspace/domain/paper-doc"
+import { paperEngineBlank, templatePageName } from "@workspace/domain/paper-doc"
 import type { OperationBinding } from "../../../registry/bind.js"
 import { startingPaper } from "../../new-paper.js"
 import { deleteNewPaper } from "../../new-paper-undo.js"
+import { admitted, engineLog } from "../../engine-sync-log.js"
 import { createPaper } from "../../store.js"
 
 type Created = Awaited<ReturnType<typeof createPaper>>
@@ -19,6 +20,15 @@ export const implementation = {
       ...(input.templateId ? { templateId: input.templateId } : {}),
       paper: startingPaper(input),
     })
+    if (input.engine === 2)
+      admitted(
+        await engineLog.start(
+          created.id,
+          input.kind === "cv"
+            ? paperEngineBlank.blankCv()
+            : paperEngineBlank.blankLetter()
+        )
+      )
     if (input.jobId)
       await registry.execute({
         name: catalog["job.linkPaper"].name,

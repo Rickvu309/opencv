@@ -207,3 +207,8 @@
     width: 96px;
   }
 }
+
+.paper-recovery {
+  padding: 8px 16px;
+  background: var(--background);
+}
