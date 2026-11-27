@@ -58,6 +58,7 @@ import {
   placement,
   px,
 } from "./painter.ts"
+import { whenIdle } from "./idle-warm.ts"
 
 export type {
   PaperEditor,
@@ -520,6 +521,15 @@ export function mountPaperEditor(
   fit()
   draw()
   port.sync()
+  const stopWarm = whenIdle(() => {
+    const at = head()
+    engine.run(
+      state,
+      [{ op: "insertText", range: { from: at, to: at }, text: "x" }],
+      origin,
+      { kind: "typing", caret: { block: at.block, offset: at.offset + 1 } }
+    )
+  })
 
   return {
     read: () => ({ doc, selection }),
@@ -555,6 +565,7 @@ export function mountPaperEditor(
     },
     suggest: suggestions.set,
     destroy() {
+      stopWarm()
       suggestions.destroy()
       resize.disconnect()
       revealAfterTyping.disconnect()
