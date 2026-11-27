@@ -7,6 +7,7 @@
         "$TURBO_DEFAULT$",
         ".env*",
         "$TURBO_ROOT$/apps/api/src/**",
+        "$TURBO_ROOT$/packages/paper-corpus/tests/fixtures/clipboard/**",
         "$TURBO_ROOT$/scripts/lib/design-css-tokens.mjs",
         "$TURBO_ROOT$/scripts/lib/paper-flat-toolbar.mjs",
         "$TURBO_ROOT$/scripts/lib/use-read-owner.mjs",

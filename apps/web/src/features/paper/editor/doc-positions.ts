@@ -35,16 +35,36 @@ export function ordered(index: DocIndex, range: Range): Range {
     : { from: range.to, to: range.from }
 }
 
-export const samePos = (a: Pos, b: Pos) =>
+export const sameContainer = (
+  a: Pick<Pos, "block" | "cell">,
+  b: Pick<Pos, "block" | "cell">
+) =>
   a.block === b.block &&
-  a.offset === b.offset &&
   a.cell?.row === b.cell?.row &&
   a.cell?.col === b.cell?.col
 
-const sameContainer = (container: TextContainer, pos: Pos) =>
-  container.block === pos.block &&
-  container.cell?.row === pos.cell?.row &&
-  container.cell?.col === pos.cell?.col
+export const samePos = (a: Pos, b: Pos) =>
+  a.offset === b.offset && sameContainer(a, b)
+
+export function at(block: BlockId, cell: Pos["cell"], offset: number): Pos {
+  return cell ? { block, cell, offset } : { block, offset }
+}
+
+export const shift = (pos: Pos, by: number) =>
+  at(pos.block, pos.cell, pos.offset + by)
+
+export function codeUnitsBefore(text: string, offset: number): number {
+  const low = text.charCodeAt(offset - 1)
+  const high = text.charCodeAt(offset - 2)
+  return low >= 0xdc00 && low <= 0xdfff && high >= 0xd800 && high <= 0xdbff
+    ? 2
+    : 1
+}
+
+export function codeUnitsAfter(text: string, offset: number): number {
+  const high = text.charCodeAt(offset)
+  return high >= 0xd800 && high <= 0xdbff ? 2 : 1
+}
 
 export function containerAt(
   index: DocIndex,
@@ -82,7 +102,7 @@ export function textBlocksIn(
     .map((block) => block.attrs.id)
 }
 
-function runsAt(doc: Document, pos: Pos): readonly Run[] {
+export function runsAt(doc: Document, pos: Pos): readonly Run[] {
   const block = doc.content.find((each) => each.attrs.id === pos.block)
   if (!block) return []
   if (block.type === "text_block") return block.content ?? []

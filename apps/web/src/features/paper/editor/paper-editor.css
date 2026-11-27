@@ -79,7 +79,7 @@
 
 .paper-editor {
   position: relative;
-  overflow: hidden;
+  overflow: clip;
 }
 
 .paper-editor-stage {
@@ -119,7 +119,7 @@
 .paper-image {
   position: absolute;
   background: var(--muted);
-  pointer-events: none;
+  cursor: default;
 }
 
 .paper-rule {
@@ -199,4 +199,210 @@
   font-size: 16px;
   white-space: pre;
   outline: none;
+}
+
+.paper-run[data-href] {
+  color: var(--primary);
+}
+
+.paper-find-hit,
+.paper-find-active {
+  position: absolute;
+  background: color-mix(in oklch, var(--primary) 20%, transparent);
+}
+
+.paper-find-active {
+  outline: 1px solid var(--primary);
+}
+
+.paper-tools {
+  z-index: 2;
+  display: grid;
+  gap: 6px;
+  width: max-content;
+  max-width: calc(100% - 24px);
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--popover);
+  color: var(--popover-foreground);
+  box-shadow: 0 3px 12px color-mix(in oklch, var(--foreground) 12%, transparent);
+  font-size: 0.8125rem;
+}
+
+.paper-tools[hidden],
+.paper-tools [hidden] {
+  display: none;
+}
+
+.paper-tool-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+}
+
+.paper-tools button,
+.paper-tools a,
+.paper-tools input {
+  display: inline-flex;
+  min-height: 32px;
+  align-items: center;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  padding: 4px 8px;
+  font: inherit;
+}
+
+.paper-tools button,
+.paper-tools a {
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.paper-tools button:hover,
+.paper-tools a:hover {
+  background: var(--accent);
+}
+
+.paper-tools button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.paper-tools button:focus-visible,
+.paper-tools a:focus-visible,
+.paper-photo-handle:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 1px;
+}
+
+.paper-tools input {
+  flex: 1 1 104px;
+  width: 0;
+  min-width: 85px;
+  border-color: var(--border);
+  background: var(--background);
+  color: var(--foreground);
+  outline: none;
+}
+
+.paper-tools input:focus {
+  border-color: var(--muted-foreground);
+}
+
+.paper-tools input[aria-invalid="true"] {
+  border-color: var(--destructive);
+}
+
+.paper-tool-error {
+  color: var(--destructive);
+}
+
+.paper-tool-error:empty {
+  display: none;
+}
+
+.paper-find-bar {
+  position: sticky;
+  top: 12px;
+  margin-inline: auto 12px;
+  width: min(360px, calc(100% - 24px));
+}
+
+.paper-find-matches output {
+  margin-inline-end: auto;
+  color: var(--muted-foreground);
+  font-variant-numeric: tabular-nums;
+}
+
+.paper-link-bubble,
+.paper-table-tools {
+  position: absolute;
+}
+
+.paper-link-bubble {
+  width: min(336px, calc(100% - 24px));
+}
+
+.paper-link-bubble a {
+  color: var(--primary);
+}
+
+.paper-table-tools {
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.paper-photo-handles {
+  position: absolute;
+  z-index: 1;
+  outline: 1px solid var(--primary);
+  pointer-events: none;
+}
+
+.paper-photo-handle {
+  position: absolute;
+  display: grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  border-radius: var(--radius-lg);
+  touch-action: none;
+  pointer-events: auto;
+  transform: translate(-50%, -50%);
+}
+
+.paper-photo-handle::after {
+  width: 10px;
+  height: 10px;
+  border: 1px solid var(--primary-foreground);
+  border-radius: 50%;
+  background: var(--primary);
+  content: "";
+}
+
+.paper-photo-handle[data-corner^="top"] {
+  top: 0;
+}
+.paper-photo-handle[data-corner^="bottom"] {
+  top: 100%;
+}
+.paper-photo-handle[data-corner$="left"] {
+  left: 0;
+}
+.paper-photo-handle[data-corner$="right"] {
+  left: 100%;
+}
+.paper-photo-handle[data-corner="top-left"],
+.paper-photo-handle[data-corner="bottom-right"] {
+  cursor: nwse-resize;
+}
+.paper-photo-handle[data-corner="top-right"],
+.paper-photo-handle[data-corner="bottom-left"] {
+  cursor: nesw-resize;
+}
+
+@media (max-width: 480px), (pointer: coarse) {
+  .paper-tools button,
+  .paper-tools a,
+  .paper-tools input {
+    min-height: 44px;
+  }
+
+  .paper-tools button,
+  .paper-tools a {
+    min-width: 44px;
+  }
+
+  .paper-tool-row {
+    gap: 8px;
+  }
+
+  .paper-photo-handle {
+    width: 44px;
+    height: 44px;
+  }
 }

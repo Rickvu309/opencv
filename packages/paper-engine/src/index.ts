@@ -30,3 +30,4 @@ export {
   type Segment,
 } from "./layout/index.js"
 export type { InputEdit } from "./history.js"
+export { paperSchema } from "./schema.js"

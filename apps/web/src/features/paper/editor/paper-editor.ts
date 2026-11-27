@@ -1,49 +1,48 @@
 import "./paper-editor.css"
 
 import {
-  docCommandSchema,
-  type Block,
   type BlockId,
   type DocCommand,
   type Origin,
   type Pos,
   type Range,
-  type Run,
   type SelectionCommand,
 } from "@workspace/domain/paper-doc"
 import {
   caret,
   createEngine,
   createLayouter,
-  lineEdges,
   locate,
   paperFontMetrics,
   selectionRange,
   type EditorState,
   type InputEdit,
-  type PagePoint,
 } from "@workspace/paper-engine"
 
 import {
-  allMarked,
+  at,
   comparePos,
   containerAt,
   indexDoc,
   ordered,
+  sameContainer,
   samePos,
+  shift,
   textBetween,
-  textBlocksIn,
   type DocIndex,
 } from "./doc-positions.ts"
 import {
   attachPointer,
   createInputPort,
-  type KeyAction,
   type InputKind,
   type InputSink,
   type Mirror,
   type TextareaEdit,
 } from "./input-port.ts"
+import { copySelection, plainFragment } from "./clipboard.ts"
+import { createEditorTools } from "./editor-tools.ts"
+import { createKeyActions } from "./key-actions.ts"
+import { pasteHtml } from "./paste-html.ts"
 import { createOverlays, rangeRects, type PageRect } from "./overlays.ts"
 import type {
   PaperEditor,
@@ -67,51 +66,9 @@ const MIRROR_WINDOW = 2000
 const STAND_IN_LIMIT = 1000
 const NARROW_PX = 600
 
-function at(block: BlockId, cell: Pos["cell"], offset: number): Pos {
-  return cell ? { block, cell, offset } : { block, offset }
-}
-
-const shift = (pos: Pos, by: number) => at(pos.block, pos.cell, pos.offset + by)
-
-const sameContainer = (a: Pos, b: Pos) =>
-  a.block === b.block &&
-  a.cell?.row === b.cell?.row &&
-  a.cell?.col === b.cell?.col
-
-function plainFragment(text: string): Block[] | Run[] {
-  const lines = text.split(/\r\n|\r|\n/)
-  if (lines.length === 1) return [{ type: "text", text }]
-  return lines.map((line): Block => ({
-    type: "text_block",
-    attrs: {
-      id: randomId() as BlockId,
-      kind: "paragraph",
-      list: null,
-      level: 0,
-      align: "left",
-      lineSpacing: null,
-      keepWithNext: null,
-    },
-    ...(line ? { content: [{ type: "text", text: line }] } : {}),
-  }))
-}
-
 function randomId(): string {
   const bytes = crypto.getRandomValues(new Uint8Array(16))
   return [...bytes].map((byte) => byte.toString(16).padStart(2, "0")).join("")
-}
-
-function codeUnitsBefore(text: string, offset: number): number {
-  const low = text.charCodeAt(offset - 1)
-  const high = text.charCodeAt(offset - 2)
-  return low >= 0xdc00 && low <= 0xdfff && high >= 0xd800 && high <= 0xdbff
-    ? 2
-    : 1
-}
-
-function codeUnitsAfter(text: string, offset: number): number {
-  const high = text.charCodeAt(offset)
-  return high >= 0xd800 && high <= 0xdbff ? 2 : 1
 }
 
 export function mountPaperEditor(
@@ -132,7 +89,6 @@ export function mountPaperEditor(
   let index: DocIndex = indexDoc(doc)
   let layout = layouter.layout(doc, null)
   let composition: { from: Pos; to: Pos } | null = null
-  let goalX: number | null = null
   let dragAnchor: Pos | null = null
   let focused = false
   let scale = 1
@@ -140,6 +96,8 @@ export function mountPaperEditor(
   let base: { pos: Pos } | { whole: Range } = { whole: currentRange() }
   let scrollQueued = false
   const listeners = new Set<() => void>()
+  let stageLeft = 0
+  let stageTop = 0
 
   host.classList.add("paper-editor")
   const stage = document.createElement("div")
@@ -173,8 +131,9 @@ export function mountPaperEditor(
     const { widthPx, pitchPx } = placement(layout)
     const gutter = width < NARROW_PX ? 16 : 32
     scale = pageScale(width - 2 * gutter, widthPx)
-    const left = Math.max(gutter, (width - widthPx * scale) / 2)
-    stage.style.transform = `translate(${left}px, ${gutter}px) scale(${scale})`
+    stageLeft = Math.max(gutter, (width - widthPx * scale) / 2)
+    stageTop = gutter
+    stage.style.transform = `translate(${stageLeft}px, ${stageTop}px) scale(${scale})`
     stage.style.width = `${widthPx}px`
     host.style.height = `${(layout.pages.length * pitchPx - PAGE_GAP_PX) * scale + 2 * gutter}px`
     fittedWidth = width
@@ -185,6 +144,30 @@ export function mountPaperEditor(
     port.element.style.transform = `translate(${px(rect.x)}px, ${rect.page * pitchPx + px(rect.y)}px)`
     port.element.style.height = `${px(rect.h)}px`
   }
+
+  function screenPoint(rect: PageRect) {
+    return {
+      x: stageLeft + px(rect.x) * scale,
+      y:
+        stageTop + (rect.page * placement(layout).pitchPx + px(rect.y)) * scale,
+    }
+  }
+
+  function focusEditor() {
+    port.sync()
+    port.element.focus({ preventScroll: true })
+  }
+
+  const tools = createEditorTools(host, overlays.layer, metrics, {
+    head,
+    blockOf,
+    run,
+    select,
+    draw,
+    sync: () => port.sync(),
+    focusEditor,
+    screenPoint,
+  })
 
   function draw() {
     const { pitchPx } = placement(layout)
@@ -206,9 +189,11 @@ export function mountPaperEditor(
       caret: collapsed() ? headRect : null,
       selection: selected,
       composition: composed,
+      ...tools.highlights(layout, index),
       focused,
     })
     placeInput(headRect)
+    tools.update(doc, selection, layout, head(), headRect, collapsed(), scale)
   }
 
   function revealCaret() {
@@ -277,221 +262,29 @@ export function mountPaperEditor(
     return doc.content.find((block) => block.attrs.id === id)
   }
 
-  function listBlocks(range: Range) {
-    return textBlocksIn(doc, index, range).filter((id) => {
-      const block = blockOf(id)
-      return block?.type === "text_block" && block.attrs.list !== null
-    })
-  }
-
-  function backspace(word: boolean) {
-    if (!collapsed()) return deleteSelection()
-    if (word) {
-      selectCommand({ op: "move", unit: "word", dir: -1, extend: true })
-      if (!collapsed()) deleteSelection()
-      return
-    }
-    const here = head()
-    const found = containerAt(index, here)
-    if (!found) return
-    if (here.offset > 0) {
-      const units = codeUnitsBefore(found.container.text, here.offset)
-      run([
-        { op: "deleteRange", range: { from: shift(here, -units), to: here } },
-      ])
-      return
-    }
-    if (here.cell) return
-    const block = blockOf(here.block)
-    if (block?.type === "text_block" && block.attrs.list !== null) {
-      run([{ op: "setList", blocks: [here.block], list: null }])
-      return
-    }
-    if ((index.order.get(here.block) ?? 0) > 0)
-      run([{ op: "joinBlocks", block: here.block, direction: "backward" }])
-  }
-
-  function forwardDelete(word: boolean) {
-    if (!collapsed()) return deleteSelection()
-    if (word) {
-      selectCommand({ op: "move", unit: "word", dir: 1, extend: true })
-      if (!collapsed()) deleteSelection()
-      return
-    }
-    const here = head()
-    const found = containerAt(index, here)
-    if (!found) return
-    if (here.offset < found.container.text.length) {
-      const units = codeUnitsAfter(found.container.text, here.offset)
-      run([
-        { op: "deleteRange", range: { from: here, to: shift(here, units) } },
-      ])
-      return
-    }
-    if (here.cell) return
-    if ((index.order.get(here.block) ?? 0) < doc.content.length - 1)
-      run([{ op: "joinBlocks", block: here.block, direction: "forward" }])
-  }
-
-  function enter() {
-    if (collapsed()) {
-      run([{ op: "splitBlock", at: head() }])
-      return
-    }
-    const range = currentRange()
-    run([
-      { op: "deleteRange", range },
-      { op: "splitBlock", at: range.from },
-    ])
-  }
-
-  function vertical(dir: -1 | 1, extend: boolean) {
-    const from = head()
-    const rect = caret(metrics, layout, from)
-    if (goalX === null) goalX = rect.x
-    const goal = goalX
-    const page = layout.pages[rect.page]!
-    const tryPoint = (point: PagePoint) => {
-      const pos = locate(metrics, layout, point)
-      const moved = caret(metrics, layout, pos)
-      return moved.page === rect.page && moved.y === rect.y ? null : pos
-    }
-    let target =
-      dir > 0
-        ? tryPoint({ page: rect.page, x: goal, y: rect.y + rect.h + 1 })
-        : rect.y - 1 >= page.content.y
-          ? tryPoint({ page: rect.page, x: goal, y: rect.y - 1 })
-          : null
-    const nextPage = layout.pages[rect.page + dir]
-    if (!target && nextPage)
-      target = tryPoint({
-        page: nextPage.index,
-        x: goal,
-        y:
-          dir > 0
-            ? nextPage.content.y
-            : nextPage.content.y + nextPage.content.h - 1,
-      })
-    if (!target) {
-      selectCommand({ op: "move", unit: "doc", dir, extend })
-    } else {
-      select(extend ? anchor() : target, target)
-    }
-    goalX = goal
-  }
-
-  function lineEdge(dir: -1 | 1, extend: boolean) {
-    const edges = lineEdges(layout, head())
-    const target = dir < 0 ? edges.start : edges.end
-    select(extend ? anchor() : target, target)
-  }
-
-  function act(action: KeyAction) {
-    if (!(action.do === "move" && action.unit === "line")) goalX = null
-    const range = currentRange()
-    switch (action.do) {
-      case "move":
-        if (action.unit === "line") return vertical(action.dir, action.extend)
-        if (action.unit === "lineEdge")
-          return lineEdge(action.dir, action.extend)
-        return selectCommand({
-          op: "move",
-          unit: action.unit,
-          dir: action.dir,
-          extend: action.extend,
-        })
-      case "selectAll":
-        return selectCommand({ op: "selectAll" })
-      case "undo": {
-        const undone = engine.undo(state)
-        if (undone) adopt(undone.state)
-        return
-      }
-      case "redo": {
-        const redone = engine.redo(state)
-        if (redone) adopt(redone.state)
-        return
-      }
-      case "mark":
-        run([
-          {
-            op: "setMark",
-            range,
-            mark: { type: action.mark },
-            on: !allMarked(doc, index, range, action.mark),
-          },
-        ])
-        return
-      case "link": {
-        if (collapsed()) selectCommand({ op: "selectWord" })
-        const target = currentRange()
-        if (samePos(target.from, target.to)) return
-        const href = (options.askLink ?? defaultAskLink)("")
-        if (href === null) return
-        const parsed = docCommandSchema.safeParse({
-          op: "setLink",
-          range: target,
-          href: href.trim() || null,
-        })
-        if (parsed.success) run([parsed.data])
-        return
-      }
-      case "clearFormatting":
-        run([{ op: "clearFormatting", range }])
-        return
-      case "kind": {
-        const blocks = textBlocksIn(doc, index, range)
-        if (blocks.length)
-          run([{ op: "setBlockKind", blocks, kind: action.kind }])
-        return
-      }
-      case "list": {
-        const blocks = textBlocksIn(doc, index, range)
-        if (!blocks.length) return
-        const already = blocks.every((id) => {
-          const block = blockOf(id)
-          return (
-            block?.type === "text_block" && block.attrs.list === action.list
-          )
-        })
-        run([{ op: "setList", blocks, list: already ? null : action.list }])
-        return
-      }
-      case "level": {
-        const blocks = listBlocks(range)
-        if (blocks.length) run([{ op: "shiftLevel", blocks, by: action.by }])
-        return
-      }
-      case "tab": {
-        const blocks = textBlocksIn(doc, index, range)
-        const lists = listBlocks(range)
-        if (blocks.length > 0 && lists.length === blocks.length) {
-          run([{ op: "shiftLevel", blocks: lists, by: action.by }])
-          return
-        }
-        if (action.by > 0) run([{ op: "insertText", range, text: "\t" }])
-        return
-      }
-      case "enter":
-        return enter()
-      case "lineBreak":
-        run([
-          {
-            op: "pasteFragment",
-            range,
-            fragment: [{ type: "hard_break" }],
-          },
-        ])
-        return
-      case "pageBreak":
-        run([{ op: "insertBlock", at: head(), block: "page_break" }])
-        return
-      case "backspace":
-        return backspace(action.word)
-      case "delete":
-        return forwardDelete(action.word)
-    }
-  }
+  const keys = createKeyActions(metrics, {
+    doc: () => doc,
+    index: () => index,
+    layout: () => layout,
+    head,
+    anchor,
+    collapsed,
+    currentRange,
+    blockOf,
+    run,
+    selectCommand,
+    select,
+    deleteSelection,
+    undo() {
+      const undone = engine.undo(state)
+      if (undone) adopt(undone.state)
+    },
+    redo() {
+      const redone = engine.redo(state)
+      if (redone) adopt(redone.state)
+    },
+    tools,
+  })
 
   const sink: InputSink = {
     mirror(): Mirror {
@@ -555,24 +348,45 @@ export function mountPaperEditor(
       revealCaret()
     },
     action(action) {
-      act(action)
-      revealCaret()
+      keys.act(action)
+      if (action.do !== "find" && action.do !== "link") revealCaret()
     },
-    pasteText(text) {
-      run([
-        {
-          op: "pasteFragment",
-          range: currentRange(),
-          fragment: plainFragment(text),
-        },
-      ])
-      revealCaret()
+    paste({ text, html }) {
+      const range = currentRange()
+      const fragment = html ? pasteHtml(html, layout.pages[0]!.content.w) : []
+      if (fragment.length && run([{ op: "pasteFragment", range, fragment }])) {
+        revealCaret()
+      } else if (text) {
+        run([
+          {
+            op: "pasteFragment",
+            range,
+            fragment: plainFragment(
+              text,
+              !!range.from.cell,
+              () => randomId() as BlockId
+            ),
+          },
+        ])
+        revealCaret()
+      }
     },
-    copyText: () => textBetween(index, currentRange()),
-    cutText() {
-      const text = textBetween(index, currentRange())
-      if (!collapsed()) deleteSelection()
-      return text
+    copy(cut) {
+      if (collapsed()) return null
+      const clipboard = copySelection(doc, index, selection, currentRange())
+      if (cut) {
+        if (selection.kind === "all")
+          run(
+            doc.content.map((block) => ({
+              op: "deleteBlock",
+              block: block.attrs.id,
+            }))
+          )
+        else if (selection.kind === "block")
+          run([{ op: "deleteBlock", block: selection.block }])
+        else deleteSelection()
+      }
+      return clipboard
     },
     composing(active) {
       if (active) return
@@ -595,7 +409,7 @@ export function mountPaperEditor(
   port.element.addEventListener("focus", onFocus)
   port.element.addEventListener("blur", onBlur)
 
-  const detachPointer = attachPointer(host, {
+  const detachPointer = attachPointer(stage, {
     pointAt(clientX, clientY) {
       const box = stage.getBoundingClientRect()
       const { pitchPx, heightPx } = placement(layout)
@@ -609,7 +423,25 @@ export function mountPaperEditor(
       return { page, x: x * MPT_PER_PX, y: inPage * MPT_PER_PX }
     },
     press(point, clicks, extend) {
-      goalX = null
+      keys.forgetGoal()
+      tools.dismissLink()
+      const image = layout.pages[point.page]?.boxes.find(
+        ({ kind, rect }) =>
+          kind === "image" &&
+          point.x >= rect.x &&
+          point.x <= rect.x + rect.w &&
+          point.y >= rect.y &&
+          point.y <= rect.y + rect.h
+      )
+      if (image && !extend) {
+        dragAnchor = null
+        selectCommand({
+          op: "select",
+          selection: { kind: "block", block: image.block },
+        })
+        port.sync()
+        return
+      }
       const pos = locate(metrics, layout, point)
       if (clicks === 3) {
         const found = containerAt(index, pos)
@@ -633,7 +465,10 @@ export function mountPaperEditor(
   })
 
   const resize = new ResizeObserver(() => {
-    if (host.clientWidth !== fittedWidth) fit()
+    if (host.clientWidth !== fittedWidth) {
+      fit()
+      draw()
+    }
   })
   resize.observe(host)
 
@@ -646,7 +481,7 @@ export function mountPaperEditor(
     read: () => ({ doc, selection }),
     range: currentRange,
     act(action) {
-      act(action)
+      keys.act(action)
       port.sync()
       revealCaret()
     },
@@ -665,7 +500,7 @@ export function mountPaperEditor(
     },
     layout: () => layout,
     scale: () => scale,
-    focus: () => port.element.focus({ preventScroll: true }),
+    focus: focusEditor,
     destroy() {
       resize.disconnect()
       detachPointer()
@@ -673,11 +508,8 @@ export function mountPaperEditor(
       port.element.removeEventListener("blur", onBlur)
       port.destroy()
       stage.remove()
+      tools.destroy()
       host.classList.remove("paper-editor")
     },
   }
-}
-
-function defaultAskLink(current: string): string | null {
-  return window.prompt("Link", current)
 }

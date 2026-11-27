@@ -113,29 +113,26 @@ function LinkTool({
         aria-label="Add link"
         className="w-80 flex-row gap-1.5 p-1.5"
       >
-        <Input
-          autoFocus
-          type="url"
-          value={href}
-          placeholder="Paste a link"
-          aria-label="Link address"
-          className="min-w-0 flex-1"
-          onChange={(event) => setHref(event.target.value)}
-          onKeyDown={(event) => {
-            if (event.key !== "Enter") return
+        <form
+          noValidate
+          className="contents"
+          onSubmit={(event) => {
             event.preventDefault()
             onApply(href)
             setHref("")
           }}
-        />
-        <Button
-          onClick={() => {
-            onApply(href)
-            setHref("")
-          }}
         >
-          Apply
-        </Button>
+          <Input
+            autoFocus
+            type="url"
+            value={href}
+            placeholder="Paste a link"
+            aria-label="Link address"
+            className="min-w-0 flex-1"
+            onChange={(event) => setHref(event.target.value)}
+          />
+          <Button type="submit">Apply</Button>
+        </form>
       </PopoverContent>
     </Popover>
   )

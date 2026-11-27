@@ -78,7 +78,7 @@ function glyphSpan(
   span.style.fontStyle = style
   span.style.fontSize = `${sizePx}px`
   span.style.lineHeight = `${height}`
-  if (extra.color) span.style.color = extra.color
+  if (extra.color && !extra.href) span.style.color = extra.color
   const lines = [
     extra.underline || extra.href ? "underline" : "",
     extra.strike ? "line-through" : "",
