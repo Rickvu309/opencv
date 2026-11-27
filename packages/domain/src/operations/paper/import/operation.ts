@@ -5,10 +5,10 @@ import type { ResourceRef } from "../../../resources.js"
 export const operation = defineOperation({
   owner: "paper",
   name: "paper.import",
-  version: 2,
+  version: 3,
   kind: "command",
   description:
-    "Make a Paper from a file the person brought in. The file is read and converted before this runs, and the uploaded file stays stored beside the Paper.",
+    "Make a Paper from a file the person brought in. Read an uploaded Word file into a Paper and report any parts that were left out.",
   label: "Import your Paper",
   input: z
     .object({
@@ -16,13 +16,16 @@ export const operation = defineOperation({
       kind: z.enum(["cv", "letter"]),
       name: z.string().trim().min(1).max(200),
       paper: z.unknown(),
+      engine: z.literal(2).optional(),
     })
-    .strict(),
+    .strict()
+    .refine((input) => input.engine !== 2 || input.paper === null),
   publicResult: z
     .object({
       docId: z.string().uuid(),
       name: z.string().min(1).max(200),
       kind: z.enum(["cv", "letter"]),
+      dropped: z.array(z.string().min(1)).optional(),
     })
     .strip(),
   coach: "never",

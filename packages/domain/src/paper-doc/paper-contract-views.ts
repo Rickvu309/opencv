@@ -72,6 +72,7 @@ export const paperImportResponseSchema = z
         name: z.string().min(1).max(200),
         kind: z.enum(["cv", "letter"]),
         notice: z.string().min(1).optional(),
+        dropped: z.array(z.string().min(1)).optional(),
       })
       .strict(),
   })

@@ -115,10 +115,10 @@ export function createCatalogClient<const C extends Record<string, Operation>>(
       catalog[name]!.input.parse(input) as z.output<C[N]["input"]>,
     ] as const
   }
-  async function read<N extends ReadName<C>>(
+  async function requestRead<N extends ReadName<C> | WriteName<C>>(
     name: N,
     input: OperationInput<C[N]>,
-    readOptions: { signal?: AbortSignal } = {}
+    readOptions: { signal?: AbortSignal }
   ): Promise<OperationOutput<C[N]>> {
     const operation = catalog[name]!
     if (operation.kind !== "read") throw new Error("Expected catalog read")
@@ -133,6 +133,13 @@ export function createCatalogClient<const C extends Record<string, Operation>>(
     return operation.publicResult.parse(unwrapData(body)) as OperationOutput<
       C[N]
     >
+  }
+  function read<N extends ReadName<C>>(
+    name: N,
+    input: OperationInput<C[N]>,
+    readOptions: { signal?: AbortSignal } = {}
+  ) {
+    return requestRead(name, input, readOptions)
   }
   function options<N extends ReadName<C>>(
     ownerId: string,
@@ -157,7 +164,23 @@ export function createCatalogClient<const C extends Record<string, Operation>>(
         read(name, input, { signal }),
     })
   }
-  async function run<N extends WriteName<C>>(
+  function run<N extends ReadName<C>>(
+    queryClient: QueryClient,
+    name: N,
+    input: OperationInput<C[N]>,
+    runOptions?: RunOptions
+  ): Promise<OperationOutput<C[N]>>
+  function run<N extends WriteName<C>>(
+    queryClient: QueryClient,
+    name: N,
+    input: OperationInput<C[N]>,
+    runOptions?: RunOptions
+  ): Promise<
+    | OperationOutput<C[N]>
+    | CommandResult<OperationOutput<C[N]>>
+    | z.output<typeof pendingSchema>
+  >
+  async function run<N extends ReadName<C> | WriteName<C>>(
     queryClient: QueryClient,
     name: N,
     input: OperationInput<C[N]>,
@@ -168,8 +191,7 @@ export function createCatalogClient<const C extends Record<string, Operation>>(
     | z.output<typeof pendingSchema>
   > {
     const operation = catalog[name]!
-    if (operation.kind !== "command")
-      throw new Error("Expected catalog command")
+    if (operation.kind === "read") return requestRead(name, input, runOptions)
     const body = await apiFetch<SuccessBody<unknown>>(
       endpoints.catalogCommand(name),
       {

@@ -113,6 +113,8 @@ flowchart TD
   p_apps_api_src_paper --> p_apps_api_src_paper_log
   p_apps_api_src_paper --> p_apps_api_src_paper_native_output
   p_apps_api_src_paper --> p_apps_api_src_paper_content
+  p_apps_api_src_paper --> p_apps_api_src_paper_pdf
+  p_apps_api_src_paper --> p_apps_api_src_paper_word
   p_apps_api_src_paper --> p_apps_api_src_registry
   p_apps_api_src_paper --> p_apps_api_src_db
   p_apps_api_src_paper --> p_apps_api_src_limits
@@ -218,7 +220,7 @@ flowchart TD
 | `apps/api/src/job` | feature | index.ts, operations | apps/api/src/registry, apps/api/src/db, apps/api/src/limits, apps/api/src/platform | none |
 | `apps/api/src/limits` | platform | index.ts | none | none |
 | `apps/api/src/mail` | platform | none | none | none |
-| `apps/api/src/paper` | feature | index.ts, operations | apps/api/src/paper/import, apps/api/src/paper/log, apps/api/src/paper/native-output, apps/api/src/paper/content, apps/api/src/registry, apps/api/src/db, apps/api/src/limits, apps/api/src/platform | none |
+| `apps/api/src/paper` | feature | index.ts, operations | apps/api/src/paper/import, apps/api/src/paper/log, apps/api/src/paper/native-output, apps/api/src/paper/content, apps/api/src/paper/pdf, apps/api/src/paper/word, apps/api/src/registry, apps/api/src/db, apps/api/src/limits, apps/api/src/platform | none |
 | `apps/api/src/paper/content` | feature | content-store.ts, native-admission.ts, read-paper.ts, rich-snapshot.ts | apps/api/src/db, apps/api/src/platform | none |
 | `apps/api/src/paper/import` | feature | import-parse.ts, import-text-pool.ts, import-word.ts, package-xml.ts, package-zip.ts, word-to-paper.ts | apps/api/src/platform | none |
 | `apps/api/src/paper/log` | feature | index.ts | apps/api/src/db, packages/paper-engine | none |

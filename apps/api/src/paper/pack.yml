@@ -7,6 +7,8 @@ dependencies:
     apps/api/src/paper/native-output,
     apps/api/src/paper/content,
     apps/api/src/paper/log,
+    apps/api/src/paper/pdf,
+    apps/api/src/paper/word,
     apps/api/src/registry,
     apps/api/src/db,
     apps/api/src/limits,

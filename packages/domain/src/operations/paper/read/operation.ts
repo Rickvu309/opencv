@@ -6,6 +6,7 @@ import {
   nativeProvenanceSchema,
   nativeWriterSchema,
 } from "../../../paper-doc/native.js"
+import { documentSchema } from "../../../paper-doc/engine-document.js"
 import { paperStoredKindSchema } from "../../../paper-doc/paper.js"
 
 export const operation = defineOperation({
@@ -27,10 +28,18 @@ export const operation = defineOperation({
           writer: nativeWriterSchema.optional(),
         })
         .strict(),
+      z.strictObject({ docId: z.uuid(), view: z.literal("engine") }),
       z.object({ docId: z.string().uuid() }).strict(),
     ])
     .meta({ type: "object" }),
   publicResult: z.union([
+    z.strictObject({
+      docId: z.uuid(),
+      name: z.string(),
+      kind: paperStoredKindSchema,
+      doc: documentSchema,
+      version: z.int().nonnegative(),
+    }),
     z
       .object({
         items: z

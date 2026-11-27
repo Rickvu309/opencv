@@ -79,12 +79,14 @@ export function PaperChrome({
   download,
   photoReason,
   onEditor,
+  onPrint,
   sync,
 }: {
   doc: Document
   title: string
   download: PaperDownload
   photoReason: string
+  onPrint?: () => void
   onEditor?: (editor: PaperEditor | null) => void
   sync?: ChromeSync
 }) {
@@ -149,7 +151,8 @@ export function PaperChrome({
     capture: true,
     stop: true,
     onPress: () => {
-      if ("start" in download) download.start("pdf")
+      if (onPrint) onPrint()
+      else if ("start" in download) download.start("pdf")
       else toast(download.reason)
     },
   })

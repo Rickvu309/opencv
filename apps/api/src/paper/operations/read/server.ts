@@ -4,6 +4,7 @@ import { operation } from "@workspace/domain/operations/paper/read"
 import type { OperationBinding } from "../../../registry/bind.js"
 import { readPaperDocumentInfo } from "../../document-info.js"
 import { enginePaperOrNull, readEngineOutline } from "../../engine-paper.js"
+import { readEnginePaper } from "../../engine-sync-log.js"
 import { readOutline } from "../../outline.js"
 import { listPapers } from "../../store.js"
 
@@ -27,8 +28,10 @@ export const implementation = {
       }
     }
     const docId = parsePaperId(input.docId)
-    if ("view" in input)
+    if ("view" in input) {
+      if (input.view === "engine") return readEnginePaper(actor.userId, docId)
       return readPaperDocumentInfo(actor.userId, docId, input.writer)
+    }
     const engine = await enginePaperOrNull(actor.userId, docId)
     if (engine)
       return {

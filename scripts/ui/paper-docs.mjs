@@ -1,3 +1,10 @@
+import { readFile } from "node:fs/promises"
+
+const CV_CORPUS = new URL(
+  "../../packages/paper-corpus/tests/fixtures/cvs/",
+  import.meta.url
+)
+
 const LETTER_NAME = /^(letter|thư)(\s|$)/i
 
 export function paperDocPlan({ count, names = [] }) {
@@ -25,7 +32,33 @@ async function command(page, apiOrigin, origin, name, input) {
   return body.data?.result ?? body.data ?? {}
 }
 
+async function importWord(page, apiOrigin, origin, fixture) {
+  const name = `${fixture}.docx`
+  const response = await page.request.post(
+    `${apiOrigin}/api/paper/import?engine=2`,
+    {
+      headers: { origin },
+      multipart: {
+        file: {
+          name,
+          mimeType:
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          buffer: await readFile(new URL(name, CV_CORPUS)),
+        },
+      },
+    }
+  )
+  const result = await response.json()
+  if (!response.ok() || !result.data?.docId)
+    throw new Error(`Paper import failed: ${JSON.stringify(result.error)}`)
+  await page.goto(`${origin}/paper-lab?paper=${result.data.docId}`, {
+    waitUntil: "domcontentloaded",
+  })
+}
+
 export async function seedPaperDocs(page, apiOrigin, origin, spec) {
+  if (spec.importWord)
+    return importWord(page, apiOrigin, origin, spec.importWord)
   for (const doc of paperDocPlan(spec)) {
     const created = await command(page, apiOrigin, origin, "paper.create", {
       kind: doc.label,

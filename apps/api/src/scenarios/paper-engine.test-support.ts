@@ -1,3 +1,5 @@
+import { readFile } from "node:fs/promises"
+
 import { dataOf, type Person } from "./person.test-support.js"
 
 export type Mark = { type: string; from: number; to: number; href?: string }
@@ -24,6 +26,29 @@ export type Layout = {
   work: { blocksLaidOut: number; pagesPaginated: number }
 }
 export type Exported = { contentType: string; base64: string }
+
+export async function importCorpus(person: Person, name: string, key?: string) {
+  const bytes = await readFile(
+    new URL(
+      `../../../../packages/paper-corpus/tests/fixtures/cvs/${name}.docx`,
+      import.meta.url
+    )
+  )
+  return importWord(person, `${name}.docx`, bytes, key)
+}
+
+export async function importWord(
+  person: Person,
+  name: string,
+  bytes: Uint8Array,
+  key?: string
+) {
+  const form = new FormData()
+  form.set("file", new Blob([new Uint8Array(bytes)]), name)
+  return dataOf<{ docId: string; dropped: string[] }>(
+    await person.upload("/api/paper/import?engine=2", form, key)
+  )
+}
 
 export const at = (block: string, offset: number): Pos => ({ block, offset })
 export const span = (block: string, from: number, to: number) => ({

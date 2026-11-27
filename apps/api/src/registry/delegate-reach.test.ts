@@ -152,7 +152,7 @@ describe("what a delegate can reach", () => {
         options: { shape: { view?: { value: string } } }[]
       }
     ).options.map((option) => option.shape.view?.value ?? "document")
-    expect(views.sort()).toEqual(["document", "info", "library"])
+    expect(views.sort()).toEqual(["document", "engine", "info", "library"])
     expect(paperRead.delegate).toEqual({ resource: "paper", access: "read" })
     for (const [grant, allowed] of [
       ["Paper read", true],
