@@ -46,10 +46,7 @@ export function createToolRefresher(queryClient: QueryClient) {
     }
     if (event.type !== "tool-result" || !event.ok) return
     if (!inputs.has(event.toolCallId)) return
-    if (event.pendingActionId) {
-      inputs.delete(event.toolCallId)
-      return refreshPaperSuggestions(queryClient)
-    }
+    if (event.pendingActionId) return refreshPaperSuggestions(queryClient)
     const input = inputs.get(event.toolCallId)
     inputs.delete(event.toolCallId)
     if (!adoptedCommand(event.name)) return
