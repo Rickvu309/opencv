@@ -12,5 +12,19 @@
     "class": "self",
     "classBecause": null,
     "items": 2
+  },
+  {
+    "subject": "apps/api/src/scenarios/paper-engine-audit.scenario.test.ts",
+    "because": "Engine 2 is now every Paper: a person's typing goes through the tab engine and paper.save, so undo is the tab history, and an imported Paper's text is read from the engine view; each row keeps its promise on the new page",
+    "replacedBy": "apps/api/src/scenarios/paper-engine-audit.scenario.test.ts",
+    "proof": {
+      "fork": "aec0255c7f614be83cc70e6d69406e4be634757c",
+      "replacedByBlob": "e7eac8f3d3ae6fbb5532b3b598fb5502ce8526de",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 1
   }
 ]
