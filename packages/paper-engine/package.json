@@ -15,12 +15,14 @@
     "test": "vitest run",
     "replay": "vitest run src/audit-replay.test.ts --silent=false --reporter=dot",
     "layout-svg": "tsx --conditions=opencv-source cli/layout-svg.ts",
-    "keystroke-bench": "tsx --conditions=opencv-source cli/keystroke-bench.ts"
+    "keystroke-bench": "tsx --conditions=opencv-source cli/keystroke-bench.ts",
+    "simulate": "vitest run src/two-tabs.model.test.ts --silent=false -t compaction"
   },
   "dependencies": {
     "@workspace/domain": "workspace:*",
     "@workspace/paper-fonts": "workspace:*",
     "linebreak": "1.1.0",
+    "prosemirror-collab": "1.3.1",
     "prosemirror-history": "1.5.1",
     "prosemirror-model": "1.25.12",
     "prosemirror-state": "1.4.4",

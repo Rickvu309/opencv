@@ -1,0 +1,6 @@
+{
+  "id": "paper-collab-pending-delete",
+  "file": "scripts/paper-collab-rebase.test.mjs",
+  "historic": null,
+  "reason": "The two-tab simulation found it while U5 was still uncommitted: the stock prosemirror-collab rebase widened a pending block delete over text another tab had already saved. The guard rejects the stock rebase import; packages/paper-engine/src/collab-rebase.test.ts replays the case."
+}
