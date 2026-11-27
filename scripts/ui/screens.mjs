@@ -31,6 +31,7 @@ const STEP_KINDS = new Set([
   "waitFor",
   "respond",
   "paperDocs",
+  "paperFirstPages",
 ])
 const ID = /^[a-z][a-z0-9-]*$/
 

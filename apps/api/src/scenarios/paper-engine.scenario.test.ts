@@ -1,8 +1,15 @@
-import { paperEngineBlank } from "@workspace/domain/paper-doc"
-import { createEngine, fixedClock, seededIds } from "@workspace/paper-engine"
+import { paperEngineBlank, type LayoutPage } from "@workspace/domain/paper-doc"
+import {
+  createEngine,
+  createLayouter,
+  fixedClock,
+  paperFontMetrics,
+  seededIds,
+} from "@workspace/paper-engine"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 
 import { createDemoCoachRuntime } from "../coach/index.js"
+import { engineLog } from "../paper/engine-sync-log.js"
 import { createPaperLog, postgresLogStore } from "../paper/log/index.js"
 import {
   dataOf,
@@ -379,5 +386,31 @@ describe("only the owner's tabs write, in server order", () => {
     expect(
       dataOf(await ada.read("paper.changes", { docId, since: 1 }))
     ).toEqual({ head: 2, changes: [undone.change] })
+  })
+
+  it("a saved Paper's library card carries its real first page (#2248)", async () => {
+    const ada = await world.person("Ada")
+    const docId = await enginePaper(ada)
+    const change = type(ada, "tab-a", "Ada Lovelace, engineer")
+    expect(
+      dataOf(
+        await ada.run("paper.save", {
+          docId,
+          client: "tab-a",
+          base: 0,
+          changes: [change],
+        })
+      )
+    ).toEqual({ ok: true, head: 1 })
+    await world.inside(() => engineLog.flushFirstPage(docId))
+    const listed = dataOf<{ id: string; firstPage?: LayoutPage }[]>(
+      await ada.read("paper.list", {})
+    )
+    const { doc } = await stored(docId)
+    const expected = createLayouter(paperFontMetrics).layout(doc, null)
+      .pages[0]!
+    expect(listed.find((row) => row.id === docId)?.firstPage).toEqual(
+      JSON.parse(JSON.stringify(expected)) as LayoutPage
+    )
   })
 })
