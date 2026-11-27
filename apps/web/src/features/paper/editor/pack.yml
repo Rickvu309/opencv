@@ -1,4 +1,4 @@
 layer: feature
 dependencies:
   [packages/paper-engine, packages/domain/src/paper-doc, packages/paper-corpus]
-public: [paper-editor.ts, lab-documents.ts]
+public: [paper-editor.ts, lab-documents.ts, thumbnail.ts]

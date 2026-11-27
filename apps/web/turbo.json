@@ -8,6 +8,7 @@
         ".env*",
         "$TURBO_ROOT$/apps/api/src/**",
         "$TURBO_ROOT$/packages/paper-corpus/tests/fixtures/clipboard/**",
+        "$TURBO_ROOT$/packages/paper-corpus/tests/fixtures/cvs/**",
         "$TURBO_ROOT$/scripts/lib/design-css-tokens.mjs",
         "$TURBO_ROOT$/scripts/lib/use-read-owner.mjs",
         "$TURBO_ROOT$/scripts/ui/rich-document-answer.mjs",

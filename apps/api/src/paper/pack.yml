@@ -3,6 +3,7 @@ public: [index.ts, operations]
 dependencies:
   [
     apps/api/src/paper/import,
+    apps/api/src/paper/log,
     apps/api/src/paper/native-output,
     apps/api/src/paper/content,
     apps/api/src/registry,

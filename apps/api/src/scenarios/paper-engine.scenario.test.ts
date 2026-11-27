@@ -1,7 +1,15 @@
 import { delegateActorSchema } from "@workspace/domain/kernel"
+import type { LayoutPage } from "@workspace/domain/paper-doc"
+import { createLayouter, paperFontMetrics } from "@workspace/paper-engine"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 
 import { agentConnections, oauthClient } from "../db/schema.js"
+import {
+  createPaperLog,
+  keepFirstPage,
+  postgresLogStore,
+} from "../paper/log/index.js"
+import { serverEngine, writer } from "../paper/log/log.test-support.js"
 import { createId } from "../platform/id.js"
 import {
   dataOf,
@@ -494,4 +502,35 @@ describe("only the owner's tabs write, in server order", () => {
       expect(texts(await paper.outline(ada, docId))).toEqual(["Data Analyst"])
     }
   )
+
+  it("a saved Paper's library card carries its real first page (#2248)", async () => {
+    const ada = await world.person("Ada")
+    const made = dataOf<{ id: string }>(
+      await ada.run("paper.create", { kind: "cv", name: "Engine CV" })
+    )
+    const tab = writer("scenario-first-page")
+    const log = keepFirstPage(
+      createPaperLog({ store: postgresLogStore, engine: serverEngine }),
+      { debounce: () => {} }
+    )
+    await world.inside(async () => {
+      await log.start(made.id, tab.start)
+      await log.append(made.id, tab.type("Ada Lovelace", 0))
+      await log.append(made.id, tab.type(", engineer", 12))
+      await log.flushFirstPage(made.id)
+    })
+    const listed = dataOf<{ id: string; firstPage?: LayoutPage }[]>(
+      await ada.read("paper.list", {})
+    )
+    const mine = listed.find((row) => row.id === made.id)
+    expect(mine).toMatchObject({ id: made.id, name: "Engine CV" })
+    const head = await world.inside(() => log.head(made.id))
+    expect("refusal" in head || "missing" in head).toBe(false)
+    if ("refusal" in head || "missing" in head) return
+    const expected = createLayouter(paperFontMetrics).layout(head.doc, null)
+      .pages[0]!
+    expect(mine?.firstPage).toEqual(
+      JSON.parse(JSON.stringify(expected)) as LayoutPage
+    )
+  })
 })
