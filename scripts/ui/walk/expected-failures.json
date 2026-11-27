@@ -1,0 +1,17 @@
+{
+  "select-all-end-type": "#2202",
+  "select-all-arrow-right-type": "#2202",
+  "list-enter-continues": "#2202",
+  "list-tab-nests": "#2202",
+  "list-empty-enter-ends": "#2202",
+  "paste-rich-word": "#2202",
+  "paste-rich-docs": "#2202",
+  "paste-rich-web": "#2202",
+  "paste-plain-lines": "#2202",
+  "bold-three-paragraphs": "#2202",
+  "undo-after-paste": "#2202",
+  "pdf-download": "#2202",
+  "print-only-page": "#2202",
+  "page-default-a4": "#2202",
+  "word-keeps-headings-links": "#2202"
+}

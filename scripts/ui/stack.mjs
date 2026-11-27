@@ -378,6 +378,70 @@ export async function up(ctx, { port } = {}) {
   return { reused: false, state: startFiller(ctx, state) }
 }
 
+export async function serveProductionWeb(ctx) {
+  const state = await liveState(ctx)
+  if (!state)
+    throw new Error(
+      "no running app for this worktree: run node scripts/ui.mjs up"
+    )
+  if (state.webBuild === "production") return state
+  const out = join(state.dir, "web-production")
+  const log = join(state.dir, "web-production.log")
+  ctx.fs.write(log, "")
+  const env = {
+    ...ctx.env,
+    VITE_API_URL: state.apiOrigin,
+    PORT: String(state.apiPort),
+  }
+  const built = await ctx.proc.run(
+    "pnpm",
+    [
+      "--dir",
+      "apps/web",
+      "exec",
+      "vite",
+      "build",
+      "--outDir",
+      out,
+      "--emptyOutDir",
+    ],
+    { cwd: ctx.repo, env, log, timeoutMs: BUILD_DEADLINE_MS }
+  )
+  if (built !== 0)
+    throw new Error(`the production web build failed (log ${log})`)
+  const [apiPid, devPid] = state.pids
+  await stopPids(ctx, [devPid])
+  const webPid = ctx.proc.start(
+    "pnpm",
+    [
+      "--dir",
+      "apps/web",
+      "exec",
+      "vite",
+      "preview",
+      "--outDir",
+      out,
+      "--port",
+      String(state.webPort),
+      "--strictPort",
+    ],
+    { cwd: ctx.repo, env, log }
+  )
+  const next = { ...state, pids: [apiPid, webPid], webBuild: "production" }
+  ctx.fs.write(join(state.dir, "state.json"), JSON.stringify(next, null, 2))
+  ctx.fs.write(
+    portClaimFile(ctx.scratchRoot, state.apiPort),
+    JSON.stringify({ pids: next.pids, dir: state.dir })
+  )
+  await waitUntil(
+    ctx,
+    () => healthy(ctx, `${state.webOrigin}/`),
+    START_DEADLINE_MS,
+    `production web (log ${log})`
+  )
+  return next
+}
+
 export async function down(ctx) {
   const state = readState(ctx)
   if (!state) return { stopped: [] }

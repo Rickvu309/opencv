@@ -4,6 +4,7 @@ import { UsageError, parseArgs, positiveIntegers } from "./args.mjs"
 import { measure, openScreen, slotSelectors } from "./capture.mjs"
 import { SCREENS, pickScreens, shotName } from "./screens.mjs"
 import { down, liveState, up } from "./stack.mjs"
+import { WALK_COMMAND } from "./walk/command.mjs"
 
 export const EXIT = Object.freeze({ ok: 0, failed: 1, usage: 2 })
 export const json = (value) => JSON.stringify(value)
@@ -171,6 +172,7 @@ export const COMMANDS = {
     },
   },
   sweep: SWEEP_COMMAND,
+  walk: WALK_COMMAND,
 }
 
 export function renderHelp() {
