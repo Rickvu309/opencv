@@ -57,6 +57,21 @@ const FILE_SIZE_LIMIT_BYTES = 20000
 
 const split = (out) => out.split("\0").filter(Boolean)
 
+export function commitReachability(ctx, head) {
+  const seen = new Map()
+  return (hash) => {
+    if (!seen.has(hash))
+      seen.set(
+        hash,
+        [head, "origin/main"].some(
+          (ref) =>
+            run(ctx, "git", ["merge-base", "--is-ancestor", hash, ref]).ok
+        )
+      )
+    return seen.get(hash)
+  }
+}
+
 export function changedFiles(ctx, listed, base, head) {
   const bothSidesOfEachRename = git(
     ctx,

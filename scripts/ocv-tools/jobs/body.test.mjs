@@ -26,6 +26,39 @@ test("body keeps the closing line when the new note lacks it", () => {
   assert.equal(f.effects("gh", "pr edit")[0].args[2], "91")
 })
 
+test("body checks citations against the edited pull's head and main", () => {
+  const f = fixture({
+    intercept(cmd, args) {
+      if (
+        cmd === "git" &&
+        args[0] === "merge-base" &&
+        args[1] === "--is-ancestor"
+      ) {
+        const [, , hash, ref] = args
+        const ok =
+          (hash === "ab12345" && ref === "head-1") ||
+          (hash === "cd23456" && ref === "origin/main")
+        return { ok, out: "", err: "" }
+      }
+      return editOk(cmd, args)
+    },
+  })
+  const note = `${f.ctx.cwd}/note.md`
+  f.ctx.writeFile(note, `${BODY}\nMeasured at ab12345 and on cd23456.\n`)
+  const accepted = f.call("body", "91", "--body-file", "note.md")
+  assert.equal(accepted.code, 0, accepted.text)
+  assert.equal(f.effects("gh", "pr edit").length, 1)
+
+  f.ctx.writeFile(note, `${BODY}\nMeasured at \`ef34567\`.\n`)
+  const refused = f.call("body", "91", "--body-file", "note.md")
+  assert.equal(refused.code, 2, refused.text)
+  assert.equal(
+    refused.text.split("\n")[0],
+    "REFUSED BAD_BODY: Line 6 cites commit ef34567, which is on neither this branch nor origin/main. Measure again at the head or drop the hash."
+  )
+  assert.equal(f.effects("gh", "pr edit").length, 1)
+})
+
 test("body refuses to remove the screenshot section from a screen pull request", () => {
   const f = fixture({
     intercept: editOk,

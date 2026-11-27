@@ -7,7 +7,7 @@ import { throwPushFailure } from "../push-failure.mjs"
 import { Refused } from "../result.mjs"
 import { closesIssue } from "../rules/pull-ref.mjs"
 import { migrationFacts } from "./migration-facts.mjs"
-import { changedFiles } from "./pull-facts.mjs"
+import { changedFiles, commitReachability } from "./pull-facts.mjs"
 import { retiredLines } from "../rules/protected.mjs"
 import { autoMergeWhenGreen } from "./merge.mjs"
 import {
@@ -110,7 +110,11 @@ export function finish(ctx, { flags }) {
       .replace(/\.$/, "")
     const title = `${t.type}: ${desc.charAt(0).toLowerCase()}${desc.slice(1)} (#${t.n})`
     const body = withClosingLine(written.text, t.n)
-    const bodyFileFacts = { ...written, text: body }
+    const bodyFileFacts = {
+      ...written,
+      text: body,
+      isCommitReachable: commitReachability(ctx, "HEAD"),
+    }
     if (flags["--dry-run"]) {
       const checked = decide("body", {
         body: bodyFileFacts,
