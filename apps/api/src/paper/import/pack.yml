@@ -1,3 +1,10 @@
 layer: feature
-public: [import-parse.ts, import-text-pool.ts, import-word.ts, word-to-paper.ts]
+public:
+  [
+    import-parse.ts,
+    import-text-pool.ts,
+    import-word.ts,
+    package-xml.ts,
+    word-to-paper.ts,
+  ]
 dependencies: [apps/api/src/platform]
