@@ -68,5 +68,19 @@
     "class": "self",
     "classBecause": null,
     "items": 5
+  },
+  {
+    "subject": "apps/api/src/coach/coach-starts-paper.test.ts",
+    "because": "Every way of making a Paper now makes a new-engine Paper (paper.start, paper.duplicate, imports, the Word page conversion), so these checks read the engine page and its snapshot instead of the engine-1 rich columns",
+    "replacedBy": "apps/api/src/coach/coach-starts-paper.test.ts",
+    "proof": {
+      "fork": "aec0255c7f614be83cc70e6d69406e4be634757c",
+      "replacedByBlob": "1c416f8f41e9bb4d20fccf4ba3e29b94afd3a74e",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 1
   }
 ]
