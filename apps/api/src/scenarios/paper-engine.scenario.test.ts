@@ -1,5 +1,5 @@
 import { delegateActorSchema } from "@workspace/domain/kernel"
-import { paperEngineBlank } from "@workspace/domain/paper-doc"
+import { paperEngineBlank, type Document } from "@workspace/domain/paper-doc"
 import { createEngine, fixedClock, seededIds } from "@workspace/paper-engine"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 
@@ -415,10 +415,12 @@ describe("only the owner's tabs write, in server order", () => {
   it("opens a new engine Paper at its head for its owner only", async () => {
     const ada = await world.person("Ada")
     const grace = await world.person("Grace")
-    const { id: docId } = dataOf(
+    const { id: docId } = dataOf<{ id: string }>(
       await ada.run("paper.create", { kind: "cv", engine: 2 })
     )
-    const opened = dataOf(await ada.read("paper.head", { docId }))
+    const opened = dataOf<{ doc: Document; version: number }>(
+      await ada.read("paper.head", { docId })
+    )
     expect(opened.version).toBe(0)
     expect(opened.doc.content).toHaveLength(1)
     expect(JSON.stringify(opened.doc)).not.toContain("Kept")
@@ -436,7 +438,9 @@ describe("only the owner's tabs write, in server order", () => {
         })
       )
     ).toEqual({ ok: true, head: 1 })
-    const head = dataOf(await ada.read("paper.head", { docId }))
+    const head = dataOf<{ doc: Document; version: number }>(
+      await ada.read("paper.head", { docId })
+    )
     expect(head.version).toBe(1)
     expect(JSON.stringify(head.doc)).toContain("Kept")
   })
