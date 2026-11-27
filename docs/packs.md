@@ -35,6 +35,7 @@ flowchart TD
     p_apps_web_src_features_landing["apps/web/src/features/landing"]
     p_apps_web_src_features_paper["apps/web/src/features/paper"]
     p_apps_web_src_features_paper_page["apps/web/src/features/paper-page"]
+    p_apps_web_src_features_paper_editor["apps/web/src/features/paper/editor"]
     p_apps_web_src_features_paper_rich_editor["apps/web/src/features/paper/rich-editor"]
     p_apps_web_src_features_seed["apps/web/src/features/seed"]
     p_apps_web_src_features_settings["apps/web/src/features/settings"]
@@ -135,6 +136,7 @@ flowchart TD
   p_apps_web_src --> p_apps_web_src_features_inbox
   p_apps_web_src --> p_apps_web_src_features_landing
   p_apps_web_src --> p_apps_web_src_features_paper
+  p_apps_web_src --> p_apps_web_src_features_paper_editor
   p_apps_web_src --> p_apps_web_src_features_paper_rich_editor
   p_apps_web_src --> p_apps_web_src_features_paper_page
   p_apps_web_src --> p_apps_web_src_features_seed
@@ -176,6 +178,9 @@ flowchart TD
   p_apps_web_src_features_paper --> p_apps_web_src_components
   p_apps_web_src_features_paper_page --> p_apps_web_src_lib
   p_apps_web_src_features_paper_page --> p_apps_web_src_components
+  p_apps_web_src_features_paper_editor --> p_packages_paper_engine
+  p_apps_web_src_features_paper_editor --> p_packages_domain_src_paper_doc
+  p_apps_web_src_features_paper_editor --> p_packages_paper_corpus
   p_apps_web_src_features_paper_rich_editor --> p_apps_web_src_features_paper
   p_apps_web_src_features_paper_rich_editor --> p_apps_web_src_features_paper_page
   p_apps_web_src_features_paper_rich_editor --> p_apps_web_src_features_coach
@@ -219,7 +224,7 @@ flowchart TD
 | `apps/api/src/paper/word` | feature | read-docx.ts, write-docx.ts | apps/api/src/paper/import | none |
 | `apps/api/src/platform` | platform | none | none | none |
 | `apps/api/src/registry` | kernel | none | apps/api/src/db, apps/api/src/limits, apps/api/src/platform | none |
-| `apps/web/src` | app | none | apps/web/src/features/app-shell, apps/web/src/features/apply, apps/web/src/features/auth, apps/web/src/features/coach, apps/web/src/features/coming-soon, apps/web/src/features/command-palette, apps/web/src/features/connections, apps/web/src/features/inbox, apps/web/src/features/landing, apps/web/src/features/paper, apps/web/src/features/paper/rich-editor, apps/web/src/features/paper-page, apps/web/src/features/seed, apps/web/src/features/settings, apps/web/src/lib, apps/web/src/components | none |
+| `apps/web/src` | app | none | apps/web/src/features/app-shell, apps/web/src/features/apply, apps/web/src/features/auth, apps/web/src/features/coach, apps/web/src/features/coming-soon, apps/web/src/features/command-palette, apps/web/src/features/connections, apps/web/src/features/inbox, apps/web/src/features/landing, apps/web/src/features/paper, apps/web/src/features/paper/editor, apps/web/src/features/paper/rich-editor, apps/web/src/features/paper-page, apps/web/src/features/seed, apps/web/src/features/settings, apps/web/src/lib, apps/web/src/components | none |
 | `apps/web/src/components` | platform | none | apps/web/src/lib | none |
 | `apps/web/src/features/app-shell` | shell | app-shell-layout.tsx, not-found-page.tsx | apps/web/src/features/apply, apps/web/src/features/auth, apps/web/src/features/coach, apps/web/src/features/command-palette, apps/web/src/features/inbox, apps/web/src/features/paper, apps/web/src/features/seed, apps/web/src/lib, apps/web/src/components | none |
 | `apps/web/src/features/apply` | feature | apply-api.ts, apply-board-empty.tsx, apply-board.tsx, apply-calendar.tsx, apply-job-detail.tsx, apply-list.tsx, apply-new-job-dialog.tsx, apply-next-up-strip.tsx, apply-peek.tsx, apply-search.ts, apply-stages.ts, apply-toolbar.tsx | apps/web/src/lib, apps/web/src/components | none |
@@ -232,6 +237,7 @@ flowchart TD
 | `apps/web/src/features/landing` | feature | about/about-page.tsx, blog/blog-copy.ts, blog/blog-index.tsx, blog/blog-post.tsx, help/help-page.tsx, landing-page.tsx, landing-pricing.tsx, landing-stories-page.tsx | apps/web/src/lib, apps/web/src/components | none |
 | `apps/web/src/features/paper` | feature | paper-api.ts, paper-library.tsx, paper-templates.ts, document-share.tsx, design/paper-writing-page.css, paper-letter-stopped-rich.tsx | apps/web/src/features/apply, apps/web/src/features/coach, apps/web/src/features/paper-page, apps/web/src/features/seed, apps/web/src/lib, apps/web/src/components | none |
 | `apps/web/src/features/paper-page` | feature | document-chrome.tsx | apps/web/src/lib, apps/web/src/components | none |
+| `apps/web/src/features/paper/editor` | feature | paper-editor.ts, lab-documents.ts | packages/paper-engine, packages/domain/src/paper-doc, packages/paper-corpus | none |
 | `apps/web/src/features/paper/rich-editor` | feature | rich-page.tsx | apps/web/src/features/paper, apps/web/src/features/paper-page, apps/web/src/features/coach, apps/web/src/lib, apps/web/src/components | none |
 | `apps/web/src/features/seed` | feature | sample-author.ts | apps/web/src/lib, apps/web/src/components | none |
 | `apps/web/src/features/settings` | feature | account-section.tsx, billing-section.tsx, coach-section.tsx, integrations-section.tsx, preferences-section.tsx, sections.ts, settings-api.ts, settings-layout.tsx, settings-nav.tsx, usage-section.tsx | apps/web/src/features/auth, apps/web/src/features/connections, apps/web/src/lib, apps/web/src/components | none |
@@ -243,7 +249,7 @@ flowchart TD
 | `packages/domain/src/control` | platform | public.ts, control.ts | none | none |
 | `packages/domain/src/inbox` | platform | public.ts, index.ts | packages/domain/src/apply | none |
 | `packages/domain/src/paper-doc` | platform | public.ts, index.ts, paper.ts, paper-contract.ts, paper-contract-views.ts, paper-diff.ts, paper-rich-edit.ts, paper-start.ts, paper-page-scale.ts, paper-presentation.ts | none | none |
-| `packages/paper-corpus` | platform | none | none | none |
+| `packages/paper-corpus` | platform | tests/fixtures/cvs/en-10.expected.json, tests/fixtures/cvs/vi-01.expected.json | none | none |
 | `packages/paper-engine` | platform | src/index.ts | packages/domain/src/paper-doc, packages/paper-engine/src/layout | none |
 | `packages/paper-engine/src/layout` | platform | index.ts | packages/domain/src/paper-doc, packages/paper-fonts | none |
 | `packages/paper-fonts` | platform | fonts.json, metrics | none | none |

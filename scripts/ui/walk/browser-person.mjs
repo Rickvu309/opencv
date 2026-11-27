@@ -9,6 +9,7 @@ import {
   keystrokeStats,
   lineStart,
 } from "./keystrokes.mjs"
+import { LAB_SURFACE, labKeystrokeTiming } from "./lab-surface.mjs"
 import { wordBytesFacts } from "./word-file.mjs"
 
 const FIXTURES = new URL("../fixtures/", import.meta.url)
@@ -128,7 +129,19 @@ const twoFrames = () =>
     requestAnimationFrame(() => requestAnimationFrame(resolve))
   )
 
-function tab(page) {
+const RICH_SURFACE = {
+  name: "rich",
+  page: PAGE,
+  line: PARAGRAPH,
+  ready: PAGE,
+  blocksInPage,
+  caretInPage,
+  pointer: {},
+}
+
+export const SURFACES = { rich: RICH_SURFACE, lab: LAB_SURFACE }
+
+function tab(page, surface = RICH_SURFACE) {
   const settle = async (ms = SETTLE_MS) => {
     await page.evaluate(twoFrames)
     await page.waitForTimeout(ms)
@@ -163,43 +176,49 @@ function tab(page) {
       await settle(PASTE_SETTLE_MS)
     },
     pause: (ms) => page.waitForTimeout(ms),
-    blocks: () => page.evaluate(blocksInPage, PAGE),
+    blocks: () => page.evaluate(surface.blocksInPage, surface.page),
     tapPage: async () => {
       await page
-        .locator(PARAGRAPH)
+        .locator(surface.line)
         .filter({ visible: true })
         .last()
-        .tap({ timeout: STEP_MS })
+        .tap({ timeout: STEP_MS, ...surface.pointer })
       await settle()
     },
-    caretInPage: () => page.evaluate(caretInPage, PAGE),
+    caretInPage: () => page.evaluate(surface.caretInPage, surface.page),
     waitForText: (text, ms) =>
       page
         .waitForFunction(
           ([selector, wanted]) =>
             document.querySelector(selector)?.innerText.includes(wanted),
-          [PAGE, text],
+          [surface.page, text],
           { timeout: ms }
         )
         .catch(() => null),
     typeAtEnd: async (text) => {
       await page
-        .locator(PARAGRAPH)
+        .locator(surface.line)
         .filter({ visible: true })
         .last()
-        .click({ timeout: STEP_MS })
+        .click({ timeout: STEP_MS, ...surface.pointer })
       await page.keyboard.press("Control+End")
       await page.keyboard.type(text)
       await settle()
     },
     waitForEditor: async () => {
-      await page.locator(PAGE).first().waitFor({ timeout: PAGE_MS })
+      await page.locator(surface.ready).first().waitFor({ timeout: PAGE_MS })
       await page.waitForTimeout(OPEN_SETTLE_MS)
     },
   }
 }
 
-export function browserPerson({ browser, state, account, shotsDir }) {
+export function browserPerson({
+  browser,
+  state,
+  account,
+  shotsDir,
+  surface = RICH_SURFACE,
+}) {
   let context = null
   let current = null
   const newContext = async (options = {}) => {
@@ -232,7 +251,7 @@ export function browserPerson({ browser, state, account, shotsDir }) {
     currentPage: () => page(),
     begin: async () => {
       context = await newContext()
-      current = tab(await context.newPage())
+      current = tab(await context.newPage(), surface)
     },
     end: async (row) => {
       await page()
@@ -243,6 +262,17 @@ export function browserPerson({ browser, state, account, shotsDir }) {
       current = null
     },
     openBlankCv: async () => {
+      if (surface !== RICH_SURFACE) {
+        await page().goto(`${state.webOrigin}${state.route}?doc=blank`, {
+          waitUntil: "domcontentloaded",
+        })
+        await current.waitForEditor()
+        await page()
+          .locator(surface.line)
+          .last()
+          .click({ timeout: STEP_MS, ...surface.pointer })
+        return
+      }
       await page().goto(`${state.webOrigin}${state.route ?? "/paper"}`, {
         waitUntil: "domcontentloaded",
       })
@@ -340,7 +370,7 @@ export function browserPerson({ browser, state, account, shotsDir }) {
         deviceScaleFactor: 3,
       })
       try {
-        const phone = tab(await phoneContext.newPage())
+        const phone = tab(await phoneContext.newPage(), surface)
         await phone.page.goto(page().url(), { waitUntil: "domcontentloaded" })
         await phone.waitForEditor()
         return await work(phone)
@@ -349,7 +379,7 @@ export function browserPerson({ browser, state, account, shotsDir }) {
       }
     },
     inTwoTabs: async (work) => {
-      const second = tab(await context.newPage())
+      const second = tab(await context.newPage(), surface)
       try {
         await second.page.goto(page().url(), { waitUntil: "domcontentloaded" })
         await second.waitForEditor()
@@ -369,7 +399,19 @@ export async function keystrokeTiming({
   account,
   build,
   shotsDir,
+  surface = RICH_SURFACE,
 }) {
+  if (surface !== RICH_SURFACE) {
+    const context = await browser.newContext({ viewport: DESK })
+    try {
+      return {
+        build,
+        ...(await labKeystrokeTiming({ context, state, keys: PERF_KEYS })),
+      }
+    } finally {
+      await context.close()
+    }
+  }
   const person = browserPerson({ browser, state, account, shotsDir })
   await person.begin()
   try {
