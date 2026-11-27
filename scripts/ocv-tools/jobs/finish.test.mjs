@@ -1,7 +1,7 @@
 import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
 import test from "node:test"
-import { BODY, fixture } from "./fixture.mjs"
+import { BODY, PROOF_TREE, fixture } from "./fixture.mjs"
 
 function uploadedBody(f) {
   const { args } = f.effects("gh", "pr create")[0]
@@ -145,6 +145,7 @@ test("finish rejects malformed body and missing flags", () => {
 test("finish and its dry run refuse a screen pull request without screenshots or a reason", () => {
   for (const flags of [[], ["--dry-run"]]) {
     const f = fixture({ changed: ["packages/ui/src/components/button.tsx"] })
+    f.ctx.writeFile(`${f.ctx.cwd}/body.md`, PROOF_TREE)
     const refused = finish(f, ...flags)
     assert.equal(refused.code, 2, refused.text)
     assert.match(refused.text, /REFUSED NO_BEFORE_AFTER/)
@@ -153,7 +154,7 @@ test("finish and its dry run refuse a screen pull request without screenshots or
 
     f.ctx.writeFile(
       `${f.ctx.cwd}/body.md`,
-      `${BODY}\n## Before / after\n\nNo visible change: The button markup moved unchanged.\n`
+      `${PROOF_TREE}\n## Before / after\n\nNo visible change: The button markup moved unchanged.\n`
     )
     const accepted = finish(f, ...flags)
     assert.equal(accepted.code, 0, accepted.text)

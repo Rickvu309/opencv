@@ -1,0 +1,44 @@
+[
+  {
+    "subject": "scripts/ocv-tools/rules/delivery.test.mjs > a body needs text on each lead line and a readable file",
+    "because": "D's rule adds a fifth problem: a fix body must open with a proof tree; the delivery test checks the exact refusal and the tree fixtures",
+    "replacedBy": "scripts/ocv-tools/rules/delivery.test.mjs",
+    "proof": {
+      "fork": "ca482fe8b739b39f5e4f53f48d8a3d5c0b6f1a58",
+      "replacedByBlob": "bf03cc1a907c545e77f37e335393fae2215958fe",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 1
+  },
+  {
+    "subject": "scripts/ocv-tools/rules/pr-body-fixtures/compliant-fix.txt",
+    "because": "D's rule adds a fifth problem: a fix body must open with a proof tree; the delivery test checks the exact refusal and the tree fixtures",
+    "replacedBy": "scripts/ocv-tools/rules/delivery.test.mjs",
+    "proof": {
+      "fork": "ca482fe8b739b39f5e4f53f48d8a3d5c0b6f1a58",
+      "replacedByBlob": "bf03cc1a907c545e77f37e335393fae2215958fe",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "owner",
+    "classBecause": "scripts/ocv-tools/rules/delivery.test.mjs shares no module, command or route with scripts/ocv-tools/rules/pr-body-fixtures/compliant-fix.txt",
+    "items": 1
+  },
+  {
+    "subject": "scripts/ocv-tools/rules/pr-body-fixtures/tree.txt",
+    "because": "D's rule adds a fifth problem: a fix body must open with a proof tree; the delivery test checks the exact refusal and the tree fixtures",
+    "replacedBy": "scripts/ocv-tools/rules/delivery.test.mjs",
+    "proof": {
+      "fork": "ca482fe8b739b39f5e4f53f48d8a3d5c0b6f1a58",
+      "replacedByBlob": "bf03cc1a907c545e77f37e335393fae2215958fe",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "owner",
+    "classBecause": "scripts/ocv-tools/rules/delivery.test.mjs shares no module, command or route with scripts/ocv-tools/rules/pr-body-fixtures/tree.txt",
+    "items": 1
+  }
+]

@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs"
 import assert from "node:assert/strict"
 import test from "node:test"
 import { decide, evaluate } from "./index.mjs"
@@ -10,8 +11,10 @@ const FILES = [
   "packages/ui/src/styles/globals.css",
 ]
 const TEST_FILE = "apps/web/src/features/paper/paper-library.test.tsx"
-const LEAD =
-  "**Now:** Paper cards show a preview.\n**Proof:** `node --test preview.test.mjs` 1 pass."
+const LEAD = readFileSync(
+  new URL("pr-body-fixtures/tree.txt", import.meta.url),
+  "utf8"
+)
 const SCREENSHOTS = "https://github.com/Rickvu309/opencv/releases/download"
 const PICTURE = `![Paper after](${SCREENSHOTS}/screenshots/paper.png)`
 const section = (content) => `${LEAD}\n\n## Before / after\n\n${content}\n`
@@ -123,7 +126,7 @@ test("a screen body with two pictures counts only non-empty lines", () => {
   const details = `<details><summary>Detail</summary>\n\n${"More detail.\n".repeat(26)}\n</details>`
   const text = `Closes #7\n\n${section(`${before}\n\n${PICTURE}`)}\n${details}`
   assert.deepEqual(decide("body", facts(text)).refusals, [])
-  const atLimit = `${text}\n\n${"Evidence note.\n\n".repeat(19)}`
+  const atLimit = `${text}\n\n${"Evidence note.\n\n".repeat(20)}`
   assert.deepEqual(decide("body", facts(atLimit)).refusals, [])
   const overLimit = decide("body", facts(`${atLimit}One more line.\n`))
   assert.equal(overLimit.refusals[0].id, "BAD_BODY")

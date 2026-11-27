@@ -33,11 +33,13 @@ const CASES = {
     {
       body: { file: "/b.md", text: "**Now:** Only this" },
       migrations: NO_MIGRATIONS,
+      diff: { files: [] },
       pull: { title: "feat: add a thing (#7)" },
     },
     {
       body: { file: "/b.md", text: BODY },
       migrations: NO_MIGRATIONS,
+      diff: { files: [] },
       pull: { title: "feat: add a thing (#7)" },
     },
     NEEDS_LEAD,
@@ -110,7 +112,7 @@ test("a body needs text on each lead line and a readable file", () => {
       ...body("**Now:** A fix.\n**Proof:** It works, see /home/me/log."),
       pull: { title: "fix: a thing (#7)" },
     }),
-    "4 problems. (1) The PR body names a path on your machine (/home/ or ~/tmp). Show the command and its result, or link a picture. (2) Proof needs a command with its result on the same line or in the output block under it (exit 0, N passed, 0 mismatches), an image, or a link to a CI run. (3) A fix needs a line: Caught by: user|ci|review|verify-skill|test|agent-self (4) A fix needs a line: Introduced by: <sha>|#<pr>|unknown"
+    "5 problems. (1) The PR body names a path on your machine (/home/ or ~/tmp). Show the command and its result, or link a picture. (2) Proof needs a command with its result on the same line or in the output block under it (exit 0, N passed, 0 mismatches), an image, or a link to a CI run. (3) Start with a bold answer and a <details> block holding the question and two to four lettered reasons. Write it with node .agents/skills/show-opencv/bin/logic.mjs tree.json. (4) A fix needs a line: Caught by: user|ci|review|verify-skill|test|agent-self (5) A fix needs a line: Introduced by: <sha>|#<pr>|unknown"
   )
   assert.equal(
     check({ body: { file: null, text: "" } }),
@@ -128,11 +130,17 @@ const fixture = (name) =>
 const badBody = (
   text,
   title = "feat: add a thing (#7)",
-  migrations = NO_MIGRATIONS
+  migrations = NO_MIGRATIONS,
+  files = []
 ) =>
   jobRows
     .find((r) => r.id === "BAD_BODY")
-    .check({ body: { file: "/b.md", text }, pull: { title }, migrations })
+    .check({
+      body: { file: "/b.md", text },
+      pull: { title },
+      migrations,
+      diff: { files },
+    })
 
 const withEvidence = (evidence) =>
   BODY.replace(
@@ -166,14 +174,15 @@ test("a fix or hotfix PR names who caught the bug and what introduced it", () =>
   const FIX = "fix: keep the photo (#7)"
   assert.match(badBody(BODY, FIX), /Caught by:/)
   assert.equal(badBody(BODY, "chore: tidy (#7)"), null)
-  const caught = `${BODY}\nCaught by: ci\n`
+  const tree = fixture("tree.txt")
+  const caught = `${tree}\nCaught by: ci\n`
   assert.match(badBody(caught, FIX), /Introduced by:/)
   assert.match(
     badBody(`${caught}Introduced by: someone\n`, FIX),
     /Introduced by:/
   )
   assert.match(
-    badBody(`${BODY}\nCaught by: nobody\nIntroduced by: #9\n`, FIX),
+    badBody(`${tree}\nCaught by: nobody\nIntroduced by: #9\n`, FIX),
     /Caught by:/
   )
   for (const introduced of ["#911", "unknown", "d29f8b87", "d29f8b87d29f8b87"])
@@ -185,6 +194,53 @@ test("a fix or hotfix PR names who caught the bug and what introduced it", () =>
       null,
       introduced
     )
+})
+
+test("fix and screen bodies need a proof tree next to the bold answer", () => {
+  const title = "fix: preview Paper cards (#7)"
+  const provenance = "\nCaught by: review\nIntroduced by: #911\n"
+  const command =
+    /node \.agents\/skills\/show-opencv\/bin\/logic\.mjs tree\.json/
+  const tree = fixture("tree.txt")
+
+  assert.match(badBody(BODY + provenance, title), command)
+  assert.equal(badBody(tree + provenance, title), null)
+  assert.equal(badBody(BODY, "feat: Add a check (#7)"), null)
+
+  const screen = ["apps/web/src/features/paper/paper-library-sections.tsx"]
+  const screenTitle = "feat: preview Paper cards (#7)"
+  assert.match(badBody(BODY, screenTitle, NO_MIGRATIONS, screen), command)
+  assert.equal(badBody(tree, screenTitle, NO_MIGRATIONS, screen), null)
+  assert.equal(
+    badBody(BODY, screenTitle, NO_MIGRATIONS, [
+      "packages/ui/src/button.test.tsx",
+    ]),
+    null
+  )
+
+  for (const malformed of [
+    tree.replace("sheet?*", "sheet.*"),
+    tree.replace("- **B.**", "  - **B.**"),
+    tree.replace("- **B.**", "- **C.**"),
+    tree.replace(
+      "</details>",
+      "- **C.** Third reason\n- **D.** Fourth reason\n- **E.** Fifth reason\n</details>"
+    ),
+    tree
+      .replace(
+        "<summary>Detail</summary>",
+        "<summary>Detail</summary>\n\n~~~markdown"
+      )
+      .replace("</details>", "~~~\n</details>"),
+    tree
+      .replace(
+        "<summary>Detail</summary>",
+        "<summary>Detail</summary>\n\n<details>"
+      )
+      .replace("</details>", "</details>\n</details>"),
+    tree.replace("<details>", "A public paragraph.\n\n<details>"),
+  ])
+    assert.match(badBody(malformed + provenance, title), command)
 })
 
 test("saved PR bodies: 487 and 915 are refused, a compliant fix passes", () => {

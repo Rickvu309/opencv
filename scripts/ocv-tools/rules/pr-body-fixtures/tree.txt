@@ -1,8 +1,16 @@
-**The check covers web tests.**
+**Paper cards now show the document's opening lines.**
 
 <details><summary>Detail</summary>
 
-- The web test config includes test files.
-- `pnpm typecheck`: exit 0.
+*Why did every Paper card show an empty sheet?*
+
+Verdict: Passed
+
+Split by reasons. Covers the cause and the fix.
+
+- **A.** Every card drew the same empty preview (Passed)
+  - [PR 2133](<https://github.com/Rickvu309/opencv/pull/2133>) (passed)
+- **B.** Each card now uses its own opening lines (Passed)
+  - [PR 2133](<https://github.com/Rickvu309/opencv/pull/2133/files>) (passed)
 
 </details>

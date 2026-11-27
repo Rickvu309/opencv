@@ -1,8 +1,14 @@
+import { readFileSync } from "node:fs"
 import { ctxFor, fakePorts } from "../ports/fake.mjs"
 import { runCli } from "../cli.mjs"
 
 export const BODY =
   "**Now:** A useful change.\n**Proof:** `node --test scripts/x.test.mjs`: 4 pass.\n"
+export const PROOF_TREE = readFileSync(
+  new URL("../rules/pr-body-fixtures/tree.txt", import.meta.url),
+  "utf8"
+)
+
 export function fixture(over = {}) {
   const s = {
     tree: "tree-1",
