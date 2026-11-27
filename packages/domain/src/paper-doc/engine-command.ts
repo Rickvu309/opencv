@@ -1,6 +1,6 @@
 import { z } from "zod"
 
-import { fileIdSchema } from "../ids.js"
+import { idResult, type FileId } from "../ids.js"
 import {
   alignSchema,
   blockIdSchema,
@@ -114,7 +114,7 @@ export const docCommandSchema = z.discriminatedUnion("op", [
   z.strictObject({
     op: z.literal("insertImage"),
     at: posSchema,
-    fileId: fileIdSchema,
+    fileId: idResult<FileId>(),
     widthMpt: positiveMptSchema,
     heightMpt: positiveMptSchema,
   }),

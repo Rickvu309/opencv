@@ -1,4 +1,10 @@
 layer: feature
 dependencies:
-  [packages/paper-engine, packages/domain/src/paper-doc, packages/paper-corpus]
-public: [paper-editor.ts, lab-documents.ts, thumbnail.ts]
+  [
+    packages/paper-engine,
+    packages/domain/src/paper-doc,
+    packages/paper-corpus,
+    apps/web/src/lib,
+  ]
+public:
+  [paper-editor.ts, lab-documents.ts, chrome/paper-chrome.tsx, thumbnail.ts]

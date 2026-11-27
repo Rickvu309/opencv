@@ -3,6 +3,7 @@ import type {
   DocCommand,
   Document,
   Origin,
+  Pos,
   Run,
 } from "@workspace/domain/paper-doc"
 
@@ -32,6 +33,24 @@ export const docText = (doc: Document) =>
     .join("")
 export const runsText = (runs: readonly Run[]) =>
   runs.map((run) => (run.type === "text" ? run.text : "")).join("")
+
+type Erased = (container: number, offset: number) => boolean
+
+function tokensTouched(doc: Document, erased: Erased) {
+  const chars = textContainers(doc).flatMap((container, index) =>
+    [...container.text].flatMap((char, offset) =>
+      char === "\n" ? [] : [erased(index, offset)]
+    )
+  )
+  const text = docText(doc)
+  return new Set(
+    [...text.matchAll(tokenPattern)]
+      .filter((match) =>
+        chars.slice(match.index, match.index + match[0].length).some(Boolean)
+      )
+      .map((match) => match[0])
+  )
+}
 
 export class Server {
   private engine = createEngine({ ids: seededIds("srv"), now: fixedClock() })
@@ -149,13 +168,15 @@ export class Tab {
     this.note(`${why}, recovered "${runsText(lost)}"`)
   }
 
-  edit(commands: DocCommand[], label: string) {
+  edit(commands: DocCommand[], label: string, erased?: Erased) {
     const before = tokensOf(docText(this.doc))
+    const touched = erased ? tokensTouched(this.doc, erased) : new Set<string>()
     const result = this.engine.run(this.state, commands, this.origin)
     if ("refusal" in result) return
     this.state = result.state
     const after = tokensOf(docText(this.doc))
     for (const token of before) if (!after.has(token)) this.deleted.add(token)
+    for (const token of touched) this.deleted.add(token)
     this.persist()
     this.note(`${label} -> "${docText(this.doc)}"`)
   }
@@ -178,7 +199,15 @@ export class Tab {
       globalOf(doc, to) < globalOf(doc, from)
         ? { from: to, to: from }
         : { from, to }
-    this.edit([{ op: "deleteRange", range }], "deletes a range")
+    const blocks = textContainers(doc).map((container) => container.block)
+    const at = (pos: Pos) => [blocks.indexOf(pos.block), pos.offset] as const
+    const [fromBlock, fromOffset] = at(range.from)
+    const [toBlock, toOffset] = at(range.to)
+    const erased = (container: number, offset: number) =>
+      (container > fromBlock ||
+        (container === fromBlock && offset >= fromOffset)) &&
+      (container < toBlock || (container === toBlock && offset < toOffset))
+    this.edit([{ op: "deleteRange", range }], "deletes a range", erased)
   }
 
   split(seed: number) {
@@ -190,8 +219,13 @@ export class Tab {
 
   dropBlock(seed: number) {
     const blocks = textContainers(this.doc)
-    const block = blocks[seed % blocks.length]!.block
-    this.edit([{ op: "deleteBlock", block }], `deletes block ${block}`)
+    const index = seed % blocks.length
+    const block = blocks[index]!.block
+    this.edit(
+      [{ op: "deleteBlock", block }],
+      `deletes block ${block}`,
+      (container) => container === index
+    )
   }
 
   push(server: Server) {

@@ -25,6 +25,7 @@ import {
   parseImportLink,
 } from "./import/import-parse.js"
 import { importedPaper } from "./import/import-word.js"
+import { createPaperChangesRoutes } from "./changes-http.js"
 import { createNativeWordRoutes } from "./native-word-http.js"
 import {
   IMPORT_FILE_CAP,
@@ -172,6 +173,7 @@ export function createPaperRoutes(signedIn: SignedIn) {
   routes.use("*", signedIn)
 
   routes.route("/", createNativeWordRoutes())
+  routes.route("/", createPaperChangesRoutes())
 
   routes.post("/letter-attachment", async (c) => {
     const uploaded = await readImportUpload(c)

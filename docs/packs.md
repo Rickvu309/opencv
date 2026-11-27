@@ -112,6 +112,7 @@ flowchart TD
   p_apps_api_src_paper --> p_apps_api_src_paper_import
   p_apps_api_src_paper --> p_apps_api_src_paper_native_output
   p_apps_api_src_paper --> p_apps_api_src_paper_content
+  p_apps_api_src_paper --> p_apps_api_src_paper_log
   p_apps_api_src_paper --> p_apps_api_src_registry
   p_apps_api_src_paper --> p_apps_api_src_db
   p_apps_api_src_paper --> p_apps_api_src_limits
@@ -181,6 +182,7 @@ flowchart TD
   p_apps_web_src_features_paper_editor --> p_packages_paper_engine
   p_apps_web_src_features_paper_editor --> p_packages_domain_src_paper_doc
   p_apps_web_src_features_paper_editor --> p_packages_paper_corpus
+  p_apps_web_src_features_paper_editor --> p_apps_web_src_lib
   p_apps_web_src_features_paper_rich_editor --> p_apps_web_src_features_paper
   p_apps_web_src_features_paper_rich_editor --> p_apps_web_src_features_paper_page
   p_apps_web_src_features_paper_rich_editor --> p_apps_web_src_features_coach
@@ -215,7 +217,7 @@ flowchart TD
 | `apps/api/src/job` | feature | index.ts, operations | apps/api/src/registry, apps/api/src/db, apps/api/src/limits, apps/api/src/platform | none |
 | `apps/api/src/limits` | platform | index.ts | none | none |
 | `apps/api/src/mail` | platform | none | none | none |
-| `apps/api/src/paper` | feature | index.ts, operations | apps/api/src/paper/import, apps/api/src/paper/native-output, apps/api/src/paper/content, apps/api/src/registry, apps/api/src/db, apps/api/src/limits, apps/api/src/platform | none |
+| `apps/api/src/paper` | feature | index.ts, operations | apps/api/src/paper/import, apps/api/src/paper/native-output, apps/api/src/paper/content, apps/api/src/paper/log, apps/api/src/registry, apps/api/src/db, apps/api/src/limits, apps/api/src/platform | none |
 | `apps/api/src/paper/content` | feature | content-store.ts, native-admission.ts, read-paper.ts, rich-snapshot.ts | apps/api/src/db, apps/api/src/platform | none |
 | `apps/api/src/paper/import` | feature | import-parse.ts, import-text-pool.ts, import-word.ts, package-xml.ts, package-zip.ts, word-to-paper.ts | apps/api/src/platform | none |
 | `apps/api/src/paper/log` | feature | index.ts | apps/api/src/db, packages/paper-engine | none |
@@ -237,7 +239,7 @@ flowchart TD
 | `apps/web/src/features/landing` | feature | about/about-page.tsx, blog/blog-copy.ts, blog/blog-index.tsx, blog/blog-post.tsx, help/help-page.tsx, landing-page.tsx, landing-pricing.tsx, landing-stories-page.tsx | apps/web/src/lib, apps/web/src/components | none |
 | `apps/web/src/features/paper` | feature | paper-api.ts, paper-library.tsx, paper-templates.ts, document-share.tsx, design/paper-writing-page.css, paper-letter-stopped-rich.tsx | apps/web/src/features/apply, apps/web/src/features/coach, apps/web/src/features/paper-page, apps/web/src/features/seed, apps/web/src/lib, apps/web/src/components | none |
 | `apps/web/src/features/paper-page` | feature | document-chrome.tsx | apps/web/src/lib, apps/web/src/components | none |
-| `apps/web/src/features/paper/editor` | feature | paper-editor.ts, lab-documents.ts | packages/paper-engine, packages/domain/src/paper-doc, packages/paper-corpus | none |
+| `apps/web/src/features/paper/editor` | feature | paper-editor.ts, lab-documents.ts, chrome/paper-chrome.tsx | packages/paper-engine, packages/domain/src/paper-doc, packages/paper-corpus, apps/web/src/lib | none |
 | `apps/web/src/features/paper/rich-editor` | feature | rich-page.tsx | apps/web/src/features/paper, apps/web/src/features/paper-page, apps/web/src/features/coach, apps/web/src/lib, apps/web/src/components | none |
 | `apps/web/src/features/seed` | feature | sample-author.ts | apps/web/src/lib, apps/web/src/components | none |
 | `apps/web/src/features/settings` | feature | account-section.tsx, billing-section.tsx, coach-section.tsx, integrations-section.tsx, preferences-section.tsx, sections.ts, settings-api.ts, settings-layout.tsx, settings-nav.tsx, usage-section.tsx | apps/web/src/features/auth, apps/web/src/features/connections, apps/web/src/lib, apps/web/src/components | none |

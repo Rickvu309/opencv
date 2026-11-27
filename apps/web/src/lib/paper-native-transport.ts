@@ -45,7 +45,7 @@ type PaperSave = (typeof catalog)["paper.save"]
 export type NativeSyncTransport = (
   queryClient: QueryClient,
   name: PaperSave["name"],
-  input: OperationInput<PaperSave>,
+  input: Extract<OperationInput<PaperSave>, { update: string }>,
   options: { refresh: false; signal: AbortSignal }
 ) => Promise<unknown>
 

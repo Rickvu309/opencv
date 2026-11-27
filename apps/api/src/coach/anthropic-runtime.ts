@@ -99,7 +99,11 @@ function advertisedInputSchema(name: string, input: z.ZodType) {
     z.toJSONSchema(input, { io: "input", reused: "ref" }),
     `Invalid tool schema: ${name}`
   )
-  if (schema.type !== "object") throw new Error(`Invalid tool schema: ${name}`)
+  const objectUnion =
+    input instanceof z.ZodUnion &&
+    input.options.every((option) => option instanceof z.ZodObject)
+  if (schema.type !== "object" && !objectUnion)
+    throw new Error(`Invalid tool schema: ${name}`)
   if (schema.$defs && typeof schema.$defs === "object") {
     const kept = defsStillUsed(schema, schema.$defs as JsonRecord)
     if (Object.keys(kept).length) schema.$defs = kept
