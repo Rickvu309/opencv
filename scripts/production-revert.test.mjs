@@ -210,7 +210,7 @@ test("prepare reverts the code, keeps every migration file, and sets the label a
   ])
   assert.match(
     fake.staged.body,
-    /Kept migrations: `apps\/api\/drizzle\/0001_b.sql`/
+    /^\*\*Risk:\*\* .*keeps the production schema, including apps\/api\/drizzle\/0001_b\.sql(?=[,.])/m
   )
   assert.equal(git(["rev-parse", "main"]).trim(), shas[2])
 })
@@ -300,10 +300,13 @@ test("the body states code only and no migration when the range has none", () =>
     commits: [{ sha: "c".repeat(40), subject: "fix: x (#1)" }],
     migrations: [],
   })
-  assert.match(body, /^## Summary/)
-  assert.match(body, /## Evidence/)
-  assert.match(body, /## Merge Danger\n\nNo migration in the reverted range/)
-  assert.match(body, /No visible change\./)
+  assert.match(body, /^\*\*Now:\*\* Restore the code/)
+  assert.match(body, /\*\*Proof:\*\* `git merge-base --is-ancestor .* exit 0/)
+  assert.match(body, /\*\*Risk:\*\* No migration in the reverted range/)
+  assert.match(
+    body,
+    /<details><summary>Reverted merges<\/summary>[\s\S]*fix: x \(#1\)/
+  )
 })
 
 test("git runs without inherited git variables, so a hook cannot point it at this repository", () => {

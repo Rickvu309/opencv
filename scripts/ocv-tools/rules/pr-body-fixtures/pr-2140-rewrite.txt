@@ -1,0 +1,10 @@
+**Now:** `pnpm typecheck` checks every web test, so a test that calls removed code or fakes data the contract rejects fails CI.
+**Proof:** `tsc -p apps/web/tsconfig.test.json` went from 362 errors on main to 0. Web `vitest run` passed 2,017 tests.
+
+Closes #2139
+
+<details><summary>Detail</summary>
+
+What changed, file by file.
+
+</details>

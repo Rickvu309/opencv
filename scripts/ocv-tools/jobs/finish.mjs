@@ -5,6 +5,9 @@ import { decide, refusalError } from "../rules/index.mjs"
 import { recordedProtectedFacts } from "./protected-facts.mjs"
 import { throwPushFailure } from "../push-failure.mjs"
 import { Refused } from "../result.mjs"
+import { closesIssue } from "../rules/pull-ref.mjs"
+import { migrationFacts } from "./migration-facts.mjs"
+import { changedFiles } from "./pull-facts.mjs"
 import { retiredLines } from "../rules/protected.mjs"
 import { autoMergeWhenGreen } from "./merge.mjs"
 import {
@@ -25,6 +28,16 @@ export function bodyOf(ctx, flag) {
   } catch {
     return { file, text: "", unreadable: true }
   }
+}
+
+export function withClosingLine(text, n) {
+  if (closesIssue(text, n)) return text
+  return `Closes #${n}\n\n${text}`
+}
+
+function branchMigrations(ctx) {
+  const base = git(ctx, "merge-base", "origin/main", "HEAD")
+  return migrationFacts(ctx, changedFiles(ctx, [], base, "HEAD"), "HEAD")
 }
 
 function autoMerge(ctx, n) {
@@ -95,23 +108,20 @@ export function finish(ctx, { flags }) {
       .trim()
       .replace(/\.$/, "")
     const title = `${t.type}: ${desc.charAt(0).toLowerCase()}${desc.slice(1)} (#${t.n})`
+    const body = withClosingLine(written.text, t.n)
+    const bodyFileFacts = { ...written, text: body }
     if (flags["--dry-run"]) {
-      const files = git(ctx, "diff", "--name-only", "origin/main...HEAD")
       const checked = decide("body", {
-        body: written,
-        pull: {
-          title,
-          issue: t.n,
-          body: `Closes #${t.n}\n\n${written.text}`,
-        },
-        diff: { files },
+        body: bodyFileFacts,
+        pull: { title, issue: t.n, body },
+        migrations: branchMigrations(ctx),
       })
       if (!checked.ok) throw refusalError(checked.refusals[0])
       return {
         lines: [
           "DRY RUN: the body passes. Nothing was pushed or opened, and the other finish rules did not run.",
           `Title: ${title}`,
-          `Closes #${t.n}\n\n${written.text}`,
+          body,
         ],
         next: "scripts/ocv-tools.mjs finish --body-file <file>",
       }
@@ -149,7 +159,6 @@ export function finish(ctx, { flags }) {
     }
     git(ctx, "fetch", "--quiet", "origin", "main")
     const current = stateHeldDuringPush(ctx, t)
-    const body = `Closes #${t.n}\n\n${written.text}`
     const facts = {
       pull: { issue: t.n, title, body, issueState: issue.state },
       issue: {
@@ -161,7 +170,8 @@ export function finish(ctx, { flags }) {
         count: Number(git(ctx, "rev-list", "--count", "origin/main..HEAD")),
       },
       here: { ok: true },
-      body: written,
+      body: bodyFileFacts,
+      migrations: branchMigrations(ctx),
       disk: problem ?? {},
       work: { path: t.top, dirty: current.dirty, force: false, finish: true },
       main,
@@ -174,7 +184,9 @@ export function finish(ctx, { flags }) {
     )
     const bodyFile = ctx.writeScratch(
       `finish/${t.n}-body.md`,
-      retiredNote.length ? `${body}\n\n${retiredNote.join("\n\n")}\n` : body
+      retiredNote.length
+        ? `${body.trimEnd()}\n\n<details><summary>Retired checks</summary>\n\n${retiredNote.join("\n\n")}\n\n</details>\n`
+        : body
     )
     const upload = run(ctx, "git", ["push", "-u", "origin", t.branch])
     if (!upload.ok) throwPushFailure(ctx, upload)

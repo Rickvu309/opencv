@@ -8,7 +8,7 @@ export const COMMANDS = [
   {
     name: "finish",
     usage: "finish --body-file <file> [-d <description>] [--draft] [--dry-run]",
-    when: "Run the pull request rules early, push through the hooks and open the PR (--draft opens a draft). Every problem in the body is named in one message. Unless the PR is a draft or blocked by the migration allow-label or production-red rules, it turns on auto-merge, so the PR merges by itself when ci is green; if GitHub refuses auto-merge, it says so in one line and the coordinator merges with merge <pr#>. --dry-run checks only the body, not the title, pushes nothing and opens nothing, so it works with unsaved changes.",
+    when: "Run the pull request rules early, push through the hooks and open the PR (--draft opens a draft). The body opens with **Now:** and **Proof:**, or a bold answer followed by a <details> block. Show a command and its result, an image, or a CI run. Use at most 25 non-empty lines outside details, including fenced code. A migration needs a **Risk:** line. Every problem in the body is named in one message. Unless the PR is a draft or blocked by the migration allow-label or production-red rules, it turns on auto-merge, so the PR merges by itself when ci is green; if GitHub refuses auto-merge, it says so in one line and the coordinator merges with merge <pr#>. --dry-run checks only the body, not the title, pushes nothing and opens nothing, so it works with unsaved changes.",
   },
   {
     name: "body",

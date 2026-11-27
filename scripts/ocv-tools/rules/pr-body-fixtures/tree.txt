@@ -1,0 +1,8 @@
+**The check covers web tests.**
+
+<details><summary>Detail</summary>
+
+- The web test config includes test files.
+- `pnpm typecheck`: exit 0.
+
+</details>

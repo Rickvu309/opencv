@@ -1,0 +1,35 @@
+Closes #2139
+
+## Summary
+
+Closes #2139. The web type check skipped every test file and the shared test helpers (`apps/web/tsconfig.app.json` excluded them), so tests could call removed code or fake results the real contract rejects. On main this hid 362 type errors in 71 files. Now:
+
+- **The check covers tests.** `apps/web/tsconfig.test.json` extends the app config and includes `src`. `apps/web/tsconfig.json` references it, so the existing `pnpm typecheck` (`tsc -b --noEmit`) and every CI job that runs it type-check tests. No workflow change.
+- **Internal domain subpaths type from source.** `@workspace/domain/internal/paper-presentation` and `paper-page-scale` resolved to `packages/domain/dist`, so code and tests could compile against stale built types. `tsconfig.app.json` now maps them to source like the other domain paths.
+- **Real faults the check found**, fixed at the source:
+  - Job preview mocks returned shapes the contract rejects (no `fields`, `location` or `description`), and `fullPreview` papered over them. The mocks now return valid previews, and `fullPreview` is gone.
+  - `mockJob` now parses through `jobViewSchema`, so fixtures with invalid ids fail. The board-drop property test used ids like `"c1"`.
+  - `setMockChats` dropped the `createdAt`/`updatedAt` that tests passed. It now keeps them.
+  - The marketing link check reported failures as `link: undefined`.
+  - A Coach chat test scripted a tool that does not exist (`paper.replace`).
+  - `coach-draft.ts` typed a browser timer id as a Node timer.
+- **Mechanical fixes.** Dropped `exact`/`hidden` options the testing library does not accept on those queries, plus stale fields (`focusKind`, `focusId`, `cardId`, `word`). Added required props (`onWritten`, `onReturnedToInbox`, `reversible`). Typed `this` and mock calls, and parsed branded ids.
+- **Removed** two Word page test cases (Word pages are gone since #2125). Each changed or removed check is recorded in `scripts/retired/2139.json`.
+
+## Evidence
+
+- `npx tsc --noEmit -p apps/web/tsconfig.test.json`: 362 errors on main, 0 here. `pnpm --filter web typecheck`: exit 0, and it now writes `tsconfig.test.tsbuildinfo`, so tests are part of the build.
+- Web `vitest run` (whole suite): 265 files pass, 1 skipped (2017 tests).
+- eslint is clean on the changed files. `node packages/guards/run-group.mjs ordinary`: green after re-proving `job-board-queue` (`node scripts/guard-ledger.mjs prove job-board-queue`: passes at HEAD). The branch judge passes.
+
+## Merge Danger
+
+**Door:** two-way.
+
+**Blast Radius:** the web typecheck (now includes tests), web test fixtures and helpers, one timer type in `coach-draft.ts`, and two internal domain path mappings.
+
+Low. Product behavior is unchanged apart from the timer type. A future test that drifts from the contract now fails the typecheck.
+
+
+Retired 46 checks without self-serve replacement proof: apps/web/src/features/app-shell/app-shell.dock-chips.test.tsx (no replacement test); apps/web/src/features/apply/apply-board-drops.property.test.ts (no replacement test); apps/web/src/features/coach/coach-draft-ownership.isolated.test.tsx (no replacement test); apps/web/src/features/coach/coach-workspace.isolated.test.tsx (no replacement test); apps/web/src/features/landing/help/help.test.tsx (no replacement test); apps/web/src/features/paper/paper-letter-stopped.test.tsx (no replacement test); apps/web/src/features/paper/paper-library-sections.test.tsx (no replacement test); apps/web/src/features/paper/paper-library.isolated.test.tsx (no replacement test); apps/web/src/features/paper/paper-print.test.ts (no replacement test); apps/web/src/features/paper/rich-editor/rich-page-lifecycle.isolated.test.tsx (no replacement test); apps/web/src/features/paper/rich-editor/rich-text-formatting.test.tsx (no replacement test); apps/web/src/test/surface-behavior.test.tsx (no replacement test)
+

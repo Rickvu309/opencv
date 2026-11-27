@@ -23,15 +23,12 @@ test("a merged pull request skips the pr rows and the ci check", () => {
   assert.equal(f.effects("gh", "pr merge").length, 0)
 })
 
-test("finish refuses a body with no Evidence section before any push", () => {
+test("finish refuses a body with no Proof line before any push", () => {
   const f = fixture()
-  f.ctx.writeFile(
-    `${f.ctx.cwd}/body.md`,
-    "## Summary\n\nA change.\n\n## Merge Danger\n\n**Door:** two-way\n**Blast Radius:** jobs\n"
-  )
+  f.ctx.writeFile(`${f.ctx.cwd}/body.md`, "**Now:** A change.\n")
   const r = f.call("finish", "--body-file", "body.md")
   assert.equal(r.code, 2, r.text)
-  assert.match(r.text, /REFUSED BAD_BODY: .*The PR body needs ## Evidence\./)
+  assert.match(r.text, /REFUSED BAD_BODY: .*\*\*Now:\*\*.*\*\*Proof:\*\*/)
   assert.equal(f.effects("git", "push").length, 0)
 })
 
@@ -54,12 +51,15 @@ test("a dry run checks only the body, so unsaved work does not stop it", () => {
 
 test("a dry run names every body problem in one message", () => {
   const f = fixture({ dirty: " M source.mjs" })
-  f.ctx.writeFile(`${f.ctx.cwd}/thin.md`, "## Summary\n\nOnly this\n")
+  f.ctx.writeFile(
+    `${f.ctx.cwd}/thin.md`,
+    "**Now:** Only this <screenshot>.\nLog at /home/me/log.\n"
+  )
   const r = f.call("finish", "--body-file", "thin.md", "--dry-run")
   assert.equal(r.code, 2, r.text)
   assert.match(
     r.text,
-    /REFUSED BAD_BODY: 3 problems\. \(1\) The PR body needs ## Evidence\. \(2\) The PR body needs ## Merge Danger\. \(3\) Fill in Door/
+    /REFUSED BAD_BODY: 3 problems\. \(1\) Start the PR body.*\*\*Proof:\*\*.*\(2\) Fill in all template placeholders\. \(3\) The PR body names a path on your machine/
   )
 })
 

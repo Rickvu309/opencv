@@ -1,0 +1,82 @@
+[
+  {
+    "subject": "scripts/ocv-tools/jobs/body.test.mjs",
+    "because": "Body edits are checked against the Now and Proof lead.",
+    "replacedBy": "scripts/ocv-tools/jobs/body.test.mjs",
+    "proof": {
+      "fork": "75e68a52a575ccd186baa480a387377915a67333",
+      "replacedByBlob": "67e2c6b2abe9ad62a21a1a11096390dabb64357b",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 2
+  },
+  {
+    "subject": "scripts/ocv-tools/rules/pr-body-fixtures/compliant-fix.txt",
+    "because": "The compliant fix fixture uses Now and Proof and retains both provenance lines.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/ocv-tools/rules/delivery.test.mjs",
+    "because": "The Now and Proof rule replaces the old section and Door checks.",
+    "replacedBy": "scripts/ocv-tools/rules/delivery.test.mjs",
+    "proof": {
+      "fork": "75e68a52a575ccd186baa480a387377915a67333",
+      "replacedByBlob": "123904ddb559e8c985eb06729fad1e2c84455f1a",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 7
+  },
+  {
+    "subject": "scripts/ocv-tools/rules/pr-body-fixtures/pr-915.txt",
+    "because": "The fixture uses Now and Proof so the test can isolate the missing provenance line.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/ocv-tools/rules/pr-body-fixtures/ui-no-visible-change.txt",
+    "because": "The earlier before-and-after rule was removed and this fixture has no readers.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/ocv-tools/jobs/refusals.test.mjs",
+    "because": "The combined refusal names the failed lead and the retained checks.",
+    "replacedBy": "scripts/ocv-tools/jobs/refusals.test.mjs",
+    "proof": {
+      "fork": "75e68a52a575ccd186baa480a387377915a67333",
+      "replacedByBlob": "19540a3600a98509cb41f5140b0050c8f6333b01",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 2
+  },
+  {
+    "subject": "scripts/production-revert.test.mjs",
+    "because": "Production revert body assertions cover the new Proof and Risk lines.",
+    "replacedBy": "scripts/production-revert.test.mjs",
+    "proof": {
+      "fork": "75e68a52a575ccd186baa480a387377915a67333",
+      "replacedByBlob": "edee32462ecfed73b26120637996ae9654896416",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 5
+  }
+]

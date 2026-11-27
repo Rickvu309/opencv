@@ -1,9 +1,14 @@
 Closes #911
 
+**Now:** Screen checks share one sign-in helper so the local rate limit does not stop the fourth check.
+**Proof:** `node --test scripts/ci-screens.test.mjs scripts/driver-sign-in.test.mjs scripts/ocv-tools/jobs/push-checks.test.mjs`: 16 pass.
+
+<details><summary>Detail</summary>
+
 ## Why
 Each screen check signed up its own account by email code. The api allows 3 codes a minute, so on one shared stack the fourth check got HTTP 429. On main before this change, `ci-screens` showed `send-verification-otp returned 429` in auth-welcome and session-expired (exit 2) and "send the sign-in code" failing in letter-editor. PR #909 patched one driver with a retry loop. This fixes the class.
 
-## Summary
+## Changes
 - One helper, `signInThrowaway` in `.claude/skills/verify-app-ui/scripts/lib/session.mjs`, is now the only place that talks to the code endpoints. All drivers use it: layout, apply-design, sidebar, letter-start, letter-drafting, letter-editor, auth-welcome, session-expired, the tour behind verify-app-ui, and `scripts/verify-coach-home-pane.mjs`. The old `signUp` copy in `apply-design-seed.mjs` and the inline copy in `tour.mjs` are gone. Emails are unique per call.
 - The production limit is unchanged (3 per 60 s). The local verify stack turns off only the send-code limit: `sendCodeLimitEnabledFromEnv` in `apps/api/src/config.ts` returns false only when all five hold: `NODE_ENV` is not production, `DB_DRIVER=pglite`, `OPENCV_VERIFY_RUN` is set (only `launch.sh` sets it), `AUTH_URL` is explicitly set, and it is local http. Every other auth rate limit and the 3-attempt code lockout stay on. `index.ts` already exits on pglite in production, and a deploy uses https and a database url. `config.test.ts` covers the cases that keep the send limit on, including production, https, a non-loopback http url, a non-pglite driver, and an unset or blank `AUTH_URL`.
 - #909 has merged: its decoration-cover driver now uses `signInThrowaway`. The helper waits out a 429 on the verify step only (up to 70 s), because the verify limit stays on.
@@ -25,11 +30,8 @@ Rule for AGENTS.md (restructure is on docs/908-*): a verify driver never calls t
 - Boot log: `sign-in code send limit is off for a local verify run`, seen in the api logs of the local `ci-screens` run.
 - Local `node scripts/ci-screens.mjs` after the change: OK in 421 s (exit 0), no 429, decoration-cover passes, same 7 screens skipped under #894. `pnpm --filter api exec vitest run src`: 60 files pass. driver-sign-in guard 5 pass, guards package pass, no-comments clean.
 
-## Merge Danger
-
-**Door:** two-way
-**Blast Radius:** local screen checks and one env check in the api start up
+## Deploy considerations
 
 Low. The only product-code change is a new env check in `apps/api/src/config.ts` wired in `index.ts`; it can only turn the limiter off on a pglite verify stack and defaults to on. `auth.test.ts` still tests the limiter on. If a deploy ever set `DB_DRIVER=pglite`, `OPENCV_VERIFY_RUN` and a local http auth url together, the limiter would be off, which cannot happen on Railway (https url, database url, and pglite is refused when `NODE_ENV=production`).
 
-
+</details>

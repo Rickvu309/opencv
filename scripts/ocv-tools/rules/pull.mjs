@@ -137,7 +137,7 @@ export const pullRows = [
     needs: ["pull", "migrations"],
     check: migrationChanges,
     fix: (facts) =>
-      `Name what it changes in Merge Danger, then run: scripts/ocv-tools.mjs merge ${facts.pull?.n ?? "<pr#>"} --allow-migration ${unallowedMigrations(
+      `Name what it changes in the **Risk:** line, then run: scripts/ocv-tools.mjs merge ${facts.pull?.n ?? "<pr#>"} --allow-migration ${unallowedMigrations(
         facts
       )
         .map((item) => item.tag)

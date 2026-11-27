@@ -1,13 +1,8 @@
 import { decide, refusalError } from "../rules/index.mjs"
-import { closesIssue, issueInTitle, issueOfBranch } from "../rules/pull-ref.mjs"
+import { issueInTitle, issueOfBranch } from "../rules/pull-ref.mjs"
 import { gh } from "./common.mjs"
-import { bodyOf } from "./finish.mjs"
+import { bodyOf, withClosingLine } from "./finish.mjs"
 import { pullFacts } from "./pull-facts.mjs"
-
-function withClosingLine(text, n) {
-  if (closesIssue(text, n)) return text
-  return `Closes #${n}\n\n${text}`
-}
 
 export function replaceBody(ctx, n, { flags }) {
   const written = bodyOf(ctx, flags["--body-file"])
@@ -19,7 +14,7 @@ export function replaceBody(ctx, n, { flags }) {
     issue == null ? written.text : withClosingLine(written.text, issue)
   const facts = {
     ...live,
-    body: written,
+    body: { ...written, text },
     pull: { ...live.pull, title, body: text },
   }
   const verdict = decide("body", facts)

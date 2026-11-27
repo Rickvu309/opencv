@@ -1,7 +1,12 @@
 import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
 import test from "node:test"
-import { fixture } from "./fixture.mjs"
+import { BODY, fixture } from "./fixture.mjs"
+
+function uploadedBody(f) {
+  const { args } = f.effects("gh", "pr create")[0]
+  return f.ctx.readFile(args[args.indexOf("--body-file") + 1])
+}
 
 const finish = (f, ...args) =>
   f.call("finish", "--body-file", "body.md", ...args)
@@ -17,6 +22,35 @@ test("finish opens a draft with the branch title and closing line, with no proof
   assert.doesNotMatch(f.ctx.readFile(file), /Quick check|retry/)
   assert.equal(f.effects("git", "push").length, 1)
 })
+test("finish keeps the supplied closing line and folds retired checks", () => {
+  const f = fixture({
+    intercept(cmd, args) {
+      if (cmd === "git" && args[0] === "diff" && args.includes("--raw"))
+        return {
+          ok: true,
+          out: ":000000 100644 0000 retirement A\0scripts/retired/90.json\0",
+        }
+      if (cmd === "git" && args.join(" ") === "cat-file blob retirement")
+        return {
+          ok: true,
+          out: JSON.stringify([{ subject: "obsolete check", items: 1 }]),
+        }
+    },
+  })
+  const text = `${BODY}\nCloses #90\n`
+  f.ctx.writeFile(`${f.ctx.cwd}/body.md`, text)
+  const r = finish(f, "--draft")
+  assert.equal(r.code, 0, r.text)
+  assert.match(r.text, /Retired 1 check/)
+  const body = uploadedBody(f)
+  assert.ok(body.startsWith(text))
+  assert.equal(body.match(/Closes #90/g).length, 1)
+  assert.match(
+    body,
+    /<details><summary>Retired checks<\/summary>\n\nRetired 1 check[^\n]+\n\n<\/details>/
+  )
+})
+
 test("finish opens a ready PR without --draft", () => {
   const f = fixture()
   assert.equal(finish(f).code, 0)
@@ -102,7 +136,7 @@ test("a failed finish push names the check and the first error line", () => {
 })
 test("finish rejects malformed body and missing flags", () => {
   const f = fixture()
-  f.ctx.writeFile(`${f.ctx.cwd}/body.md`, "## Summary\nOnly this")
+  f.ctx.writeFile(`${f.ctx.cwd}/body.md`, "**Now:** Only this")
   assert.match(finish(f).text, /BAD_BODY/)
   assert.equal(f.call("finish", "--body-file").code, 2)
   assert.match(f.call("finish", "--bogus").text, /UNKNOWN_FLAG/)
@@ -145,7 +179,7 @@ const AUTO_REFUSED =
 
 function migrationWorld(tag, fixtureName, over = {}) {
   const file = `apps/api/drizzle/${tag}.sql`
-  return fixture({
+  const f = fixture({
     autoOn: true,
     changed: ["apps/api/src/paper/store.ts", file],
     intercept(cmd, args) {
@@ -155,6 +189,8 @@ function migrationWorld(tag, fixtureName, over = {}) {
     },
     ...over,
   })
+  f.ctx.writeFile(`${f.ctx.cwd}/body.md`, `${BODY}\n**Risk:** Runs ${tag}.\n`)
+  return f
 }
 
 const autoAsks = (f) =>
@@ -202,6 +238,18 @@ test("ordinary, strict and high-risk PRs all get auto-merge", () => {
     assert.equal(r.code, 0, r.text)
     assert.equal(autoAsks(f).length, 1, changed[0])
     assert.match(r.text, /Auto-merge is on/)
+  }
+})
+
+test("finish and its dry run refuse an additive migration without Risk", () => {
+  for (const flags of [[], ["--dry-run"]]) {
+    const f = migrationWorld("0023_package_trash", "pr-1407-0023_package_trash")
+    f.ctx.writeFile(`${f.ctx.cwd}/body.md`, BODY)
+    const r = finish(f, ...flags)
+    assert.equal(r.code, 2, r.text)
+    assert.match(r.text, /REFUSED BAD_BODY: .*migration needs a \*\*Risk:\*\*/)
+    assert.equal(f.effects("git", "push").length, 0)
+    assert.equal(f.effects("gh", "pr create").length, 0)
   }
 })
 
