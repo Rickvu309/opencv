@@ -7,3 +7,26 @@ export {
   type TextContainer,
 } from "./document-text.js"
 export type { InputEdit } from "./history.js"
+export {
+  caret,
+  createLayouter,
+  faceKey,
+  fixedMetrics,
+  layoutWork,
+  lineEdges,
+  locate,
+  paperFontMetrics,
+  tableMetrics,
+  type Box,
+  type CaretRect,
+  type FaceKey,
+  type FaceTable,
+  type Layout,
+  type Layouter,
+  type LayoutWork,
+  type LineBox,
+  type Metrics,
+  type Page,
+  type PagePoint,
+  type Segment,
+} from "./layout/index.js"
