@@ -26,10 +26,10 @@ function session() {
     state = result.state
     return result.change
   }
-  const select = (offset: number) => {
+  const select = (offset: number, head = offset) => {
     state = engine.select(state, {
       op: "select",
-      selection: { kind: "text", anchor: at(offset), head: at(offset) },
+      selection: { kind: "text", anchor: at(offset), head: at(head) },
     })
   }
   const undo = () => {
@@ -242,4 +242,24 @@ it("keeps a replacement behind the caret in the replaced word's marks after bold
   expect(runs.type === "text_block" ? runs.content : []).toEqual([
     { type: "text", text: "Tì", marks: [{ type: "bold" }] },
   ])
+})
+
+it("keeps a word's undo step when its last letters are selected back from the caret and retyped", () => {
+  const s = session()
+  s.select(2)
+  s.type(2, "e")
+  s.select(3, 2)
+  s.run([{ op: "insertText", range: s.range(2, 3), text: "ê" }], person, {
+    kind: "typing",
+  })
+  s.select(1)
+  s.select(3, 2)
+  s.run([{ op: "insertText", range: s.range(2, 3), text: "ế" }], person, {
+    kind: "typing",
+  })
+  expect(s.text()).toBe("Tiế")
+  s.undo()
+  expect(s.text()).toBe("Tiê")
+  s.undo()
+  expect(s.doc()).toEqual(s.original)
 })

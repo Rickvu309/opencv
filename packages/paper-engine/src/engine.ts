@@ -351,10 +351,16 @@ export function createEngine(ports: Ports): PaperEngine {
       const { doc, selection } = inner.pm
       const next = applySelection(doc, selection, command)
       if (!next || next.eq(selection)) return state
+      const fromGroupCaret =
+        inner.group !== null &&
+        !next.empty &&
+        next.anchor === inner.group.caret &&
+        next.$anchor.sameParent(next.$head)
+      const tr = inner.pm.tr.setSelection(next)
       return wrap({
         ...inner,
-        pm: inner.pm.apply(closeHistory(inner.pm.tr.setSelection(next))),
-        group: null,
+        pm: inner.pm.apply(fromGroupCaret ? tr : closeHistory(tr)),
+        group: fromGroupCaret ? inner.group : null,
       })
     },
 
