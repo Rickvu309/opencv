@@ -1,0 +1,16 @@
+[
+  {
+    "subject": "apps/api/src/scenarios/paper-engine.scenario.test.ts > Coach and outside agents only suggest",
+    "because": "Replace the pinned insertText suggestion calls with passing v3 replaceText scenarios that verify approval, stale text refusal, and receipt Undo.",
+    "replacedBy": "apps/api/src/scenarios/paper-engine.scenario.test.ts",
+    "proof": {
+      "fork": "31312de3d470d5483df65a463d3bc506c8035c28",
+      "replacedByBlob": "7dbc86fd9c5e076441623a8266210d7b4540453f",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 3
+  }
+]
