@@ -1,0 +1,10 @@
+{
+  "id": "paper-first-key-work",
+  "file": "scripts/paper-keystroke-work.test.mjs",
+  "detector": {
+    "module": "scripts/lib/paper-keystroke-work.mjs",
+    "export": "detectFirstKey"
+  },
+  "historic": null,
+  "reason": "The detector takes runtime counts from Chromium. The first-key browser probe run against dcb64a0f6 code (paper-editor.ts and paper-chrome.tsx restored on this branch) detected a React commit and compiled schema code inside the first key's task. Its pure fixtures cover both counts."
+}

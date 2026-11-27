@@ -1,7 +1,7 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
 
-import { detect } from "./lib/paper-keystroke-work.mjs"
+import { detect, detectFirstKey } from "./lib/paper-keystroke-work.mjs"
 
 const steadyKey = {
   blocksLaidOut: 1,
@@ -39,4 +39,18 @@ test("an edit on page two catches extra editor and browser work", () => {
       "React committed during typing",
     ]
   )
+})
+
+test("a first key leaves chrome renders and schema compiles for later", () => {
+  assert.deepEqual(
+    detectFirstKey({ keyTaskCommits: 0, keyTaskCompiles: 0 }),
+    []
+  )
+})
+
+test("a first key that renders chrome or compiles code in its task is caught", () => {
+  assert.deepEqual(detectFirstKey({ keyTaskCommits: 1, keyTaskCompiles: 9 }), [
+    "React committed inside the first key's task",
+    "code was compiled inside the first key's task",
+  ])
 })

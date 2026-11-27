@@ -14,3 +14,12 @@ export function detect(sample) {
   if (sample.reactCommits !== 0) failures.push("React committed during typing")
   return failures
 }
+
+export function detectFirstKey(sample) {
+  const failures = []
+  if (sample.keyTaskCommits !== 0)
+    failures.push("React committed inside the first key's task")
+  if (sample.keyTaskCompiles !== 0)
+    failures.push("code was compiled inside the first key's task")
+  return failures
+}

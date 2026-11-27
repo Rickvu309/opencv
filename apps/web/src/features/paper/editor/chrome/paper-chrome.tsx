@@ -1,7 +1,7 @@
 import "./paper-toolbar.css"
 import "./paper-chrome-print.css"
 
-import { useEffect, useReducer, useRef } from "react"
+import { startTransition, useEffect, useReducer, useRef } from "react"
 
 import {
   PageHeader,
@@ -132,7 +132,7 @@ export function PaperChrome({
       )
         return
       previous = next
-      dispatch({ type: "changed", snapshot: next })
+      startTransition(() => dispatch({ type: "changed", snapshot: next }))
     })
     const detach = sync?.paper.attach({
       state: mounted.state,
