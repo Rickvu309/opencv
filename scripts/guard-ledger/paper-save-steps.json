@@ -6,5 +6,5 @@
     "export": "detectPaperSaveCommandReplay"
   },
   "historic": null,
-  "reason": "The replay first appeared on PR #2249 at d5c207ea4 and was corrected before squash merge, so the faulty source is absent from main history. The mistake fixture preserves the offending call."
+  "reason": "The replay first appeared on PR #2249 and was corrected before squash merge, so the faulty source is absent from main history. The mistake fixture preserves the offending call."
 }

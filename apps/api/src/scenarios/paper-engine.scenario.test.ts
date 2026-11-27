@@ -197,18 +197,16 @@ describe("the Paper engine keeps its promises", () => {
     if ("refusal" in split) throw new Error(JSON.stringify(split.refusal))
     const changes = [first.change, split.change]
     const head = changes.flatMap((change) => change.steps).length
+    const saved = await ada.run("paper.save", {
+      docId,
+      client: tab,
+      base: 0,
+      changes,
+    })
+    expect(saved.status).toBe(200)
+    expect(dataOf(saved)).toEqual({ ok: true, head })
     expect(
-      dataOf(
-        await ada.run("paper.save", {
-          docId,
-          client: tab,
-          base: 0,
-          changes,
-        })
-      )
-    ).toEqual({ ok: true, head })
-    expect(
-      dataOf(await ada.get(`/api/paper/${docId}/changes?since=0`))
+      dataOf(await ada.read("paper.changes", { docId, since: 0 }))
     ).toEqual({
       head,
       changes,
@@ -300,7 +298,7 @@ describe("the Paper engine keeps its promises", () => {
     expect(result.message).toContain(message)
     expect(await stored(docId)).toEqual({ doc: blank, version: 0 })
     expect(
-      dataOf(await ada.get(`/api/paper/${docId}/changes?since=0`))
+      dataOf(await ada.read("paper.changes", { docId, since: 0 }))
     ).toEqual({ head: 0, changes: [] })
   })
 })
@@ -428,11 +426,14 @@ describe("only the owner's tabs write, in server order", () => {
       })
     expect(failureOf(await save(grace, [change])).code).toBe("NOT_FOUND")
     expect(
-      failureOf(await grace.get(`/api/paper/${docId}/changes?since=0`)).code
+      failureOf(await grace.read("paper.changes", { docId, since: 0 })).code
     ).toBe("NOT_FOUND")
     expect(
       failureOf(
-        await ada.get(`/api/paper/${await paper.blank(ada)}/changes?since=0`)
+        await ada.read("paper.changes", {
+          docId: await paper.blank(ada),
+          since: 0,
+        })
       ).code
     ).toBe("NOT_FOUND")
     expect(
@@ -541,7 +542,7 @@ describe("only the owner's tabs write, in server order", () => {
     expect(dataOf(await save(undone.change))).toEqual({ ok: true, head: 2 })
     expect(await stored(docId)).toEqual({ doc: blank, version: 2 })
     expect(
-      dataOf(await ada.get(`/api/paper/${docId}/changes?since=1`))
+      dataOf(await ada.read("paper.changes", { docId, since: 1 }))
     ).toEqual({ head: 2, changes: [undone.change] })
   })
 })

@@ -2,7 +2,6 @@ import {
   ERROR_CODES,
   parsePaperId,
   parseUserId,
-  successEnvelope,
 } from "@workspace/domain/kernel"
 import { Hono } from "hono"
 import { streamSSE } from "hono/streaming"
@@ -37,17 +36,6 @@ export function createPaperChangesRoutes() {
       const owner = parseUserId(c.var.userId)
       let batch = await changesSince(owner, docId, since.data)
       c.header("Cache-Control", "no-store")
-      c.header("Vary", "Accept", { append: true })
-      if (!c.req.header("Accept")?.includes("text/event-stream")) {
-        return c.json(
-          successEnvelope(
-            "compacted" in batch
-              ? { head: batch.compacted.head, compacted: true }
-              : batch
-          )
-        )
-      }
-
       c.header("X-Accel-Buffering", "no")
       c.header("Content-Encoding", "identity")
       return streamSSE(c, async (stream) => {
