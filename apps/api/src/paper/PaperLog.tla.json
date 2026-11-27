@@ -1,0 +1,23 @@
+{
+  "module": "../../../../packages/paper-engine/src/collab.ts",
+  "actions": {
+    "Type": "tagPending",
+    "Push": "sendableChanges",
+    "Pull": "receiveChanges",
+    "Coach": null,
+    "Compact": null,
+    "LoseReply": null,
+    "Retry": null,
+    "Reload": "confirmedDoc",
+    "Ignore": null,
+    "DeliverOk": "receiveChanges",
+    "DeliverStale": "receiveChanges",
+    "DeliverCompacted": "rebaseOnto"
+  },
+  "covers": [
+    "apps/api/src/paper/PaperLog.tla",
+    "packages/paper-engine/src/collab.ts",
+    "packages/paper-engine/src/engine.ts"
+  ],
+  "sync": "8530beefd1298e27f48295df8553aaf844b1f07f"
+}

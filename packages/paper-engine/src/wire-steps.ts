@@ -1,6 +1,5 @@
 import type { Node } from "prosemirror-model"
-import type { Transaction } from "prosemirror-state"
-import { Step } from "prosemirror-transform"
+import { Step, type Transform } from "prosemirror-transform"
 import { stepJsonSchema, type StepJSON } from "@workspace/domain/paper-doc"
 
 function parts(step: Step): StepJSON[] {
@@ -10,7 +9,7 @@ function parts(step: Step): StepJSON[] {
     : [stepJsonSchema.parse(json)]
 }
 
-export function transactionSteps(tr: Transaction): {
+export function transactionSteps(tr: Transform): {
   steps: StepJSON[]
   inverse: StepJSON[]
 } {

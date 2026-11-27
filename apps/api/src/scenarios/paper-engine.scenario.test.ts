@@ -452,4 +452,46 @@ describe("only the owner's tabs write, in server order", () => {
       })
     }
   )
+
+  it.fails(
+    "keeps both tabs' text when they type at once, and stores a tab's resend once (#2218)",
+    async () => {
+      const ada = await world.person("Ada")
+      const { docId, blocks } = await paper.written(ada, ["Analyst"])
+      const head = (await paper.outline(ada, docId)).version
+      const typed = (client: string, text: string, offset: number) => ({
+        edit: createId(),
+        origin: { kind: "person", actor: ada.id, client },
+        base: head,
+        steps: [
+          {
+            stepType: "replace",
+            from: 1 + offset,
+            to: 1 + offset,
+            slice: { content: [{ type: "text", text }] },
+          },
+        ],
+        commands: [
+          {
+            op: "insertText",
+            range: span(blocks[0]!.id, offset, offset),
+            text,
+          },
+        ],
+      })
+      const first = typed("tab-a", "Data ", 0)
+      const save = (client: string, changes: unknown[]) =>
+        ada.run("paper.save", { docId, client, base: head, changes })
+      dataOf(await save("tab-a", [first]))
+      const stale = dataOf<{ stale: boolean; since: { edit: string }[] }>(
+        await save("tab-a", [first])
+      )
+      expect(stale.since.map((change) => change.edit)).toEqual([first.edit])
+      const other = dataOf<{ stale: boolean }>(
+        await save("tab-b", [typed("tab-b", "Lead ", 7)])
+      )
+      expect(other.stale).toBe(true)
+      expect(texts(await paper.outline(ada, docId))).toEqual(["Data Analyst"])
+    }
+  )
 })
