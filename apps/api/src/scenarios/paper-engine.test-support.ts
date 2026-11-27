@@ -1,9 +1,4 @@
-import { delegateActorSchema } from "@workspace/domain/kernel"
-import { expect } from "vitest"
-
-import { agentConnections, oauthClient } from "../db/schema.js"
-import { createId } from "../platform/id.js"
-import { dataOf, type Person, type World } from "./person.test-support.js"
+import { dataOf, type Person } from "./person.test-support.js"
 
 export type Mark = { type: string; from: number; to: number; href?: string }
 export type OutlineBlock = {
@@ -45,18 +40,9 @@ export const paragraph = (
   content: text ? [{ type: "text", text }] : [],
 })
 
-export async function pdfPages(bytes: Buffer) {
-  const unpdf = await import("unpdf")
-  const pdf = await unpdf.getDocumentProxy(new Uint8Array(bytes))
-  const { text } = await unpdf.extractText(pdf, { mergePages: false })
-  return text
-}
-
 export const texts = (o: Outline) => o.blocks.map((block) => block.text)
 
-export function engineHelpers(world: World) {
-  let agents = 0
-
+export function engineHelpers() {
   async function blank(person: Person, kind: "cv" | "letter" = "cv") {
     const made = dataOf<{ id: string }>(
       await person.run("paper.create", { kind, name: "Engine CV" })
@@ -109,53 +95,6 @@ export function engineHelpers(world: World) {
     return { ...file, bytes: Buffer.from(file.base64, "base64") }
   }
 
-  async function connectAgent(person: Person) {
-    agents += 1
-    const connectionId = createId()
-    const clientId = `engine-client-${agents}`
-    await world.db.insert(oauthClient).values({
-      id: clientId,
-      clientId,
-      redirectUris: ["http://localhost/callback"],
-    })
-    await world.db.insert(agentConnections).values({
-      id: connectionId,
-      userId: person.id,
-      clientId,
-      authorizationCodeId: `engine-authorization-${agents}`,
-      name: "Paper agent",
-      audience: "http://localhost/mcp",
-      scopes: ["connection.status", "paper.read", "paper.write"],
-      resources: { kind: "paper" },
-      policy: { reads: "allow", writes: "approval" },
-      expiresAt: new Date(Date.now() + 600_000),
-    })
-    return delegateActorSchema.parse({
-      type: "delegate",
-      userId: person.id,
-      connectionId,
-      name: "Paper agent",
-      scopes: ["paper.read", "paper.write"],
-      resources: "paper",
-      reads: "allow",
-      writes: "approval",
-    })
-  }
-
-  async function suggest(person: Person, docId: string, commands: Command[]) {
-    const agent = await connectAgent(person)
-    const { version } = await outline(person, docId)
-    const proposed = await world.inside(() =>
-      world.registry.execute({
-        name: "paper.edit",
-        input: { docId, basedOn: version, commands },
-        actor: agent,
-      })
-    )
-    expect(proposed.pending).toBe(true)
-    return proposed.pendingActionId as string
-  }
-
   return {
     blank,
     outline,
@@ -163,7 +102,5 @@ export function engineHelpers(world: World) {
     written,
     layout,
     exported,
-    connectAgent,
-    suggest,
   }
 }

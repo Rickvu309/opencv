@@ -7,7 +7,6 @@ import {
   span,
   paragraph,
   texts,
-  pdfPages,
 } from "./paper-engine.test-support.js"
 
 let world: World
@@ -15,12 +14,19 @@ let paper: ReturnType<typeof engineHelpers>
 
 beforeAll(async () => {
   world = await openWorld()
-  paper = engineHelpers(world)
+  paper = engineHelpers()
 })
 
 afterAll(async () => {
   await world.close()
 })
+
+async function pdfPages(bytes: Buffer) {
+  const unpdf = await import("unpdf")
+  const pdf = await unpdf.getDocumentProxy(new Uint8Array(bytes))
+  const { text } = await unpdf.extractText(pdf, { mergePages: false })
+  return text
+}
 
 describe("the 2026-11-27 editor audit", () => {
   it.fails(

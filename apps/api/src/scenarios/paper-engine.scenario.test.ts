@@ -1,10 +1,13 @@
+import { delegateActorSchema } from "@workspace/domain/kernel"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 
+import { agentConnections, oauthClient } from "../db/schema.js"
 import { createId } from "../platform/id.js"
 import {
   dataOf,
   failureOf,
   openWorld,
+  type Person,
   type World,
 } from "./person.test-support.js"
 import {
@@ -12,7 +15,7 @@ import {
   at,
   span,
   texts,
-  pdfPages,
+  type Command,
 } from "./paper-engine.test-support.js"
 
 let world: World
@@ -20,12 +23,68 @@ let paper: ReturnType<typeof engineHelpers>
 
 beforeAll(async () => {
   world = await openWorld()
-  paper = engineHelpers(world)
+  paper = engineHelpers()
 })
 
 afterAll(async () => {
   await world.close()
 })
+
+async function pdfPages(bytes: Buffer) {
+  const unpdf = await import("unpdf")
+  const pdf = await unpdf.getDocumentProxy(new Uint8Array(bytes))
+  const { text } = await unpdf.extractText(pdf, { mergePages: false })
+  return text
+}
+
+let agents = 0
+
+async function connectAgent(person: Person) {
+  agents += 1
+  const connectionId = createId()
+  const clientId = `engine-client-${agents}`
+  await world.db.insert(oauthClient).values({
+    id: clientId,
+    clientId,
+    redirectUris: ["http://localhost/callback"],
+  })
+  await world.db.insert(agentConnections).values({
+    id: connectionId,
+    userId: person.id,
+    clientId,
+    authorizationCodeId: `engine-authorization-${agents}`,
+    name: "Paper agent",
+    audience: "http://localhost/mcp",
+    scopes: ["connection.status", "paper.read", "paper.write"],
+    resources: { kind: "paper" },
+    policy: { reads: "allow", writes: "approval" },
+    expiresAt: new Date(Date.now() + 600_000),
+  })
+  return delegateActorSchema.parse({
+    type: "delegate",
+    userId: person.id,
+    connectionId,
+    name: "Paper agent",
+    scopes: ["paper.read", "paper.write"],
+    resources: "paper",
+    reads: "allow",
+    writes: "approval",
+  })
+}
+
+async function suggest(person: Person, docId: string, commands: Command[]) {
+  const agent = await connectAgent(person)
+  const { version } = await paper.outline(person, docId)
+  const proposed = await world.inside(() =>
+    world.registry.execute({
+      name: "paper.edit",
+      input: { docId, basedOn: version, commands },
+      actor: agent,
+    })
+  )
+  expect(proposed.pending).toBe(true)
+  return proposed.pendingActionId as string
+}
 
 describe("the Paper engine keeps its promises", () => {
   it.fails(
@@ -197,7 +256,7 @@ describe("Coach and outside agents only suggest", () => {
     async () => {
       const ada = await world.person("Ada")
       const { docId, blocks } = await paper.written(ada, ["Built dashboards"])
-      const pendingActionId = await paper.suggest(ada, docId, [
+      const pendingActionId = await suggest(ada, docId, [
         {
           op: "insertText",
           range: span(blocks[0]!.id, 0, 16),
@@ -226,7 +285,7 @@ describe("Coach and outside agents only suggest", () => {
     async () => {
       const ada = await world.person("Ada")
       const { docId, blocks } = await paper.written(ada, ["Built dashboards"])
-      const agent = await paper.connectAgent(ada)
+      const agent = await connectAgent(ada)
       const { version } = await paper.outline(ada, docId)
       await expect(
         world.inside(() =>
@@ -259,7 +318,7 @@ describe("Coach and outside agents only suggest", () => {
         "Built dashboards",
         "Python",
       ])
-      const pendingActionId = await paper.suggest(ada, docId, [
+      const pendingActionId = await suggest(ada, docId, [
         {
           op: "insertText",
           range: span(blocks[0]!.id, 0, 5),
@@ -279,7 +338,7 @@ describe("Coach and outside agents only suggest", () => {
         "Python, SQL",
       ])
 
-      const again = await paper.suggest(ada, docId, [
+      const again = await suggest(ada, docId, [
         {
           op: "insertText",
           range: span(blocks[1]!.id, 0, 6),
