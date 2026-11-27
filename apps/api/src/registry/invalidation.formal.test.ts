@@ -74,6 +74,7 @@ const SNAPSHOT_QUERIES: {
     ...ids.docs.map((docId) => ({ view: "info", docId })),
     ...ids.docs.map((docId) => ({ docId })),
   ],
+  "paper.changes": null,
   "paper.export": null,
   "file.get": (ids) => ids.files.map((fileId) => ({ fileId })),
   "paper.files": () => [{}],
@@ -93,6 +94,8 @@ const SNAPSHOT_QUERIES: {
 
 const NEVER_SNAPSHOT_REASON: Partial<Record<QueryName, string>> = {
   "activity.list": "every command refreshes it",
+  "paper.changes":
+    "change polling advances its own cursor outside the query cache",
   "paper.export":
     "pinned binary download metadata and exact-basis Word qualification are covered by the package and native Word HTTP replays",
   "coach.status":

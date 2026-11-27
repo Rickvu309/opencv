@@ -350,6 +350,33 @@ describe("Anthropic request-bound Coach runtime", () => {
     )
     expect(requests).toHaveLength(1)
     expect(requests[0]?.tools).toHaveLength(entries.length)
+    expect(requests[0]?.tools).toContainEqual(
+      expect.objectContaining({
+        name: "paper_save",
+        input_schema: expect.objectContaining({
+          type: "object",
+          anyOf: [
+            expect.objectContaining({
+              type: "object",
+              required: ["docId", "client", "base", "changes"],
+              additionalProperties: false,
+            }),
+            expect.objectContaining({
+              type: "object",
+              required: [
+                "epoch",
+                "update",
+                "stateVector",
+                "docId",
+                "writer",
+                "provenance",
+              ],
+              additionalProperties: false,
+            }),
+          ],
+        }),
+      })
+    )
   })
 
   it("uses bounded Anthropic Messages for posting completion", async () => {

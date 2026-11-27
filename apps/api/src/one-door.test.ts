@@ -14,7 +14,11 @@ const transportExceptions = {
   ],
   agentProtocol: ["ALL /mcp", "GET /.well-known/oauth-protected-resource/mcp"],
   mailProviderRedirect: ["GET /api/inbox/connect", "GET /api/inbox/callback"],
-  stream: ["POST /api/chats/:id/turns", "GET /api/coach/tasks/:id/events"],
+  stream: [
+    "POST /api/chats/:id/turns",
+    "GET /api/coach/tasks/:id/events",
+    "GET /api/paper/:id/changes",
+  ],
   upload: [
     "POST /api/account/photo",
     "POST /api/paper/files",
