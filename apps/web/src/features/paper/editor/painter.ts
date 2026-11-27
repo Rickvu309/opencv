@@ -1,9 +1,9 @@
 import type { Document } from "@workspace/domain/paper-doc"
 import type {
   Box,
+  FaceKey,
   Layout,
   LineBox,
-  Metrics,
   Segment,
 } from "@workspace/paper-engine"
 
@@ -11,6 +11,10 @@ export const MPT_PER_PX = 750
 export const PAGE_GAP_PX = 24
 
 export const px = (mpt: number) => mpt / MPT_PER_PX
+
+export type FaceHeights = {
+  face(key: FaceKey): { ascent: number; descent: number }
+}
 
 export type Placement = { widthPx: number; heightPx: number; pitchPx: number }
 
@@ -58,7 +62,7 @@ function faceStyle(face: string) {
 }
 
 function glyphSpan(
-  metrics: Metrics,
+  metrics: FaceHeights,
   line: LineBox,
   run: Pick<Segment, "x" | "text" | "font" | "sizeMpt">,
   extra: Partial<Segment>
@@ -89,7 +93,7 @@ function glyphSpan(
 
 function fillLine(
   el: HTMLElement,
-  metrics: Metrics,
+  metrics: FaceHeights,
   box: LineBox,
   facts: BlockFacts | undefined
 ) {
@@ -158,7 +162,10 @@ export type Painter = {
   touched(): number
 }
 
-export function createPainter(stage: HTMLElement, metrics: Metrics): Painter {
+export function createPainter(
+  stage: HTMLElement,
+  metrics: FaceHeights
+): Painter {
   const pages: PageSlot[] = []
   let touched = 0
   return {
