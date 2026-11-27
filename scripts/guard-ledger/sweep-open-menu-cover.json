@@ -1,0 +1,6 @@
+{
+  "id": "sweep-open-menu-cover",
+  "file": "scripts/ui/sweep/page-probes.test.mjs",
+  "historic": null,
+  "reason": "The fit check reported toolbar buttons as covered while a File menu the person opened sat on top of them (paper-lab downloads, sweep finding 8 of G1, introduced by ec9d6ad9f, #1486). The fixture is a real-browser probe over HTML. A control covered by a non-menu layer still fires, and a control under an open menu stays quiet."
+}

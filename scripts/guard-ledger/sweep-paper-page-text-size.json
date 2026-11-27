@@ -1,0 +1,6 @@
+{
+  "id": "sweep-paper-page-text-size",
+  "file": "scripts/ui/sweep/hig-probes.test.mjs",
+  "historic": null,
+  "reason": "The 200% text rule reported painted Paper page lines as chrome that did not grow, 144 findings on paper-lab (introduced by ec9d6ad9f, #1486). The probe needs a real browser over HTML fixtures, so no source detector replays the old file. The chrome fixture fires, and the painted Paper line fixture stays quiet."
+}
