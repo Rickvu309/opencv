@@ -138,7 +138,10 @@ export function realPorts() {
     browser: {
       launch: async () => {
         const { chromium } = await import("playwright-core")
-        return chromium.launch({ headless: true })
+        return chromium.launch({
+          headless: true,
+          args: ["--font-render-hinting=slight"],
+        })
       },
     },
   }

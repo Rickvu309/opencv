@@ -1,0 +1,10 @@
+{
+  "id": "paper-one-input",
+  "file": "scripts/paper-one-input.test.mjs",
+  "detector": {
+    "module": "scripts/lib/paper-one-input.mjs",
+    "export": "paperOneInputProblems"
+  },
+  "historic": null,
+  "reason": "preventive: the new Paper editor starts in #2231 with one hidden textarea as its only input path; the old core reads a contenteditable page, which the 2026-11-27 editor audit ties to the select-all wipes"
+}

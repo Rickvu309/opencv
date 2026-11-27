@@ -4,11 +4,15 @@ import { join } from "node:path"
 import { UsageError } from "../args.mjs"
 import { liveState, serveProductionWeb } from "../stack.mjs"
 import { accountSource } from "../sweep/accounts.mjs"
-import { browserPerson, keystrokeTiming } from "./browser-person.mjs"
+import { SURFACES, browserPerson, keystrokeTiming } from "./browser-person.mjs"
+import { LAB_ROUTE } from "./lab-surface.mjs"
 import { ROWS } from "./rows.mjs"
 import { unknownPins, walkRows, walkSummary } from "./run.mjs"
 
-export const WALKS = { paper: { route: "/paper", rows: ROWS } }
+export const WALKS = {
+  paper: { route: "/paper", rows: ROWS, surface: "rich", pinned: true },
+  "paper-lab": { route: LAB_ROUTE, rows: ROWS, surface: "lab", pinned: false },
+}
 export const EXPECTED_FAILURES = "scripts/ui/walk/expected-failures.json"
 
 export function pickRows(rows, ids) {
@@ -23,7 +27,7 @@ export function pickRows(rows, ids) {
 
 export const WALK_COMMAND = {
   usage:
-    "walk paper [--route /paper] [--row id...] [--production] [--no-keystrokes]",
+    "walk paper|paper-lab [--route /paper] [--row id...] [--production] [--no-keystrokes]",
   about:
     "Use the Paper page like a person with real keys, mouse and clipboard: one line per row (pass, fail, expected-fail pinned in scripts/ui/walk/expected-failures.json, now-passes), then keystroke time on a 3-page CV. --production swaps the dev web for a production build first. Writes walk/<name>.json.",
   options: {
@@ -39,7 +43,9 @@ export const WALK_COMMAND = {
         `walk takes ${Object.keys(WALKS).join(", ")}, got ${name ?? "nothing"}`
       )
     const rows = pickRows(walk.rows, flags.row ?? [])
-    const expected = JSON.parse(ctx.fs.read(join(ctx.repo, EXPECTED_FAILURES)))
+    const expected = walk.pinned
+      ? JSON.parse(ctx.fs.read(join(ctx.repo, EXPECTED_FAILURES)))
+      : {}
     const stale = unknownPins(walk.rows, expected)
     if (stale.length)
       throw new UsageError(
@@ -65,6 +71,7 @@ export const WALK_COMMAND = {
         state: { ...state, route: flags.route ?? walk.route },
         account,
         shotsDir,
+        surface: SURFACES[walk.surface],
       })
       results = await walkRows({
         rows,
@@ -80,6 +87,7 @@ export const WALK_COMMAND = {
           account,
           build,
           shotsDir,
+          surface: SURFACES[walk.surface],
         })
         say(`keystrokes ${JSON.stringify(keystrokes)}`)
       }

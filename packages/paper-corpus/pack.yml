@@ -1,1 +1,6 @@
 layer: platform
+public:
+  [
+    tests/fixtures/cvs/en-10.expected.json,
+    tests/fixtures/cvs/vi-01.expected.json,
+  ]

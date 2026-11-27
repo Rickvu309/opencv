@@ -1,0 +1,10 @@
+{
+  "id": "paper-layout-owns-lines",
+  "file": "scripts/paper-layout-owns-lines.test.mjs",
+  "detector": {
+    "module": "scripts/lib/paper-layout-owns-lines.mjs",
+    "export": "paperLayoutOwnsLinesProblems"
+  },
+  "historic": null,
+  "reason": "preventive: the new Paper editor starts in #2231 painting positioned lines from the engine Layout; the old core lets the browser wrap text, so screen and PDF lines can differ"
+}

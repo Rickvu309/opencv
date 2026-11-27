@@ -1,0 +1,203 @@
+@font-face {
+  font-family: "paper-liberation-sans";
+  src: url("/fonts/LiberationSans-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+}
+@font-face {
+  font-family: "paper-liberation-sans";
+  src: url("/fonts/LiberationSans-Bold.ttf") format("truetype");
+  font-weight: 700;
+  font-style: normal;
+}
+@font-face {
+  font-family: "paper-liberation-sans";
+  src: url("/fonts/LiberationSans-Italic.ttf") format("truetype");
+  font-weight: 400;
+  font-style: italic;
+}
+@font-face {
+  font-family: "paper-liberation-sans";
+  src: url("/fonts/LiberationSans-BoldItalic.ttf") format("truetype");
+  font-weight: 700;
+  font-style: italic;
+}
+@font-face {
+  font-family: "paper-liberation-serif";
+  src: url("/fonts/LiberationSerif-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+}
+@font-face {
+  font-family: "paper-liberation-serif";
+  src: url("/fonts/LiberationSerif-Bold.ttf") format("truetype");
+  font-weight: 700;
+  font-style: normal;
+}
+@font-face {
+  font-family: "paper-liberation-serif";
+  src: url("/fonts/LiberationSerif-Italic.ttf") format("truetype");
+  font-weight: 400;
+  font-style: italic;
+}
+@font-face {
+  font-family: "paper-liberation-serif";
+  src: url("/fonts/LiberationSerif-BoldItalic.ttf") format("truetype");
+  font-weight: 700;
+  font-style: italic;
+}
+@font-face {
+  font-family: "paper-liberation-mono";
+  src: url("/fonts/LiberationMono-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+}
+@font-face {
+  font-family: "paper-liberation-mono";
+  src: url("/fonts/LiberationMono-Bold.ttf") format("truetype");
+  font-weight: 700;
+  font-style: normal;
+}
+@font-face {
+  font-family: "paper-liberation-mono";
+  src: url("/fonts/LiberationMono-Italic.ttf") format("truetype");
+  font-weight: 400;
+  font-style: italic;
+}
+@font-face {
+  font-family: "paper-liberation-mono";
+  src: url("/fonts/LiberationMono-BoldItalic.ttf") format("truetype");
+  font-weight: 700;
+  font-style: italic;
+}
+@font-face {
+  font-family: "paper-carlito";
+  src: url("/fonts/Carlito.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+}
+
+.paper-editor {
+  position: relative;
+  overflow: hidden;
+  background: var(--muted);
+}
+
+.paper-editor-stage {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: 0 0;
+}
+
+.paper-editor-page {
+  position: absolute;
+  left: 0;
+  overflow: hidden;
+  background: #ffffff;
+  box-shadow:
+    0 0 0 1px var(--border),
+    0 1px 3px rgb(0 0 0 / 0.06);
+  cursor: text;
+}
+
+.paper-line {
+  position: absolute;
+  white-space: pre;
+  pointer-events: none;
+  user-select: none;
+}
+
+.paper-run {
+  position: absolute;
+  top: 0;
+  white-space: pre;
+  font-kerning: none;
+  font-variant-ligatures: none;
+  text-rendering: geometricPrecision;
+}
+
+.paper-image {
+  position: absolute;
+  background: var(--muted);
+  pointer-events: none;
+}
+
+.paper-rule {
+  position: absolute;
+  border-top: 1px solid var(--border);
+  pointer-events: none;
+}
+
+.paper-cell {
+  position: absolute;
+  pointer-events: none;
+}
+
+.paper-cell[data-borders="all"] {
+  outline: 1px solid var(--border);
+}
+
+.paper-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+}
+
+.paper-selection {
+  position: absolute;
+  background: rgb(26 115 232 / 0.22);
+}
+
+.paper-composition {
+  position: absolute;
+  border-bottom: 2px solid var(--foreground);
+}
+
+.paper-caret {
+  position: absolute;
+  width: 2px;
+  background: var(--foreground);
+  animation: paper-caret-blink-a 1.06s steps(1) infinite;
+}
+
+.paper-caret[data-phase="b"] {
+  animation-name: paper-caret-blink-b;
+}
+
+.paper-caret[hidden] {
+  display: none;
+}
+
+@keyframes paper-caret-blink-a {
+  50% {
+    opacity: 0;
+  }
+}
+
+@keyframes paper-caret-blink-b {
+  50% {
+    opacity: 0;
+  }
+}
+
+.paper-input {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 1em;
+  padding: 0;
+  border: 0;
+  margin: 0;
+  overflow: hidden;
+  resize: none;
+  opacity: 0;
+  color: transparent;
+  caret-color: transparent;
+  background: transparent;
+  font-size: 16px;
+  white-space: pre;
+  outline: none;
+}
