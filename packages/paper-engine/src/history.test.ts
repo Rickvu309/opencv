@@ -26,10 +26,10 @@ function session() {
     state = result.state
     return result.change
   }
-  const select = (offset: number) => {
+  const select = (offset: number, head = offset) => {
     state = engine.select(state, {
       op: "select",
-      selection: { kind: "text", anchor: at(offset), head: at(offset) },
+      selection: { kind: "text", anchor: at(offset), head: at(head) },
     })
   }
   const undo = () => {
@@ -180,4 +180,86 @@ it("maps a multi-step receipt Undo over later edits and refuses an overwritten t
   expect(s.engine.revert(s.doc(), accepted, [later, overwrite])).toEqual({
     refusal: { code: "unmappable", edit: accepted.edit },
   })
+})
+
+it("joins the space and punctuation after a composed word and a bold toggle to its undo step", () => {
+  const s = session()
+  const composed = { kind: "composition", id: "word" } as const
+  s.run([{ op: "insertText", range: s.range(2), text: "ế" }], person, composed)
+  s.run([{ op: "insertText", range: s.range(2, 3), text: "ếng" }], person, {
+    ...composed,
+  })
+  s.run([
+    { op: "setMark", range: s.range(5), mark: { type: "bold" }, on: true },
+  ])
+  s.advance(2000)
+  s.run([{ op: "insertText", range: s.range(5), text: "," }], person, {
+    kind: "typing",
+  })
+  s.run([{ op: "insertText", range: s.range(6), text: " " }], person, {
+    kind: "typing",
+  })
+  s.run([{ op: "insertText", range: s.range(7), text: "b" }], person, {
+    kind: "typing",
+  })
+  expect(s.text()).toBe("Tiếng, b")
+  s.undo()
+  expect(s.text()).toBe("Tiếng, ")
+  s.undo()
+  expect(s.doc()).toEqual(s.original)
+})
+
+it("keeps the marks of a deleted word for the next letters typed in its place", () => {
+  const s = session()
+  s.select(2)
+  s.run([
+    { op: "setMark", range: s.range(2), mark: { type: "bold" }, on: true },
+  ])
+  s.type(2, "xy")
+  s.run([{ op: "deleteRange", range: s.range(3, 4) }])
+  s.run([{ op: "deleteRange", range: s.range(2, 3) }])
+  s.type(2, "z")
+  const runs = s.doc().content[0]!
+  expect(runs.type === "text_block" ? runs.content : []).toEqual([
+    { type: "text", text: "Ti" },
+    { type: "text", text: "z", marks: [{ type: "bold" }] },
+  ])
+})
+
+it("keeps a replacement behind the caret in the replaced word's marks after bold is turned off", () => {
+  const s = session()
+  s.run([
+    { op: "setMark", range: s.range(0, 2), mark: { type: "bold" }, on: true },
+  ])
+  s.run([
+    { op: "setMark", range: s.range(2), mark: { type: "bold" }, on: false },
+  ])
+  s.run([{ op: "insertText", range: s.range(1, 2), text: "ì" }], person, {
+    kind: "typing",
+    caret: s.at(2),
+  })
+  const runs = s.doc().content[0]!
+  expect(runs.type === "text_block" ? runs.content : []).toEqual([
+    { type: "text", text: "Tì", marks: [{ type: "bold" }] },
+  ])
+})
+
+it("keeps a word's undo step when its last letters are selected back from the caret and retyped", () => {
+  const s = session()
+  s.select(2)
+  s.type(2, "e")
+  s.select(3, 2)
+  s.run([{ op: "insertText", range: s.range(2, 3), text: "ê" }], person, {
+    kind: "typing",
+  })
+  s.select(1)
+  s.select(3, 2)
+  s.run([{ op: "insertText", range: s.range(2, 3), text: "ế" }], person, {
+    kind: "typing",
+  })
+  expect(s.text()).toBe("Tiế")
+  s.undo()
+  expect(s.text()).toBe("Tiê")
+  s.undo()
+  expect(s.doc()).toEqual(s.original)
 })
