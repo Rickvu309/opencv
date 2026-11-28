@@ -1,3 +1,5 @@
+import { blockSchema, type Document } from "@workspace/domain/paper-doc"
+
 import { createTestApp, testWebOrigin } from "../test/harness.js"
 
 export const png = Uint8Array.from([
@@ -26,4 +28,24 @@ export function postAvatar(
     headers: { Origin: testWebOrigin, Cookie: cookie },
     body: formFile(bytes, name, type),
   })
+}
+
+export function pageWithPhoto(page: Document, fileId: string): Document {
+  return {
+    ...page,
+    content: [
+      ...page.content,
+      blockSchema.parse({
+        type: "image",
+        attrs: {
+          id: "photo-1",
+          fileId,
+          widthMpt: 72000,
+          heightMpt: 72000,
+          align: "left",
+          alt: "Photo",
+        },
+      }),
+    ],
+  }
 }

@@ -1,4 +1,4 @@
-import { paperPhotoRef } from "@workspace/domain/paper-doc"
+import { type Document } from "@workspace/domain/paper-doc"
 import { eq } from "drizzle-orm"
 import { describe, expect, it } from "vitest"
 
@@ -11,10 +11,7 @@ import {
   signUp,
   testWebOrigin,
 } from "../test/harness.js"
-import { richPaper } from "../test/rich-paper.js"
-
-import { seedColumns } from "./content/content-document.js"
-import { imageFile, png, postAvatar } from "./photo.fixtures.js"
+import { imageFile, pageWithPhoto, png, postAvatar } from "./photo.fixtures.js"
 
 describe("CV photo bytes", () => {
   it("stores a file id, serves the owner, and rejects another user or 3 MB", async () => {
@@ -229,9 +226,15 @@ describe("CV photo bytes", () => {
       body: JSON.stringify({ input: { fileId: profileId } }),
     })
     expect(profile.status).toBe(200)
+    const [stored] = await db
+      .select({ snapshot: paperDocs.snapshot })
+      .from(paperDocs)
+      .where(eq(paperDocs.id, docId))
     await db
       .update(paperDocs)
-      .set(seedColumns("cv", richPaper("cv", paperPhotoRef(attachedId))))
+      .set({
+        snapshot: pageWithPhoto(stored?.snapshot as Document, attachedId),
+      })
       .where(eq(paperDocs.id, docId))
 
     const { files } = await import("../db/schema.js")

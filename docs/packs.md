@@ -19,7 +19,6 @@ flowchart TD
     p_apps_api_src_inbox["apps/api/src/inbox"]
     p_apps_api_src_job["apps/api/src/job"]
     p_apps_api_src_paper["apps/api/src/paper"]
-    p_apps_api_src_paper_content["apps/api/src/paper/content"]
     p_apps_api_src_paper_import["apps/api/src/paper/import"]
     p_apps_api_src_paper_log["apps/api/src/paper/log"]
     p_apps_api_src_paper_native_output["apps/api/src/paper/native-output"]
@@ -112,15 +111,12 @@ flowchart TD
   p_apps_api_src_paper --> p_apps_api_src_paper_import
   p_apps_api_src_paper --> p_apps_api_src_paper_log
   p_apps_api_src_paper --> p_apps_api_src_paper_native_output
-  p_apps_api_src_paper --> p_apps_api_src_paper_content
   p_apps_api_src_paper --> p_apps_api_src_paper_pdf
   p_apps_api_src_paper --> p_apps_api_src_paper_word
   p_apps_api_src_paper --> p_apps_api_src_registry
   p_apps_api_src_paper --> p_apps_api_src_db
   p_apps_api_src_paper --> p_apps_api_src_limits
   p_apps_api_src_paper --> p_apps_api_src_platform
-  p_apps_api_src_paper_content --> p_apps_api_src_db
-  p_apps_api_src_paper_content --> p_apps_api_src_platform
   p_apps_api_src_paper_import --> p_apps_api_src_platform
   p_apps_api_src_paper_log --> p_apps_api_src_db
   p_apps_api_src_paper_log --> p_packages_paper_engine
@@ -220,8 +216,7 @@ flowchart TD
 | `apps/api/src/job` | feature | index.ts, operations | apps/api/src/registry, apps/api/src/db, apps/api/src/limits, apps/api/src/platform | none |
 | `apps/api/src/limits` | platform | index.ts | none | none |
 | `apps/api/src/mail` | platform | none | none | none |
-| `apps/api/src/paper` | feature | index.ts, operations | apps/api/src/paper/import, apps/api/src/paper/log, apps/api/src/paper/native-output, apps/api/src/paper/content, apps/api/src/paper/pdf, apps/api/src/paper/word, apps/api/src/registry, apps/api/src/db, apps/api/src/limits, apps/api/src/platform | none |
-| `apps/api/src/paper/content` | feature | content-document.ts | apps/api/src/db, apps/api/src/platform | none |
+| `apps/api/src/paper` | feature | index.ts, operations | apps/api/src/paper/import, apps/api/src/paper/log, apps/api/src/paper/native-output, apps/api/src/paper/pdf, apps/api/src/paper/word, apps/api/src/registry, apps/api/src/db, apps/api/src/limits, apps/api/src/platform | none |
 | `apps/api/src/paper/import` | feature | import-parse.ts, import-text-pool.ts, import-word.ts, package-xml.ts, package-zip.ts, word-to-paper.ts | apps/api/src/platform | none |
 | `apps/api/src/paper/log` | feature | index.ts | apps/api/src/db, packages/paper-engine | none |
 | `apps/api/src/paper/native-output` | feature | formatted.ts, formatted-photos.ts | none | none |
