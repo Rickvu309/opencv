@@ -55,10 +55,32 @@ function world({ listed = [], ancestors = {}, runs = [] } = {}) {
   return { io, calls }
 }
 
-const env = (result, sha) => ({
+const env = (result, sha, attempt = 2) => ({
   CI_RESULT: result,
   GITHUB_SHA: sha,
   RUN_URL: RUN,
+  RUN_ATTEMPT: String(attempt),
+})
+
+test("a first failed run on main opens and comments on nothing, because the failed jobs run again by themselves", () => {
+  const { io, calls } = world({
+    listed: [
+      {
+        number: 9,
+        body: redReport({ sha: PARENT, parent: OLD_GREEN, runUrl: RUN }),
+        comments: [],
+      },
+    ],
+  })
+  const lines = []
+  main(env("failure", RED, 1), { ...io, out: (line) => lines.push(line) })
+  assert.deepEqual(
+    calls.filter(
+      (call) => call[0] === "gh" && call[1] === "issue" && call[2] !== "list"
+    ),
+    []
+  )
+  assert.match(lines.join("\n"), /attempt 1; the failed jobs run again once/)
 })
 
 test("a red run on main opens one main-red issue with the commit, the run and the revert command", () => {
