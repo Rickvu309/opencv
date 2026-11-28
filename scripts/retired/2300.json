@@ -22,5 +22,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 8
+  },
+  {
+    "subject": "apps/api/src/paper/native-word-http.test.ts",
+    "because": "It saved edits through the old paper.save over HTTP, which now refuses because every Paper is engine 2. D11 removes the old Word download.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
   }
 ]
