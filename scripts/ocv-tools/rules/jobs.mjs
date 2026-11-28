@@ -98,6 +98,39 @@ const TREE_FIX =
 
 const RISK_LINE = /^\*\*Risk:\*\* \S/
 
+const issueOf = (facts) =>
+  facts.pull?.title?.match(/\(#(\d+)\)\s*$/)?.[1] ?? "<n>"
+
+export function passingBody(facts = {}) {
+  const closes = `Closes #${issueOf(facts)}`
+  if (FIX_TITLE.test(facts.pull?.title ?? ""))
+    return [
+      "**<what a person sees or gets now, in one sentence>**",
+      "",
+      "<details><summary>Detail</summary>",
+      "",
+      "<the tree.md that node .agents/skills/show-opencv/bin/logic.mjs tree.json writes>",
+      "",
+      "</details>",
+      "",
+      "Caught by: agent-self",
+      "Introduced by: <sha>",
+      "",
+      "`<test command>`: <N> passed, 0 failed",
+      "",
+      closes,
+    ].join("\n")
+  return [
+    "**Now:** <what changes for the person, in one line>",
+    "**Proof:** `<test command>`: <N> passed, 0 failed",
+    "",
+    closes,
+  ].join("\n")
+}
+
+const bodyFix = (facts) =>
+  `Write the body like this, with no /home or ~/tmp paths, then run scripts/ocv-tools.mjs finish again:\n\n${passingBody(facts)}`
+
 function visibleBody(text) {
   const lines = []
   const sourceLines = []
@@ -324,6 +357,7 @@ export const jobRows = [
     at: ["finish", "body"],
     needs: ["body", "pull", "migrations", "diff"],
     check: badBody,
+    fix: bodyFix,
   }),
   row({
     id: "NO_BEFORE_AFTER",
