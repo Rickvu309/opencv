@@ -1,0 +1,10 @@
+[
+  {
+    "subject": "packages/domain/src/paper-page-scale.test.ts",
+    "because": "its subject, scalePaperPage, lost its last user when the old Paper engine page layout was deleted, so it is deleted",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 3
+  }
+]
