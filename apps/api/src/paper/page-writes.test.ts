@@ -32,7 +32,7 @@ export async function quick(db: any) {
 export async function quick(db: any) {
   await db.insert(schema.paperDocs).values({})
 }`,
-  "an insert through an aliased import": `import { paperPackageHeads as heads } from "../db/schema.js"
+  "an insert through an aliased import": `import { paperDocs as heads } from "../db/schema.js"
 export async function quick(db: any) {
   await db.insert(heads).values({})
 }`,
@@ -46,7 +46,7 @@ export async function quick(db: any) {
   await db.insert(targets.page).values({})
 }`,
   "a table taken out of the schema by destructuring": `import * as schema from "../db/schema.js"
-const { paperPackageHeads: heads } = schema
+const { paperDocs: heads } = schema
 export async function quick(db: any) {
   await db.insert(heads).values({})
 }`,
@@ -58,14 +58,14 @@ export async function quick(db: any) {
 
 const CLEAN = `import { sql, eq } from "drizzle-orm"
 import * as schema from "../db/schema.js"
-import { paperDocs, paperPackageHeads } from "../db/schema.js"
+import { paperDocs, paperShares } from "../db/schema.js"
 type Row = typeof paperDocs.$inferSelect
 export async function reads(db: any, owner: string): Promise<Row[]> {
   await db.update(paperDocs).set({ name: "x" }).where(eq(paperDocs.userId, owner))
-  await db.delete(paperPackageHeads).where(eq(paperPackageHeads.userId, owner))
+  await db.delete(paperDocs).where(eq(paperDocs.userId, owner))
   await db.execute(sql\`select id from opencv_app.paper_docs where user_id = \${owner}\`)
-  await db.select().from(schema.paperPackageHeads)
-  return db.select().from(paperDocs).innerJoin(paperPackageHeads, eq(paperDocs.id, paperPackageHeads.docId))
+  await db.select().from(schema.paperDocs)
+  return db.select().from(paperDocs).innerJoin(paperShares, eq(paperDocs.id, paperShares.docId))
 }`
 
 describe("only the paper store files insert page rows", () => {

@@ -246,7 +246,7 @@ class OwnedWatch {
   }
 }
 
-const PAGE_TABLES: readonly OwnedTable[] = ["paperDocs", "paperPackageHeads"]
+const PAGE_TABLES: readonly OwnedTable[] = ["paperDocs"]
 
 const COMMAND_PAGE_CREATORS = [
   "paper.create",
@@ -454,7 +454,7 @@ describe("the owned-row kind enrols every owned table and judges each sighting",
     expect(Object.keys(OWNED_READS).sort()).toEqual(
       Object.keys(ownedTables).sort()
     )
-    expect(Object.keys(ownedTables)).toContain("paperPackageHeads")
+    expect(Object.keys(ownedTables)).toContain("paperDocs")
     expect(Object.keys(ownedTables)).not.toContain("paperShares")
   })
 

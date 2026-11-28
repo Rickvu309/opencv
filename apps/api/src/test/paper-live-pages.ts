@@ -1,14 +1,10 @@
 import { RICH_NATIVE_WRITER } from "@workspace/domain/paper-doc"
-import { and, eq } from "drizzle-orm"
+import { eq } from "drizzle-orm"
 import { expect } from "vitest"
 import { z } from "zod"
 
 import { withDatabase } from "../db/context.js"
-import {
-  paperDocs,
-  paperPackageHeads,
-  paperPackageVersions,
-} from "../db/schema.js"
+import { paperDocs } from "../db/schema.js"
 import { authHeaders, createMigratedTestDb, createTestApp } from "./harness.js"
 
 export function paperReadRequest(
@@ -52,25 +48,13 @@ const listed = z.object({
 
 export async function livePagesOf(db: Db, userId: string) {
   return withDatabase(db, async () => {
-    const heads = await db
-      .select({ id: paperPackageHeads.docId, kind: paperPackageVersions.kind })
-      .from(paperPackageHeads)
-      .innerJoin(
-        paperPackageVersions,
-        and(
-          eq(paperPackageHeads.docId, paperPackageVersions.docId),
-          eq(paperPackageHeads.revision, paperPackageVersions.revision)
-        )
-      )
-      .where(eq(paperPackageHeads.userId, userId))
     const docs = await db
       .select({ id: paperDocs.id, kind: paperDocs.kind })
       .from(paperDocs)
       .where(eq(paperDocs.userId, userId))
-    return [
-      ...heads.map((row) => ({ id: row.id, kind: row.kind, word: true })),
-      ...docs.map((row) => ({ id: row.id, kind: row.kind, word: false })),
-    ].sort((left, right) => left.id.localeCompare(right.id))
+    return docs
+      .map((row) => ({ id: row.id, kind: row.kind, word: false }))
+      .sort((left, right) => left.id.localeCompare(right.id))
   })
 }
 

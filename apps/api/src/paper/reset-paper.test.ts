@@ -8,13 +8,7 @@ import { describe, expect, it } from "vitest"
 
 import { withDatabase } from "../db/context.js"
 import { migrationsFolder } from "../db/paths.js"
-import {
-  activity,
-  paperDocUpdates,
-  paperDocs,
-  paperShares,
-  user,
-} from "../db/schema.js"
+import { activity, paperDocs, paperShares, user } from "../db/schema.js"
 import { createId } from "../platform/id.js"
 import { installRegistry } from "../install.js"
 import { seedCoachActor } from "../test/coach-turn.js"
@@ -57,7 +51,6 @@ type CountRow = {
   idempotency: number
   pending: number
   papers: number
-  updates: number
   shares: number
   paper_refs: number
   avatar_refs: number
@@ -82,7 +75,6 @@ function countsOf(row: CountRow) {
     idempotency: Number(row.idempotency),
     pending: Number(row.pending),
     papers: Number(row.papers),
-    updates: Number(row.updates),
     shares: Number(row.shares),
     paperRefs: Number(row.paper_refs),
     avatarRefs: Number(row.avatar_refs),
@@ -215,15 +207,6 @@ describe("reset paper rows", () => {
         })
         expect(pending.pending).toBe(true)
         const editId = createId()
-        await db.insert(paperDocUpdates).values({
-          paperId: cvId,
-          seq: 20,
-          origin: "coach",
-          editId,
-          basedOn: 1,
-          touched: ["t1"],
-          update: Buffer.from([0, 0]),
-        })
         const revertId = createId()
         await db.insert(activity).values({
           id: revertId,
@@ -251,11 +234,9 @@ describe("reset paper rows", () => {
               (select count(*)::int from "opencv_app"."idempotency") as idempotency,
               (select count(*)::int from "opencv_app"."pending_actions") as pending,
               (select count(*)::int from "opencv_app"."paper_docs") as papers,
-              (select count(*)::int from "opencv_app"."paper_doc_updates") as updates,
               (select count(*)::int from "opencv_app"."paper_shares") as shares,
               (select count(*)::int from "opencv_app"."photo_refs"
-                where "source" like 'paper_docs.%'
-                   or "source" like 'paper_doc_updates:%') as paper_refs,
+                where "source" like 'paper_docs.%') as paper_refs,
               (select count(*)::int from "opencv_app"."photo_refs"
                 where "source" like 'user.image:%') as avatar_refs
           `)
@@ -292,7 +273,6 @@ describe("reset paper rows", () => {
             })),
         }
         expect(before.counts.papers).toBe(2)
-        expect(before.counts.updates).toBeGreaterThan(0)
         expect(before.counts.shares).toBe(1)
         expect(before.counts.paperRefs).toBeGreaterThan(0)
         expect(before.counts.avatarRefs).toBe(1)
@@ -315,7 +295,6 @@ describe("reset paper rows", () => {
           job: await readJob(),
         }
         expect(after.counts.papers).toBe(0)
-        expect(after.counts.updates).toBe(0)
         expect(after.counts.shares).toBe(0)
         expect(after.counts.paperRefs).toBe(0)
         expect(after.counts.avatarRefs).toBe(1)

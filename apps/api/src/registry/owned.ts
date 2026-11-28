@@ -40,7 +40,6 @@ export type OwnedReads = {
 }
 
 const byId = (row: OwnedRow) => String(row.id)
-const byDoc = (row: OwnedRow) => String(row.doc_id)
 const hidden: OwnedReads = { list: "unlisted", open: "none", idOf: byId }
 
 export const OWNED_READS: { [T in OwnedTable]: OwnedReads } = {
@@ -60,15 +59,6 @@ export const OWNED_READS: { [T in OwnedTable]: OwnedReads } = {
     shownWhen: (row) => row.purpose !== "package",
     idOf: byId,
   },
-  paperPackageVersions: { ...hidden, idOf: (row) => String(row.revision) },
-  paperPackageHeads: {
-    list: "paper.list",
-    open: "paper.read",
-    openInput: (docId) => ({ docId }),
-    idOf: byDoc,
-  },
-  paperPackageCandidates: hidden,
-  paperPackageTrash: { ...hidden, idOf: byDoc },
   paperDocs: {
     list: "paper.list",
     open: "paper.read",

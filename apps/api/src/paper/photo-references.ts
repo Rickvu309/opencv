@@ -5,11 +5,6 @@ import { getDb } from "../db/context.js"
 
 export const PHOTO_DOCUMENT_COLUMNS = [
   {
-    table: "paper_docs",
-    column: "crdt_document",
-    source: "paper_docs.crdt_document",
-  },
-  {
     table: "activity",
     column: "reversal_input",
     source: "activity.reversal_input",
@@ -41,11 +36,8 @@ export const PHOTO_DOCUMENT_COLUMNS = [
 ] as const
 
 export const PHOTO_BYTE_SOURCES = [
-  { table: "paper_doc_updates", column: "update", source: "paper_doc_updates" },
   { table: "user", column: "image", source: "user.image" },
 ] as const
-
-export const RELEASED_PHOTO_SOURCE = "paper_doc_updates.released"
 
 export const NOT_PHOTO_JSON = [
   {
@@ -102,16 +94,6 @@ export const NOT_PHOTO_JSON = [
     table: "paper_docs",
     column: "checks",
     why: "check notes do not name a photo",
-  },
-  {
-    table: "paper_doc_updates",
-    column: "touched",
-    why: "block ids, not a document",
-  },
-  {
-    table: "paper_doc_updates",
-    column: "rebuilt",
-    why: "block ids, not a document",
   },
   { table: "jobs", column: "posting", why: "a job posting, not a CV" },
   {
@@ -264,69 +246,13 @@ export const NOT_PHOTO_JSON = [
     column: "metadata",
     why: "sign-in client settings for a person's agent, not a document",
   },
-  {
-    table: "paper_package_candidates",
-    column: "seal",
-    why: "Word package file ids the package store keeps, not photo references",
-  },
-  {
-    table: "paper_package_versions",
-    column: "projection",
-    why: "Word page text regions, not photo references",
-  },
-  {
-    table: "paper_package_versions",
-    column: "sidecar",
-    why: "Word paragraph ids, not photo references",
-  },
 ] as const
-
-export async function dropServerReleasedPhoto(userId: UserId, fileId: string) {
-  await getDb().execute(sql`
-    update opencv_app.paper_doc_updates as updates
-    set released_photo_refs = array_remove(updates.released_photo_refs, ${fileId}::uuid)
-    where ${fileId}::uuid = any(updates.released_photo_refs)
-      and updates.paper_id in (
-        select docs.id
-        from opencv_app.paper_docs as docs
-        where docs.user_id = ${userId}
-      )
-      and (
-        updates.origin = 'server'
-        or exists (
-          select 1
-          from opencv_app.paper_doc_updates as undone
-          where undone.paper_id = updates.paper_id
-            and undone.origin = 'revert'
-            and undone.edit_id = updates.edit_id
-        )
-      )
-  `)
-}
 
 export async function referencedPhotoFileIds(userId: UserId) {
   const result = await getDb().execute<{ file_id: string }>(sql`
     select distinct refs.file_id::text as file_id
     from opencv_app.photo_refs as refs
     where refs.user_id = ${userId}
-      and (
-        refs.source not like 'paper_doc_updates.released:%'
-        or exists (
-          select 1
-          from opencv_app.paper_doc_updates as dropped
-          where dropped.paper_id::text =
-              split_part(refs.source, 'paper_doc_updates.released:', 2)
-            and dropped.origin <> 'server'
-            and refs.file_id = any(dropped.released_photo_refs)
-            and not exists (
-              select 1
-              from opencv_app.paper_doc_updates as undone
-              where undone.paper_id = dropped.paper_id
-                and undone.origin = 'revert'
-                and undone.edit_id = dropped.edit_id
-            )
-        )
-      )
   `)
   return new Set(result.rows.map((row) => row.file_id))
 }

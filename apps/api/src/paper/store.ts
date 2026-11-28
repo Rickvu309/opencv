@@ -26,10 +26,7 @@ import {
   mediaTypeForImport,
 } from "./import/import-parse.js"
 
-import {
-  dropServerReleasedPhoto,
-  referencedPhotoFileIds,
-} from "./photo-references.js"
+import { referencedPhotoFileIds } from "./photo-references.js"
 import { isEnginePaper, toListedEnginePaper } from "./listed-engine-paper.js"
 import { readPaperDocumentInfo } from "./document-info.js"
 import { admitted, engineLog, headOf } from "./engine-sync-log.js"
@@ -389,7 +386,6 @@ export async function deleteFile(actor: Actor, fileId: FileId) {
       "This photo is still in use by a CV, your profile, or Undo."
     )
   }
-  await dropServerReleasedPhoto(actor.userId, fileId)
   await getDb()
     .delete(files)
     .where(and(eq(files.id, fileId), eq(files.userId, actor.userId)))

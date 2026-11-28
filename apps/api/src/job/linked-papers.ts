@@ -9,11 +9,7 @@ import {
 import { and, eq } from "drizzle-orm"
 
 import { getDb } from "../db/context.js"
-import {
-  paperDocs,
-  paperPackageHeads,
-  paperPackageVersions,
-} from "../db/schema.js"
+import { paperDocs } from "../db/schema.js"
 import { CommandError } from "../platform/errors.js"
 import { changeJob, ownedJob, toJob, type JobRow } from "./store.js"
 
@@ -25,41 +21,15 @@ async function ownedPaper(userId: string, docId: string) {
     .from(paperDocs)
     .where(and(eq(paperDocs.id, docId), eq(paperDocs.userId, userId)))
     .limit(1)
-  if (doc) return { ...doc, wordPage: false }
-  const [page] = await getDb()
-    .select({
-      id: paperPackageHeads.docId,
-      name: paperPackageVersions.name,
-      kind: paperPackageVersions.kind,
-    })
-    .from(paperPackageHeads)
-    .innerJoin(
-      paperPackageVersions,
-      and(
-        eq(paperPackageVersions.docId, paperPackageHeads.docId),
-        eq(paperPackageVersions.revision, paperPackageHeads.revision)
-      )
-    )
-    .where(
-      and(
-        eq(paperPackageHeads.docId, docId),
-        eq(paperPackageHeads.userId, userId)
-      )
-    )
-    .limit(1)
-  return page ? { ...page, wordPage: true } : null
+  return doc ?? null
 }
 
 function linkedId(row: JobRow, kind: PaperKind) {
-  return kind === "cv"
-    ? (row.cvDocId ?? row.cvPackageId)
-    : (row.letterDocId ?? row.letterPackageId)
+  return kind === "cv" ? row.cvDocId : row.letterDocId
 }
 
-function links(kind: PaperKind, doc: string | null, wordPage: string | null) {
-  return kind === "cv"
-    ? { cvDocId: doc, cvPackageId: wordPage }
-    : { letterDocId: doc, letterPackageId: wordPage }
+function links(kind: PaperKind, doc: string | null) {
+  return kind === "cv" ? { cvDocId: doc } : { letterDocId: doc }
 }
 
 async function named(userId: UserId, docId: string | null) {
@@ -85,10 +55,7 @@ export async function linkPaper(
   if (!paper || paper.kind !== kind)
     throw new CommandError(ERROR_CODES.NOT_FOUND, "Document not found")
   const previous = linkedId(job, kind)
-  const changed = await changeJob(
-    job,
-    links(kind, paper.wordPage ? null : docId, paper.wordPage ? docId : null)
-  )
+  const changed = await changeJob(job, links(kind, docId))
   return {
     ...toJob(changed),
     previousDocId: previous ? parsePaperId(previous) : null,
@@ -98,5 +65,5 @@ export async function linkPaper(
 
 export async function unlinkPaper(actor: Actor, jobId: JobId, kind: PaperKind) {
   const job = await ownedJob(actor.userId, jobId)
-  return toJob(await changeJob(job, links(kind, null, null)))
+  return toJob(await changeJob(job, links(kind, null)))
 }
