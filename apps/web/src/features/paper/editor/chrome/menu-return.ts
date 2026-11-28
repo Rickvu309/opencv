@@ -3,23 +3,25 @@ import { useRef } from "react"
 function openedFromKeyboard(event: Event | undefined) {
   if (!event) return false
   if (event instanceof KeyboardEvent) return true
-  if (typeof PointerEvent !== "undefined" && event instanceof PointerEvent)
-    return event.pointerType === "" && event.detail === 0
-  return event instanceof MouseEvent && event.detail === 0
+  return event.type === "click" && (event as MouseEvent).detail === 0
 }
 
 export function useMenuReturn(back: () => false) {
-  const closedBy = useRef("")
+  const toTrigger = useRef(false)
   const keyboard = useRef(false)
   return {
     onOpenChange: (
       open: boolean,
       details: { reason: string; event?: Event }
     ) => {
-      if (open) keyboard.current = openedFromKeyboard(details.event)
-      closedBy.current = open ? "" : details.reason
+      if (open) {
+        keyboard.current = openedFromKeyboard(details.event)
+        toTrigger.current = false
+        return
+      }
+      toTrigger.current = details.reason === "escape-key" && keyboard.current
+      if (!toTrigger.current) back()
     },
-    finalFocus: () =>
-      closedBy.current === "escape-key" && keyboard.current ? true : back(),
+    finalFocus: () => toTrigger.current,
   }
 }
