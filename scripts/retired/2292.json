@@ -1,0 +1,10 @@
+[
+  {
+    "subject": "scripts/paper-content-isolation.test.mjs",
+    "because": "Engine 1 cached CRDT heads are gone with the switch; the promise that only one place writes Paper content, inside the outer commit, is now scripts/paper-one-writer.test.mjs with apps/api/src/paper/log/log.test.ts",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 15
+  }
+]
