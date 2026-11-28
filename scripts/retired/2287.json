@@ -1,0 +1,100 @@
+[
+  {
+    "subject": "apps/api/src/paper/import/import-parse.test.ts",
+    "because": "Engine 2 is now every Paper: a person's typing goes through the tab engine and paper.save, so undo is the tab history, and an imported Paper's text is read from the engine view; each row keeps its promise on the new page",
+    "replacedBy": "apps/api/src/paper/import/import-parse.test.ts",
+    "proof": {
+      "fork": "aec0255c7f614be83cc70e6d69406e4be634757c",
+      "replacedByBlob": "8010e836de4e1a3656a43645d7cee81695179365",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 1
+  },
+  {
+    "subject": "apps/api/src/scenarios/paper.scenario.test.ts > a Paper in the list > shows its first lines, and a blank one shows none",
+    "because": "Engine-1 list preview text. On the new page the library card carries the real first page, and drafted lines land on the new page; both rows live in paper-engine.scenario.test.ts",
+    "replacedBy": "apps/api/src/scenarios/paper-engine.scenario.test.ts",
+    "proof": {
+      "fork": "aec0255c7f614be83cc70e6d69406e4be634757c",
+      "replacedByBlob": "25829df54c2f871d9415ba49e84f72d553653016",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 1
+  },
+  {
+    "subject": "apps/api/src/scenarios/paper-engine.scenario.test.ts",
+    "because": "Engine 2 is now every Paper: a person's typing goes through the tab engine and paper.save, so undo is the tab history, a new Paper already has its log, and an imported Paper's text is read from the engine view; each row keeps its promise on the new page",
+    "replacedBy": "apps/api/src/scenarios/paper-engine.scenario.test.ts",
+    "proof": {
+      "fork": "aec0255c7f614be83cc70e6d69406e4be634757c",
+      "replacedByBlob": "25829df54c2f871d9415ba49e84f72d553653016",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 2
+  },
+  {
+    "subject": "apps/api/src/paper/page-creators.test.ts",
+    "because": "Every way of making a Paper now makes a new-engine Paper (paper.start, paper.duplicate, imports, the Word page conversion), so these checks read the engine page and its snapshot instead of the engine-1 rich columns",
+    "replacedBy": "apps/api/src/paper/page-creators.test.ts",
+    "proof": {
+      "fork": "aec0255c7f614be83cc70e6d69406e4be634757c",
+      "replacedByBlob": "5e30afbf3855a498b9c2d529d1453c07533c37e9",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 5
+  },
+  {
+    "subject": "apps/api/src/coach/coach-starts-paper.test.ts",
+    "because": "Every way of making a Paper now makes a new-engine Paper (paper.start, paper.duplicate, imports, the Word page conversion), so these checks read the engine page and its snapshot instead of the engine-1 rich columns",
+    "replacedBy": "apps/api/src/coach/coach-starts-paper.test.ts",
+    "proof": {
+      "fork": "aec0255c7f614be83cc70e6d69406e4be634757c",
+      "replacedByBlob": "1c416f8f41e9bb4d20fccf4ba3e29b94afd3a74e",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 1
+  },
+  {
+    "subject": "apps/api/src/paper/word-pages-to-papers.test.ts",
+    "because": "Every way of making a Paper now makes a new-engine Paper (paper.start, paper.duplicate, imports, the Word page conversion), so these checks read the engine page and its snapshot instead of the engine-1 rich columns",
+    "replacedBy": "apps/api/src/paper/word-pages-to-papers.test.ts",
+    "proof": {
+      "fork": "aec0255c7f614be83cc70e6d69406e4be634757c",
+      "replacedByBlob": "cfd49a1995fdfc6537f7b5a60de80f1e8b179f41",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 1
+  },
+  {
+    "subject": "apps/api/src/paper/blank-paper-copy.test.ts",
+    "because": "Every way of making a Paper now makes a new-engine Paper (paper.start, paper.duplicate, imports, the Word page conversion), so these checks read the engine page and its snapshot instead of the engine-1 rich columns",
+    "replacedBy": "apps/api/src/paper/blank-paper-copy.test.ts",
+    "proof": {
+      "fork": "aec0255c7f614be83cc70e6d69406e4be634757c",
+      "replacedByBlob": "91c57936ef5abad66b1541439fcb88dd1c4c690c",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 2
+  }
+]

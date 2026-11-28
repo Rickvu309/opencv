@@ -1,19 +1,3 @@
-import { eq } from "drizzle-orm"
-
-import { paperDocs } from "../../db/schema.js"
-import type { createTestApp } from "../../test/harness.js"
-
-export async function publishedText(
-  db: Parameters<typeof createTestApp>[0],
-  docId: string
-) {
-  const rows = await db
-    .select({ document: paperDocs.crdtDocument })
-    .from(paperDocs)
-    .where(eq(paperDocs.id, docId))
-  return JSON.stringify(rows.map((row) => row.document))
-}
-
 function pdfDocument(objects: string[]): Buffer {
   let body = "%PDF-1.4\n"
   const offsets = [0]

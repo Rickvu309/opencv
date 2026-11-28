@@ -80,6 +80,12 @@ export const LAB_SURFACE = {
   pointer: { force: true },
 }
 
+export const PAPER_SURFACE = {
+  ...LAB_SURFACE,
+  name: "paper",
+  fromLibrary: true,
+}
+
 const fine = (value) => (value === null ? null : Math.round(value * 10) / 10)
 
 export function fineStats(samples) {

@@ -77,9 +77,9 @@ it("turns a Word page into a Paper at the same address, keeps its Job link and o
             "paper.list",
             { writer: RICH_NATIVE_WRITER },
             person
-          )) as { id: string; format?: string }[]
-        ).map((item) => [item.id, item.format])
-      ).toEqual([[docId, "rich"]])
+          )) as { id: string; kind: string; contentVersion: number }[]
+        ).map((item) => [item.id, item.kind, item.contentVersion])
+      ).toEqual([[docId, "cv", 0]])
 
       expect(await convertWordPages()).toEqual({
         converted: [],

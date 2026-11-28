@@ -9,7 +9,11 @@ import {
   keystrokeStats,
   lineStart,
 } from "./keystrokes.mjs"
-import { LAB_SURFACE, labKeystrokeTiming } from "./lab-surface.mjs"
+import {
+  LAB_SURFACE,
+  PAPER_SURFACE,
+  labKeystrokeTiming,
+} from "./lab-surface.mjs"
 import { wordBytesFacts } from "./word-file.mjs"
 
 const FIXTURES = new URL("../fixtures/", import.meta.url)
@@ -139,7 +143,11 @@ const RICH_SURFACE = {
   pointer: {},
 }
 
-export const SURFACES = { rich: RICH_SURFACE, lab: LAB_SURFACE }
+export const SURFACES = {
+  rich: RICH_SURFACE,
+  lab: LAB_SURFACE,
+  paper: PAPER_SURFACE,
+}
 
 function tab(page, surface = RICH_SURFACE) {
   const settle = async (ms = SETTLE_MS) => {
@@ -262,7 +270,7 @@ export function browserPerson({
       current = null
     },
     openBlankCv: async () => {
-      if (surface !== RICH_SURFACE) {
+      if (surface !== RICH_SURFACE && !surface.fromLibrary) {
         await page().goto(`${state.webOrigin}${state.route}?doc=blank`, {
           waitUntil: "domcontentloaded",
         })
@@ -293,10 +301,10 @@ export function browserPerson({
         .click({ timeout: STEP_MS })
       await current.waitForEditor()
       await page()
-        .locator(PARAGRAPH)
+        .locator(surface.line)
         .filter({ visible: true })
         .last()
-        .click({ timeout: STEP_MS })
+        .click({ timeout: STEP_MS, ...surface.pointer })
     },
     openImportedCv: async (file) => {
       await page().goto(`${state.webOrigin}${state.route ?? "/paper"}`, {
@@ -311,7 +319,7 @@ export function browserPerson({
       await page().waitForFunction(
         ([selector, wanted]) =>
           document.querySelector(selector)?.innerText.includes(wanted),
-        [PAGE, LOOP_FILES[file].heading],
+        [surface.page, LOOP_FILES[file].heading],
         { timeout: PAGE_MS }
       )
       await page().waitForTimeout(OPEN_SETTLE_MS)

@@ -8,6 +8,7 @@ import { describe, expect, it } from "vitest"
 import { z } from "zod"
 
 import { withDatabase, type TestDatabase } from "../db/context.js"
+import { engineLog } from "../paper/engine-sync-log.js"
 import { paperDocs, user } from "../db/schema.js"
 import {
   authHeaders,
@@ -413,6 +414,7 @@ describe("every row a person makes is listed, opens for them, and stays hidden f
       if (sent.status >= 500)
         ownerFailures.push(`${where} answered ${sent.answer} for its owner`)
       await withDatabase(db, async () => {
+        await engineLog.settleFirstPages()
         await watch.checkRows(where, await writesAfter(db, before))
         await watch.rerun(
           where,

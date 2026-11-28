@@ -1,4 +1,4 @@
-import { paperPhotoRef, RICH_NATIVE_WRITER } from "@workspace/domain/paper-doc"
+import { RICH_NATIVE_WRITER, type Document } from "@workspace/domain/paper-doc"
 import { eq } from "drizzle-orm"
 import { describe, expect, it } from "vitest"
 
@@ -11,8 +11,6 @@ import {
   signUp,
 } from "../test/harness.js"
 import { richInfoRequest } from "../test/paper-live-pages.js"
-import { richPaper } from "../test/rich-paper.js"
-import { seedColumns } from "./content/content-document.js"
 import { png, postAvatar } from "./photo.fixtures.js"
 
 describe("Copied CV photo lifetime", () => {
@@ -48,9 +46,32 @@ describe("Copied CV photo lifetime", () => {
       expect(uploaded.status).toBe(200)
       const fileId = ((await uploaded.json()) as { data: { id: string } }).data
         .id
+      const [source] = await db
+        .select({ snapshot: paperDocs.snapshot })
+        .from(paperDocs)
+        .where(eq(paperDocs.id, sourceId))
+      const page = source?.snapshot as Document
       await db
         .update(paperDocs)
-        .set(seedColumns("cv", richPaper("cv", paperPhotoRef(fileId))))
+        .set({
+          snapshot: {
+            ...page,
+            content: [
+              ...page.content,
+              {
+                type: "image",
+                attrs: {
+                  id: "photo-1",
+                  fileId,
+                  widthMpt: 72000,
+                  heightMpt: 72000,
+                  align: "left",
+                  alt: "Photo",
+                },
+              },
+            ],
+          },
+        })
         .where(eq(paperDocs.id, sourceId))
       const duplicated = await command("paper.duplicate", {
         docId: sourceId,
@@ -82,10 +103,10 @@ describe("Copied CV photo lifetime", () => {
       )
       expect(surviving.status).toBe(200)
       const [kept] = await db
-        .select({ document: paperDocs.crdtDocument })
+        .select({ snapshot: paperDocs.snapshot })
         .from(paperDocs)
         .where(eq(paperDocs.id, survivingId))
-      expect(JSON.stringify(kept?.document)).toContain(paperPhotoRef(fileId))
+      expect(JSON.stringify(kept?.snapshot)).toContain(fileId)
       const bytes = await app.request(`/api/paper/files/${fileId}/bytes`, {
         headers: authHeaders(owner.cookie),
       })

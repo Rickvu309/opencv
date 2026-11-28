@@ -23,7 +23,7 @@ import {
 } from "./page-probes.mjs"
 
 const FIXTURES = new URL("../fixtures/", import.meta.url)
-const PAGE = '[contenteditable="true"]'
+const PAGE = ".paper-editor"
 const SAVED = 'p.writing-note[title="Saved"], p.writing-note:text-is("Saved")'
 const PANEL = '[data-slot="coach-panel"]'
 const COMPOSER = `${PANEL} [data-slot="coach-workspace-composer"] textarea`
@@ -307,7 +307,7 @@ export function browserWorld({ browser, state, accounts, shotsDir, now }) {
       },
       typeLine: async (text) => {
         const editor = page.locator(PAGE).first()
-        await editor.click({ timeout: STEP_MS })
+        await editor.click({ timeout: STEP_MS, force: true })
         await page.keyboard.press("Control+End")
         await page.keyboard.press("Enter")
         await page.keyboard.type(text)

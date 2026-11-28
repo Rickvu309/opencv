@@ -6,6 +6,7 @@ import { z } from "zod"
 import type { OperationBinding } from "../../../registry/bind.js"
 import { startedName, startingPaper } from "../../new-paper.js"
 import { createPaper } from "../../store.js"
+import { startingPage } from "../create/server.js"
 
 type Started = { docId: string; name: string; kind: "cv" | "letter" }
 
@@ -32,6 +33,7 @@ export const implementation = {
       name: startedName(input, company),
       ...(templateId ? { templateId } : {}),
       paper: startingPaper({ kind: input.kind, templateId }),
+      page: startingPage({ kind: input.kind, templateId }),
     })
     if (input.jobId)
       await registry.execute({

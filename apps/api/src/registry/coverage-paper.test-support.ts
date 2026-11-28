@@ -81,29 +81,27 @@ export function paperCases(tools: CoverageTools): CoverageCase[] {
       },
       act: async () => {
         const read = await registry.read(
-          "paper.read",
+          "paper.outline",
           { docId: editDocId },
           personActor(userId)
         )
         const block = firstBlockWith(read, "Harbor")
+        const at = { block: block.id, offset: 6 }
         return run(paperEdit.name, {
           docId: editDocId,
           basedOn: block.revision,
-          nativeBasis: block.nativeBasis,
-          edits: [
+          commands: [
             {
               op: "replaceText",
-              blockId: block.id,
-              from: 6,
-              to: 6,
-              before: "",
+              range: { from: at, to: at },
               text: " light",
+              expect: "",
             },
           ],
         })
       },
       assert: async (result) => {
-        expect(result.reversal?.command).toBe("paper.undoEdit")
+        expect(result.reversal?.command).toBe("paper.revert")
         expect(await outlineText(editDocId)).toContain("Harbor light")
       },
       undoAssert: async (result) => {
@@ -282,18 +280,10 @@ export function paperCases(tools: CoverageTools): CoverageCase[] {
 }
 
 function firstBlockWith(read: unknown, words: string) {
-  const page = read as {
-    revision: number
-    nativeBasis: unknown
-    outline: string
-  }
+  const page = read as { revision: number; outline: string }
   const block = (
-    JSON.parse(page.outline) as { id: string; content: { text: string }[] }[]
-  ).find((node) => node.content.some((run) => run.text.includes(words)))
+    JSON.parse(page.outline) as { id: string; text: string }[]
+  ).find((node) => node.text.includes(words))
   if (!block) throw new Error(`missing block with ${words}`)
-  return {
-    id: block.id,
-    revision: page.revision,
-    nativeBasis: page.nativeBasis,
-  }
+  return { id: block.id, revision: page.revision }
 }

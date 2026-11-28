@@ -1,18 +1,18 @@
+import { personActor } from "@workspace/domain/kernel"
+import { eq } from "drizzle-orm"
 import { afterEach, describe, expect, it } from "vitest"
 
+import { withDatabase } from "../../db/context.js"
+
 import { files, paperDocs } from "../../db/schema.js"
+import { registry } from "../../registry/registry.js"
 import {
   createMigratedTestDb,
   createTestApp,
   signUp,
   testWebOrigin,
 } from "../../test/harness.js"
-import {
-  pagedPdf,
-  publishedText,
-  textDocx,
-  textPdf,
-} from "./import-fixtures.test.js"
+import { pagedPdf, textDocx, textPdf } from "./import-fixtures.test.js"
 import {
   IMPORT_GENERIC_MESSAGE,
   IMPORT_PDF_HEAVY_MESSAGE,
@@ -22,6 +22,24 @@ import {
 import { IMPORT_FILE_CAP, IMPORT_SIZE_MESSAGE } from "../store.js"
 
 type Published = { docId: string }
+
+async function engineText(
+  db: Parameters<typeof createTestApp>[0],
+  docId: string
+) {
+  const [row] = await db
+    .select({ userId: paperDocs.userId })
+    .from(paperDocs)
+    .where(eq(paperDocs.id, docId))
+  const read = (await withDatabase(db, () =>
+    registry.read(
+      "paper.read",
+      { docId, view: "engine" },
+      personActor(row!.userId)
+    )
+  )) as { doc: { content: unknown } }
+  return JSON.stringify(read.doc.content)
+}
 
 function formFile(bytes: Buffer, name: string, type: string) {
   const form = new FormData()
@@ -88,7 +106,7 @@ describe("paper import bounds", () => {
     )
     expect(response.status).toBe(200)
     const body = (await response.json()) as { data: Published }
-    const text = await publishedText(db, body.data.docId)
+    const text = await engineText(db, body.data.docId)
     expect(text).toContain("FIRST-PAGE")
     expect(text).toContain("CAP-PAGE")
     await client.close()
@@ -215,7 +233,7 @@ describe("paper import bounds", () => {
       const response = await postFile(app, owner.cookie, bytes, name, type)
       expect(response.status).toBe(200)
       const body = (await response.json()) as { data: Published }
-      expect(await publishedText(db, body.data.docId)).toContain(words)
+      expect(await engineText(db, body.data.docId)).toContain(words)
     }
     expect(await db.select().from(paperDocs)).toHaveLength(4)
     await client.close()
@@ -337,7 +355,7 @@ describe("paper import bounds", () => {
     )
     expect(text.status).toBe(200)
     const body = (await text.json()) as { data: Published }
-    expect(await publishedText(db, body.data.docId)).toContain("Café résumé")
+    expect(await engineText(db, body.data.docId)).toContain("Café résumé")
     expect(await db.select().from(paperDocs)).toHaveLength(1)
     await client.close()
   })

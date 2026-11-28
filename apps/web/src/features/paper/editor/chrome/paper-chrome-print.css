@@ -15,6 +15,20 @@
     display: none;
   }
 
+  body:has(.paper-chrome)
+    :is(
+      nav,
+      header,
+      aside,
+      [role="toolbar"],
+      [role="menubar"],
+      [role="navigation"],
+      [data-slot="sidebar"],
+      [data-slot="sidebar-gap"]
+    ):not(.paper-chrome *) {
+    display: none !important;
+  }
+
   .paper-chrome {
     display: block;
     height: auto;

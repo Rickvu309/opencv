@@ -9,7 +9,7 @@ import { createEngine } from "@workspace/paper-engine"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 
 import { createDemoCoachRuntime } from "../coach/index.js"
-import { agentConnections, oauthClient } from "../db/schema.js"
+import { agentConnections, oauthClient, paperDocs } from "../db/schema.js"
 import { createPaperLog, postgresLogStore } from "../paper/log/index.js"
 import { createId } from "../platform/id.js"
 import {
@@ -20,6 +20,15 @@ import {
   type World,
 } from "./person.test-support.js"
 import { span, type Command } from "./paper-engine.test-support.js"
+import { eq } from "drizzle-orm"
+import { getDb } from "../db/context.js"
+
+function seedOwnLog(docId: string) {
+  return getDb()
+    .update(paperDocs)
+    .set({ engine: 1, snapshot: null, headVersion: 0 })
+    .where(eq(paperDocs.id, docId))
+}
 
 let world: World
 const scenarioEngine = createEngine({
@@ -101,6 +110,7 @@ async function engineWritten(person: Person, lines: string[]) {
       content: [{ type: "text", text }],
     })),
   } as unknown as Document
+  await world.inside(() => seedOwnLog(docId))
   expect(await world.inside(() => scenarioLog.start(docId, doc))).toEqual({
     ok: true,
   })

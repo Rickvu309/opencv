@@ -146,28 +146,3 @@ describe("a Paper started blank", () => {
     expect(restored.status).toBe(200)
   })
 })
-
-describe("a Paper in the list", () => {
-  it("shows its first lines, and a blank one shows none", async () => {
-    const ada = await world.person("Ada")
-    await ada.run("paper.create", {
-      kind: "letter",
-      name: "Letter to Northwind",
-      format: "rich",
-      lines: ["Dear Northwind team,", "", "I would like to join you."],
-    })
-    await blank(ada, "cv", "Marketing CV")
-    const listed = dataOf<(Paper & { preview?: string[] })[]>(
-      await ada.read("paper.list", { writer })
-    )
-    expect(
-      Object.fromEntries(listed.map((paper) => [paper.name, paper.preview]))
-    ).toEqual({
-      "Letter to Northwind": [
-        "Dear Northwind team,",
-        "I would like to join you.",
-      ],
-      "Marketing CV": [],
-    })
-  })
-})

@@ -29,6 +29,7 @@ const contextSchema = z.object({
       revision: z.number(),
       outline: z.string(),
       nativeBasis: nativeBasisSchema.optional(),
+      engine: z.literal(2).optional(),
     })
     .optional(),
   context: z.array(z.object({ kind: z.string(), id: z.string() })).optional(),

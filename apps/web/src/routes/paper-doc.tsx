@@ -1,26 +1,36 @@
-import { Suspense, lazy } from "react"
+import { useQueryClient, type QueryClient } from "@tanstack/react-query"
 import { useNavigate, useRouterState } from "@tanstack/react-router"
-import { useQuery } from "@tanstack/react-query"
+import { Suspense, lazy, useEffect, useReducer } from "react"
+import { toast } from "sonner"
+
 import {
   ERROR_CODES,
   catalog,
   paperIdSchema,
   parsePaperId,
 } from "@workspace/domain/kernel"
-import { RICH_NATIVE_WRITER } from "@workspace/domain/paper-doc"
+import { RICH_NATIVE_WRITER, type Document } from "@workspace/domain/paper-doc"
 
 import { Button } from "@workspace/ui/components/button"
 import { Skeleton } from "@workspace/ui/components/skeleton"
 
-import { validatePaperSearch } from "@/features/paper/paper-templates.ts"
-import { authClient } from "@/lib/auth-client.ts"
-import { queryKey } from "@/lib/contract-client.ts"
-import { SURFACE_PATHS } from "@/lib/product-paths.ts"
-import { ApiError } from "@/lib/api-error.ts"
 import {
-  qualifiedPaperKey,
-  qualifiedPaperRead,
-} from "@/lib/paper-qualification.ts"
+  PaperChrome,
+  type ChromeSync,
+} from "@/features/paper/editor/chrome/paper-chrome.tsx"
+import { validatePaperSearch } from "@/features/paper/paper-templates.ts"
+import { ApiError } from "@/lib/api-error.ts"
+import { catalogClient } from "@/lib/contract-client.ts"
+import {
+  downloadEnginePaper,
+  openEnginePaperPdf,
+} from "@/lib/paper-engine-download.ts"
+import { openPaperSync } from "@/lib/paper-sync.ts"
+import { browserSyncPorts } from "@/lib/paper-sync-ports.ts"
+import { SURFACE_PATHS } from "@/lib/product-paths.ts"
+import { holdWritingCoachFocus } from "@/lib/writing-coach-focus.ts"
+import { loadedSessionCheck } from "@/lib/session-check.ts"
+import { qualifiedPaperRead } from "@/lib/paper-qualification.ts"
 
 const RichPaperPage = lazy(() =>
   import("@/features/paper/rich-editor/rich-page.tsx").then((module) => ({
@@ -28,8 +38,8 @@ const RichPaperPage = lazy(() =>
   }))
 )
 
-const NO_DOC = parsePaperId("00000000-0000-4000-8000-000000000000")
 const PAPER_PREFIX = `${SURFACE_PATHS.paper}/`
+const NOT_FOUND = "Document not found."
 
 function docIdFromPath(pathname: string) {
   if (!pathname.startsWith(PAPER_PREFIX)) return ""
@@ -38,19 +48,92 @@ function docIdFromPath(pathname: string) {
   )
 }
 
-function LetterEditorFallback() {
-  return (
-    <section
-      aria-label="Paper"
-      aria-busy="true"
-      className="flex flex-col items-center gap-4 p-6"
-    >
-      <Skeleton className="h-[792px] w-full max-w-[560px]" />
-    </section>
+type PaperState =
+  | { kind: "opening" }
+  | {
+      kind: "open"
+      docId: string
+      title: string
+      doc: Document
+      sync: ChromeSync
+    }
+  | { kind: "failed"; message: string; retry: boolean }
+  | {
+      kind: "first-engine"
+      docId: ReturnType<typeof parsePaperId>
+      info: Extract<
+        Awaited<ReturnType<typeof qualifiedPaperRead>>,
+        { format: "rich" }
+      >
+      ownerId: string
+      sessionId: string
+    }
+
+type PaperAction = { type: "opened"; state: PaperState }
+
+function paperReducer(_state: PaperState, action: PaperAction): PaperState {
+  return action.state
+}
+
+const olderFormat: PaperState = {
+  kind: "failed",
+  message: "This document cannot be opened in Paper.",
+  retry: false,
+}
+
+async function openSavedPaper(
+  queryClient: QueryClient,
+  docId: string
+): Promise<PaperState> {
+  const check = await loadedSessionCheck()
+  if (check.kind !== "signed-in")
+    return {
+      kind: "failed",
+      message: "Sign in to open this Paper",
+      retry: false,
+    }
+  const ownerId = check.session.user.id
+  const sessionId = check.session.session.id
+  const info = await qualifiedPaperRead(
+    catalog["paper.read"].name,
+    parsePaperId(docId),
+    { ownerId, sessionId, writer: RICH_NATIVE_WRITER }
   )
+  if (info.format !== "rich") return olderFormat
+  const metadata = await catalogClient.read(catalog["paper.read"].name, {
+    docId,
+    view: "engine",
+  })
+  if (!("doc" in metadata))
+    return {
+      kind: "first-engine",
+      docId: parsePaperId(docId),
+      info,
+      ownerId,
+      sessionId,
+    }
+  const paper = await openPaperSync(docId, browserSyncPorts(docId, queryClient))
+  return {
+    kind: "open",
+    docId,
+    title: metadata.name,
+    doc: paper.doc,
+    sync: { paper, actor: check.session.user.id },
+  }
+}
+
+function openFailure(error: unknown): PaperState {
+  if (error instanceof ApiError && error.code === ERROR_CODES.NOT_FOUND)
+    return { kind: "failed", message: NOT_FOUND, retry: false }
+  return {
+    kind: "failed",
+    message: "Could not open this document.",
+    retry: true,
+  }
 }
 
 export function PaperDocPage() {
+  const queryClient = useQueryClient()
   const navigate = useNavigate()
   const pathname = useRouterState({
     select: (state) => state.location.pathname,
@@ -61,84 +144,119 @@ export function PaperDocPage() {
   const search = validatePaperSearch(routeSearch)
   const parsedId = paperIdSchema.safeParse(docIdFromPath(pathname))
   const docId = parsedId.success ? parsedId.data : null
-  const session = authClient.useSession()
-  const ownerId = session.data?.user.id ?? ""
-  const sessionId = session.data?.session.id ?? ""
-  const qualification = { ownerId, sessionId, writer: RICH_NATIVE_WRITER }
-  const ready = docId !== null && ownerId !== "" && sessionId !== ""
-  const document = useQuery({
-    queryKey: ready
-      ? qualifiedPaperKey(
-          queryKey({
-            query: catalog["paper.read"].name,
-            input: { view: "info", docId },
-          }),
-          qualification
-        )
-      : ["paper-document-unavailable", docId],
-    queryFn: ({ signal }) =>
-      qualifiedPaperRead(catalog["paper.read"].name, docId ?? NO_DOC, {
-        ...qualification,
-        signal,
-      }),
-    enabled: ready,
-    retry: false,
-  })
-  const back = () => void navigate({ to: SURFACE_PATHS.paper, search })
-  const notOpened = (message: string) => (
-    <section aria-label="Paper" className="flex flex-col items-start gap-3 p-4">
-      <p>{message}</p>
-      <Button variant="outline" onClick={back}>
-        Paper
-      </Button>
-    </section>
+  const [paper, dispatch] = useReducer(paperReducer, { kind: "opening" })
+  const [attempt, retry] = useReducer((count: number) => count + 1, 0)
+
+  useEffect(
+    () => (docId === null ? undefined : holdWritingCoachFocus(docId)),
+    [docId]
   )
-  if (docId === null) return notOpened("Document not found.")
-  if (session.isPending || (ready && document.isLoading))
-    return <LetterEditorFallback />
-  if (!document.data)
+  useEffect(() => {
+    if (docId === null) return
+    let alive = true
+    let opened: PaperState | null = null
+    dispatch({ type: "opened", state: { kind: "opening" } })
+    openSavedPaper(queryClient, docId)
+      .then((state) => {
+        opened = state
+        if (alive) dispatch({ type: "opened", state })
+        else if (state.kind === "open") state.sync.paper.close()
+      })
+      .catch((error: unknown) => {
+        if (alive) dispatch({ type: "opened", state: openFailure(error) })
+      })
+    return () => {
+      alive = false
+      if (opened?.kind === "open") opened.sync.paper.close()
+    }
+  }, [queryClient, docId, attempt])
+
+  const back = () => void navigate({ to: SURFACE_PATHS.paper, search })
+  if (docId === null || paper.kind === "failed")
     return (
       <section
         aria-label="Paper"
         className="flex flex-col items-start gap-3 p-4"
       >
-        <p>
-          {document.error instanceof ApiError &&
-          document.error.code === ERROR_CODES.NOT_FOUND
-            ? "Document not found."
-            : "Could not open this document."}
+        <p role="alert">
+          {docId === null
+            ? NOT_FOUND
+            : paper.kind === "failed"
+              ? paper.message
+              : NOT_FOUND}
         </p>
-        {document.error instanceof ApiError &&
-        document.error.code === ERROR_CODES.NOT_FOUND ? null : (
-          <Button onClick={() => void document.refetch()}>Try again</Button>
-        )}
+        {paper.kind === "failed" && paper.retry ? (
+          <Button onClick={retry}>Try again</Button>
+        ) : null}
         <Button variant="outline" onClick={back}>
           Paper
         </Button>
       </section>
     )
-  if (document.data.format !== "rich")
-    return notOpened("This document cannot be opened in Paper.")
-  return (
-    <Suspense fallback={<LetterEditorFallback />}>
-      <RichPaperPage
-        key={`${ownerId}:${sessionId}:${docId}`}
-        name={document.data.name}
-        kind={document.data.kind}
-        editedAt={document.data.updatedAt}
-        identity={{
-          kind: "native",
-          ownerId,
-          sessionId,
-          docId,
-          writer: RICH_NATIVE_WRITER,
-          provenance: document.data.provenance,
-        }}
-        onBack={back}
-        onOpen={(id) =>
-          void navigate({ to: "/paper/$docId", params: { docId: id }, search })
+  if (paper.kind === "opening")
+    return <main aria-label="Paper" aria-busy="true" />
+  if (paper.kind === "first-engine")
+    return (
+      <Suspense
+        fallback={
+          <section
+            aria-label="Paper"
+            aria-busy="true"
+            className="flex flex-col items-center gap-4 p-6"
+          >
+            <Skeleton className="h-[792px] w-full max-w-[560px]" />
+          </section>
         }
+      >
+        <RichPaperPage
+          key={`${paper.ownerId}:${paper.sessionId}:${paper.docId}`}
+          name={paper.info.name}
+          kind={paper.info.kind}
+          editedAt={paper.info.updatedAt}
+          identity={{
+            kind: "native",
+            ownerId: paper.ownerId,
+            sessionId: paper.sessionId,
+            docId: paper.docId,
+            writer: RICH_NATIVE_WRITER,
+            provenance: paper.info.provenance,
+          }}
+          onBack={back}
+          onOpen={(id) =>
+            void navigate({
+              to: "/paper/$docId",
+              params: { docId: id },
+              search,
+            })
+          }
+        />
+      </Suspense>
+    )
+  const openedId = paper.docId
+  return (
+    <main aria-label="Paper" key={openedId}>
+      <PaperChrome
+        doc={paper.doc}
+        title={paper.title}
+        sync={paper.sync}
+        photoReason="Needs a saved photo"
+        download={{
+          start: (format: "word" | "pdf") => {
+            void downloadEnginePaper(
+              queryClient,
+              openedId,
+              format === "word" ? "docx" : "pdf"
+            ).catch(() =>
+              toast.error("Paper could not download this file. Try again.")
+            )
+          },
+        }}
+        onPrint={() => {
+          void openEnginePaperPdf(queryClient, openedId).catch(() =>
+            toast.error("Paper could not open the PDF. Try again.")
+          )
+        }}
       />
-    </Suspense>
+    </main>
   )
 }
