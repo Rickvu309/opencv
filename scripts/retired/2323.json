@@ -14,5 +14,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 3
+  },
+  {
+    "subject": "packages/domain/src/paper-doc.test.ts",
+    "because": "Its subject is deleted: the old Paper link normaliser, plain-text reader, formatting patch, layout and photo edits, photo geometry and presentation patch validator had no live caller after every Paper moved to the new engine",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
   }
 ]
