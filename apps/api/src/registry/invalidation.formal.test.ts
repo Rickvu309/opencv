@@ -80,6 +80,7 @@ const SNAPSHOT_QUERIES: {
   "file.get": (ids) => ids.files.map((fileId) => ({ fileId })),
   "paper.files": () => [{}],
   "paper.outline": (ids) => ids.docs.map((docId) => ({ docId })),
+  "paper.suggestions": (ids) => ids.docs.map((docId) => ({ docId })),
   "profile.get": () => [{}],
   "integrations.list": () => [{}],
   "billing.get": () => [{}],

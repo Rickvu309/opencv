@@ -70,6 +70,7 @@ import { operation as paper$outline } from "../operations/paper/outline/operatio
 import { operation as paper$read } from "../operations/paper/read/operation.js"
 import { operation as paper$save } from "../operations/paper/save/operation.js"
 import { operation as paper$start } from "../operations/paper/start/operation.js"
+import { operation as paper$suggestions } from "../operations/paper/suggestions/operation.js"
 import { operation as paper$update } from "../operations/paper/update/operation.js"
 import { operation as profile$get } from "../operations/profile/get/operation.js"
 import { operation as profile$markWelcomed } from "../operations/profile/mark-welcomed/operation.js"
@@ -150,6 +151,7 @@ export const catalog = {
   "paper.read": paper$read,
   "paper.save": paper$save,
   "paper.start": paper$start,
+  "paper.suggestions": paper$suggestions,
   "paper.update": paper$update,
   "profile.get": profile$get,
   "profile.markWelcomed": profile$markWelcomed,

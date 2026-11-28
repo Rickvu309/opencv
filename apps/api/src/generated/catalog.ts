@@ -72,6 +72,7 @@ import { implementation as paper$outline } from "../paper/operations/outline/ser
 import { implementation as paper$read } from "../paper/operations/read/server.js"
 import { implementation as paper$save } from "../paper/operations/save/server.js"
 import { implementation as paper$start } from "../paper/operations/start/server.js"
+import { implementation as paper$suggestions } from "../paper/operations/suggestions/server.js"
 import { implementation as paper$update } from "../paper/operations/update/server.js"
 import { implementation as profile$get } from "../account/operations/profile/get/server.js"
 import { implementation as profile$markWelcomed } from "../account/operations/profile/mark-welcomed/server.js"
@@ -152,6 +153,7 @@ export const implementations = {
   "paper.read": paper$read,
   "paper.save": paper$save,
   "paper.start": paper$start,
+  "paper.suggestions": paper$suggestions,
   "paper.update": paper$update,
   "profile.get": profile$get,
   "profile.markWelcomed": profile$markWelcomed,

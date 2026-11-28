@@ -266,6 +266,20 @@ export function receiveChanges(
   return { tr, versions, lost }
 }
 
+export function receiveSegments(
+  changes: readonly Change[],
+  accepted?: (change: Change) => string | null
+): { changes: Change[]; batch: string | null }[] {
+  const segments: { changes: Change[]; batch: string | null }[] = []
+  for (const change of changes) {
+    const batch = accepted?.(change) ?? null
+    const last = segments.at(-1)
+    if (batch === null && last && last.batch === null) last.changes.push(change)
+    else segments.push({ changes: [change], batch })
+  }
+  return segments
+}
+
 export function provable(command: DocCommand): boolean {
   return "expect" in command && typeof command.expect === "string"
     ? command.expect.length > 0

@@ -33,6 +33,7 @@ export function mountEditorSuggestions(
     },
     undo: editor.undo,
     changed: editor.refresh,
+    focus: editor.focus,
   })
 
   function locateReal(point: PagePoint): Pos {
@@ -42,6 +43,7 @@ export function mountEditorSuggestions(
   }
 
   return {
+    undone: layer.undone,
     stripHeight: layer.stripHeight,
     display: layer.display,
     draw: layer.draw,
