@@ -6,5 +6,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 18
+  },
+  {
+    "subject": "apps/api/src/paper/owned-word-output.test.ts",
+    "because": "It tests old Paper Word page code that this change deletes; every Paper is on the new engine and downloads Word through the engine export.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
   }
 ]
