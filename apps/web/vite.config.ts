@@ -54,6 +54,10 @@ export default defineConfig(({ mode }) => {
           __dirname,
           "../../packages/paper-crdt/src/index.ts"
         ),
+        "@workspace/paper-engine": path.resolve(
+          __dirname,
+          "../../packages/paper-engine/src/index.ts"
+        ),
       },
     },
     envDir: path.resolve(__dirname, "../.."),
