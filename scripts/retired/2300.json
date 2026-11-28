@@ -1,0 +1,10 @@
+[
+  {
+    "subject": "apps/api/src/coach/rich-grounding.test.ts",
+    "because": "Grounding on a saved engine-1 rich basis is gone: every Paper is engine 2 and paper.outline reads only the engine log, covered by the paper-engine scenarios.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  }
+]
