@@ -8,7 +8,11 @@
   "historic": {
     "mode": "detect",
     "sha": "a8b7e0cae",
-    "path": "apps/web/src/features/paper-page/document-chrome.tsx"
+    "path": "apps/web/src/features/paper-page/document-chrome.tsx",
+    "fixed": {
+      "rev": "8027a2b3a",
+      "path": "apps/web/src/features/paper-page/document-chrome.tsx"
+    }
   },
   "reason": "PR 1668 wrote Edited just now as fixed text in the Paper document header, so every document said it was edited just now whatever its real edited time."
 }

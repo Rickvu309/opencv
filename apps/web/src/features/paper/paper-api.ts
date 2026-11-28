@@ -5,10 +5,8 @@ import {
 } from "@workspace/domain/paper-doc"
 import type { QueryClient } from "@tanstack/react-query"
 import type { ChatDetail, ChatToolName } from "@workspace/domain/coach"
-import type { FileId } from "@workspace/domain/kernel"
 
 import { ApiError, isErrorEnvelope } from "@/lib/api.ts"
-import { unwrapData, type SuccessBody } from "@/lib/api-envelope.ts"
 import { catalogClient } from "@/lib/contract-client.ts"
 import { streamChatTurn } from "@/lib/coach-stream.ts"
 import { tailCoachTask } from "@/lib/coach-task-client.ts"
@@ -33,30 +31,6 @@ export function cvPhotoRejection(file: File) {
   if (!file.type.startsWith("image/")) return CV_PHOTO_TYPE_REJECTION
   if (file.size > CV_PHOTO_MAX_BYTES) return CV_PHOTO_SIZE_REJECTION
   return null
-}
-
-export async function uploadPaperPhoto(file: File): Promise<FileId> {
-  const rejection = cvPhotoRejection(file)
-  if (rejection) throw new ApiError(400, "VALIDATION_ERROR", rejection)
-  const body = new FormData()
-  body.set("file", file)
-  const res = await fetchBinary(endpoints.paperFiles, {
-    method: "POST",
-    credentials: "include",
-    body,
-  })
-  if (!res.ok) {
-    const payload = (await res.json().catch(() => null)) as {
-      error?: { message?: string }
-    } | null
-    throw new ApiError(
-      res.status,
-      "REQUEST_FAILED",
-      payload?.error?.message ?? "Could not add the photo. Try again."
-    )
-  }
-  const payload = (await res.json()) as SuccessBody<{ id: FileId }>
-  return unwrapData(payload).id
 }
 
 export async function extractLetterAttachment(
