@@ -12,7 +12,6 @@ import { createLayouter, paperFontMetrics } from "@workspace/paper-engine"
 import manifest from "../../../../../../packages/paper-fonts/fonts.json" with { type: "json" }
 import { transaction } from "../../../db/context.js"
 import type { OperationBinding } from "../../../registry/bind.js"
-import { withRichSnapshot } from "../../content/content-store.js"
 import { readEnginePaper } from "../../engine-sync-log.js"
 import { photoReferences } from "../../log/index.js"
 import { writePdf } from "../../pdf/write-pdf.js"
@@ -71,20 +70,12 @@ async function exportEnginePaper(
 
 export const implementation = {
   operation,
-  execute: (input, actor) => {
-    if ("format" in input)
-      return exportEnginePaper(
-        actor.userId,
-        parsePaperId(input.docId),
-        input.format
-      )
-    return withRichSnapshot(actor.userId, input, async (snapshot) => ({
-      docId: snapshot.docId,
-      kind: snapshot.kind,
-      name: snapshot.name,
-      basis: snapshot.basis,
-    }))
-  },
+  execute: (input, actor) =>
+    exportEnginePaper(
+      actor.userId,
+      parsePaperId(input.docId),
+      "format" in input ? input.format : "docx"
+    ),
 } satisfies OperationBinding<
   typeof operation,
   import("zod").output<typeof operation.publicResult>

@@ -1,0 +1,50 @@
+[
+  {
+    "subject": "apps/api/src/coach/rich-grounding.test.ts",
+    "because": "Grounding on a saved engine-1 rich basis is gone: every Paper is engine 2 and paper.outline reads only the engine log, covered by the paper-engine scenarios.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/api/src/paper/content/content-rich-http.test.ts",
+    "because": "The old paper.save sync over HTTP now refuses; every Paper is engine 2 and saves through engine changes. D9 deletes the old storage folder.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/api/src/paper/content/content-rich.test.ts",
+    "because": "The old rich storage admission ran through the old paper.save, which now refuses; every Paper is engine 2. D9 deletes the old storage folder.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 8
+  },
+  {
+    "subject": "apps/api/src/paper/native-word-http.test.ts",
+    "because": "It saved edits through the old paper.save over HTTP, which now refuses because every Paper is engine 2. D11 removes the old Word download.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
+  },
+  {
+    "subject": "apps/api/src/paper/rich-edit.test.ts",
+    "because": "The old rich paper.edit and paper.undoEdit are gone; Coach edits use engine commands with paper.revert, covered by the paper-engine and suggestion-undo scenarios.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/api/src/paper/native-word.test.ts",
+    "because": "paper.export without format no longer returns an old rich basis; it downloads through the engine. The Word download still checks its basis through downloadNativeWord in the same case.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  }
+]

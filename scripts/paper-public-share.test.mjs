@@ -90,7 +90,7 @@ test("revocable shared responses require no-store for JSON, photos and errors", 
 })
 
 test("accepted public projection and routes retain both boundaries", () => {
-  for (const file of ["store.ts", "content/read-paper.ts"]) {
+  for (const file of ["store.ts"]) {
     assert.deepEqual(
       detectSharedOwnerProjection(
         readFileSync(

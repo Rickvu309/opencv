@@ -9,50 +9,28 @@ import {
   nativeProvenance,
   paperDocumentInfoSchema,
   storedPaperDocumentSchema,
-  type NativeWriter,
 } from "@workspace/domain/paper-doc"
 import { getDb } from "../db/context.js"
 import { paperDocs } from "../db/schema.js"
 import { CommandError } from "../platform/errors.js"
-import { admitDocument } from "./content/native-admission.js"
 import { NEW_ENGINE } from "./log/index.js"
 
-export async function readPaperDocumentInfo(
-  userId: UserId,
-  docId: PaperId,
-  writer?: NativeWriter
-) {
+export async function readPaperDocumentInfo(userId: UserId, docId: PaperId) {
   const [row] = await getDb()
     .select()
     .from(paperDocs)
     .where(and(eq(paperDocs.id, docId), eq(paperDocs.userId, userId)))
     .limit(1)
-  if (!row) throw new CommandError(ERROR_CODES.NOT_FOUND, "Document not found")
-  if (row.engine === NEW_ENGINE)
-    return paperDocumentInfoSchema.parse({
-      id: row.id,
-      name: row.name,
-      kind: row.kind,
-      format: "rich",
-      provenance: nativeProvenance(
-        storedPaperDocumentSchema.parse(emptyRichPaper(row.kind))
-      ),
-      updatedAt: row.updatedAt.toISOString(),
-    })
-  const document = storedPaperDocumentSchema.parse(row.crdtDocument)
-  if (document.kind !== row.kind)
-    throw new CommandError(ERROR_CODES.CONFLICT, "Document identity changed")
-  admitDocument(document, writer)
+  if (!row || row.engine !== NEW_ENGINE)
+    throw new CommandError(ERROR_CODES.NOT_FOUND, "Document not found")
   return paperDocumentInfoSchema.parse({
     id: row.id,
     name: row.name,
     kind: row.kind,
-    ...(document.version === 4 && document.schemaRevision === 2
-      ? {
-          format: "rich",
-          provenance: nativeProvenance(document),
-          updatedAt: row.updatedAt.toISOString(),
-        }
-      : { format: "prose" }),
+    format: "rich",
+    provenance: nativeProvenance(
+      storedPaperDocumentSchema.parse(emptyRichPaper(row.kind))
+    ),
+    updatedAt: row.updatedAt.toISOString(),
   })
 }
