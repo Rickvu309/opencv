@@ -40,7 +40,6 @@
   "packages/guards/wall-clock.test.mjs",
   "packages/guards/workspace-scripts.test.mjs",
   "scripts/approve-railway-deploys.test.mjs",
-  "scripts/blocknote-dependencies.test.mjs",
   "scripts/check.test.mjs",
   "scripts/checks-doc.test.mjs",
   "scripts/kit-duplicates.test.mjs",

@@ -2,59 +2,66 @@ import assert from "node:assert/strict"
 import { execFileSync } from "node:child_process"
 import { readFileSync } from "node:fs"
 import test from "node:test"
-import {
-  emptyPaper,
-  emptyRichPaper,
-} from "../packages/domain/src/paper-doc/blank-canvas.ts"
-import {
-  detect,
-  detectDocument,
-  detectRichDocument,
-  message,
-  richMessage,
-} from "./lib/paper-blank-canvas.mjs"
-import {
-  applyCanvasBytes,
-  mainXml,
-  mintBlankBytes,
-  paragraphsOf,
-  contentOf,
-} from "./lib/paper-canvas-bytes.mjs"
+import { detect, detectDocument, message } from "./lib/paper-blank-canvas.mjs"
+import { contentOf, mainXml, paragraphsOf } from "./lib/paper-canvas-bytes.mjs"
+import { importSource } from "./lib/source-import.mjs"
+
+const blankFile = "packages/domain/src/paper-doc/engine-blank.ts"
+const createFile = "apps/api/src/paper/operations/create/server.ts"
+const { emptyPaper, blankCv, blankLetter } = await importSource(blankFile)
+const { writeDocx } = await importSource(
+  "apps/api/src/paper/word/write-docx.ts"
+)
 
 const read = (path) =>
   readFileSync(new URL(`../${path}`, import.meta.url), "utf8")
+
+const withBlock = (document, change) => ({
+  ...document,
+  content: [{ ...document.content[0], ...change(document.content[0]) }],
+})
 
 test("every blank kind contains only one empty paragraph", () => {
   for (const kind of ["cv", "letter"]) {
     const clean = emptyPaper(kind)
     assert.deepEqual(detectDocument(clean), [])
-    assert.deepEqual(detectDocument({ ...clean, header: { type: "header" } }), [
-      message,
+    for (const mistake of [
+      { ...clean, content: [...clean.content, { ...clean.content[0] }] },
+      withBlock(clean, () => ({ content: [{ text: "Pretend name" }] })),
+      withBlock(clean, (block) => ({
+        attrs: { ...block.attrs, kind: "heading1" },
+      })),
+      withBlock(clean, (block) => ({
+        attrs: { ...block.attrs, align: "center" },
+      })),
+      withBlock(clean, (block) => ({
+        attrs: { ...block.attrs, list: "bullet" },
+      })),
+      {
+        ...clean,
+        attrs: {
+          ...clean.attrs,
+          page: {
+            ...clean.attrs.page,
+            marginsMpt: { ...clean.attrs.page.marginsMpt, top: 36000 },
+          },
+        },
+      },
     ])
-    assert.deepEqual(
-      detectDocument({
-        ...clean,
-        blocks: [...clean.blocks, { type: "section" }],
-      }),
-      [message]
-    )
-    assert.deepEqual(
-      detectDocument({
-        ...clean,
-        blocks: [{ ...clean.blocks[0], style: "Normal" }],
-      }),
-      [message]
-    )
+      assert.deepEqual(detectDocument(mistake), [message])
   }
+  assert.deepEqual(detectDocument(blankCv()), [])
+  assert.deepEqual(detectDocument(blankLetter()), [])
 })
 
 test("a blank Letter keeps its one anchor paragraph", () => {
   assert.deepEqual(detectDocument(emptyPaper("letter")), [])
   assert.deepEqual(
-    detectDocument({
-      ...emptyPaper("letter"),
-      blocks: [{ id: "paragraph-1", type: "paragraph", content: [] }],
-    }),
+    detectDocument(
+      withBlock(emptyPaper("letter"), (block) => ({
+        attrs: { ...block.attrs, id: "paragraph-1" },
+      }))
+    ),
     [message]
   )
 })
@@ -80,35 +87,46 @@ test("blank factories delegate and the historical starter CV fails", () => {
     ),
     [message]
   )
-  for (const file of [
-    "packages/domain/src/paper-doc/document.ts",
-    "scripts/lib/paper-canvas-mint.mjs",
-    "apps/api/src/paper/store.ts",
-  ])
+  for (const file of [blankFile, createFile])
     assert.deepEqual(detect(read(file), file), [])
-  const introduced = execFileSync(
-    "git",
-    ["show", "c998b453c:packages/domain/src/paper-doc/document.ts"],
-    { encoding: "utf8" }
+  for (const sha of ["c998b453c", "38eab62e"])
+    assert.deepEqual(
+      detect(
+        execFileSync(
+          "git",
+          ["show", `${sha}:packages/domain/src/paper-doc/document.ts`],
+          { encoding: "utf8" }
+        )
+      ),
+      [message, message]
+    )
+})
+
+test("a new Paper starts from the engine blank unless it brings lines", () => {
+  const create = read(createFile)
+  const kept = "return content.length ? { ...blank, content } : blank"
+  assert.ok(create.includes(kept))
+  assert.deepEqual(
+    detect(
+      create.replace(
+        kept,
+        "return { ...blank, content: [...starterSections(), ...content] }"
+      ),
+      createFile
+    ),
+    [message]
   )
-  assert.deepEqual(detect(introduced), [message, message])
-  const historic = execFileSync(
-    "git",
-    ["show", "38eab62e:packages/domain/src/paper-doc/document.ts"],
-    { encoding: "utf8" }
+  assert.deepEqual(
+    detect(
+      create.replace("paperEngineBlank.blankLetter()", "starterLetter()"),
+      createFile
+    ),
+    [message]
   )
-  assert.deepEqual(detect(historic), [message, message])
-  assert.match(
-    read("apps/api/src/paper/store.ts"),
-    /emptyRichPaper\(input.kind\)/
-  )
-  assert.match(
-    read("apps/api/src/paper/content/read-paper.ts"),
-    /row\.kind === "cv"\s*\?\s*blankCv\(\)\s*:\s*blankLetter\(\)/
-  )
+  assert.match(create, /page: startingPage\(input\)/)
   assert.match(
     read("apps/web/src/features/paper/paper-new-dialog.tsx"),
-    /"paper\.create", \{\s*kind: "cv",\s*format: "rich",\s*templateId,\s*\}/
+    /"paper\.create", \{\s*kind,\s*format: "rich",\s*\}/
   )
   assert.match(
     read("apps/web/src/features/paper/paper-letter-start.tsx"),
@@ -116,147 +134,24 @@ test("blank factories delegate and the historical starter CV fails", () => {
   )
 })
 
-test("the rich blank is one empty paragraph with no header, photo, table or formatting", () => {
-  for (const kind of ["cv", "letter"]) {
-    const clean = emptyRichPaper(kind)
-    assert.deepEqual(detectRichDocument(clean), [])
-    const section = clean.flow.children[0]
+test("the blank Word download has one empty paragraph, A4 one inch margins and no applied style", () => {
+  for (const blank of [blankCv(), blankLetter()]) {
+    const bytes = writeDocx(blank, new Map())
+    const xml = mainXml(bytes)
+    const paragraphs = paragraphsOf(bytes)
+    assert.equal(paragraphs.length, 1)
+    assert.equal(contentOf(paragraphs[0]), "")
+    assert.doesNotMatch(xml, /<w:r\b/)
     assert.deepEqual(
-      detectRichDocument({
-        ...clean,
-        flow: {
-          ...clean.flow,
-          children: [
-            {
-              ...section,
-              children: [
-                ...section.children,
-                { ...section.children.at(-1), id: "paragraph-2" },
-              ],
-            },
-          ],
-        },
-      }),
-      [richMessage]
+      [...xml.matchAll(/<w:pStyle w:val="([^"]+)"/g)].map((match) => match[1]),
+      ["Normal"]
     )
-    assert.deepEqual(
-      detectRichDocument({
-        ...clean,
-        flow: {
-          ...clean.flow,
-          children: [
-            {
-              ...section,
-              children: [
-                {
-                  ...section.children.at(-1),
-                  paragraph: { alignment: "center" },
-                },
-              ],
-            },
-          ],
-        },
-      }),
-      [richMessage]
+    assert.doesNotMatch(xml, /<(?:w:)?(?:rPr|color|headerReference|numPr)\b/)
+    assert.doesNotMatch(xml, /<w:jc w:val="(?!left")/)
+    assert.match(xml, /<w:pgSz w:w="11906" w:h="16838"/)
+    assert.match(
+      xml,
+      /<w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440"/
     )
   }
-  const cv = emptyRichPaper("cv")
-  const header = cv.flow.children[0].children[0]
-  assert.deepEqual(
-    detectRichDocument({
-      ...cv,
-      flow: {
-        ...cv.flow,
-        children: [
-          {
-            ...cv.flow.children[0],
-            children: [
-              {
-                ...header,
-                children: [
-                  {
-                    ...header.children[0],
-                    content: [{ text: "Pretend name" }],
-                  },
-                  ...header.children.slice(1),
-                ],
-              },
-              ...cv.flow.children[0].children.slice(1),
-            ],
-          },
-        ],
-      },
-    }),
-    [richMessage]
-  )
-  assert.deepEqual(
-    detectRichDocument({
-      ...cv,
-      flow: {
-        ...cv.flow,
-        children: [
-          {
-            ...cv.flow.children[0],
-            children: cv.flow.children[0].children.slice(1),
-          },
-        ],
-      },
-    }),
-    [richMessage]
-  )
-})
-
-test("the rich blank creation path uses the factory and the full editor command", () => {
-  assert.match(
-    read("apps/api/src/paper/store.ts"),
-    /input\.paper \?\? emptyRichPaper\(input\.kind\)/
-  )
-  assert.match(
-    read("apps/api/src/paper/store.ts"),
-    /writer: NativeWriter = RICH_NATIVE_WRITER/
-  )
-  assert.match(
-    read("apps/api/src/paper/operations/create/server.ts"),
-    /paper: startingPaper\(input\)/
-  )
-  assert.match(
-    read("apps/api/src/paper/new-paper.ts"),
-    /\n  return undefined\n\}\n\nexport function startedName\(/
-  )
-  assert.match(
-    read("apps/web/src/features/paper/paper-new-dialog.tsx"),
-    /"paper\.create", \{\s*kind,\s*format: "rich",\s*\}/
-  )
-})
-
-test("the blank Word download has one empty paragraph, default margins and no applied style", () => {
-  const bytes = mintBlankBytes()
-  const paragraphs = paragraphsOf(bytes)
-  assert.equal(paragraphs.length, 1)
-  assert.equal(contentOf(paragraphs[0]), "")
-  assert.match(mainXml(bytes), /<w:r><w:t><\/w:t><\/w:r>/)
-  assert.doesNotMatch(
-    mainXml(bytes),
-    /<(?:w:)?(?:pStyle|rPr|jc|color|headerReference)\b/
-  )
-  assert.match(mainXml(bytes), /<w:pgSz w:w="12240" w:h="15840"/)
-  assert.match(
-    mainXml(bytes),
-    /<w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440"/
-  )
-})
-
-test("the unformatted blank accepts a split without a section carrier paragraph", () => {
-  const bytes = mintBlankBytes()
-  const result = applyCanvasBytes(
-    bytes,
-    { op: "split", paragraph: "blank", at: 0 },
-    {
-      version: 2,
-      paragraphs: [{ key: "blank", ordinal: 0, textIds: ["11111112"] }],
-    }
-  )
-  assert.equal(result.status, "APPLIED")
-  assert.equal(paragraphsOf(result.bytes).length, 2)
-  assert.doesNotMatch(mainXml(result.bytes), /<w:(pStyle|rPr)\b/)
 })

@@ -1,6 +1,0 @@
-{
-  "id": "paper-page-layout",
-  "file": "scripts/paper-page-layout.test.mjs",
-  "historic": null,
-  "reason": "Page reflow and continuous-sheet guards are new in this unmerged editor. Main has no ancestor of the gap-band or scaled-page sheet, so a historic pass would be fabricated. Reviewed-sheet fixtures and the current sources cover gap paint, page height, scaling, fractional margins and the 44px phone actions without pinning a branch-only commit."
-}
