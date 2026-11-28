@@ -4,7 +4,6 @@ export type SourceFile = { path: string; text: string }
 
 export const PAGE_TABLES: Record<string, string> = {
   paperDocs: "paper_docs",
-  paperPackageHeads: "paper_package_heads",
 }
 
 export const PAGE_STORE_FILES = ["paper/store.ts"]

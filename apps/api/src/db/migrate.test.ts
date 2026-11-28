@@ -38,7 +38,6 @@ const productTables = [
   "oauth_refresh_token",
   "oauth_resource",
   "paper_changes",
-  "paper_doc_updates",
   "paper_docs",
   "paper_shares",
   "pending_actions",
@@ -215,11 +214,11 @@ describe("opencv_app migrations", () => {
         values (${last.hash}, ${last.folderMillis})
       `)
       const before = await client.query<Record<string, unknown>>(
-        'select crdt_document, content_version, updated_at, is_favorite from "opencv_app"."paper_docs"'
+        'select content_version, updated_at, is_favorite from "opencv_app"."paper_docs"'
       )
       await runMigrations(db as unknown as AppDatabase)
       const after = await client.query(
-        'select crdt_document, content_version, updated_at, is_favorite from "opencv_app"."paper_docs"'
+        'select content_version, updated_at, is_favorite from "opencv_app"."paper_docs"'
       )
       expect(after.rows).toEqual(before.rows)
       expect(

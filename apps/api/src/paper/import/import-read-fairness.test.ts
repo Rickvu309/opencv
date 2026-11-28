@@ -4,7 +4,7 @@ import { Worker } from "node:worker_threads"
 import { eq } from "drizzle-orm"
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest"
 
-import { paperPackageHeads, user } from "../../db/schema.js"
+import { paperDocs, user } from "../../db/schema.js"
 import {
   createMigratedTestDb,
   createTestApp,
@@ -444,7 +444,7 @@ describe("the import and Letter routes share one gate", () => {
 
   it("drops a waiting import whose client left and makes no page", async () => {
     const [, second] = people
-    const before = await db.select().from(paperPackageHeads)
+    const before = await db.select().from(paperDocs)
     const leaving = new AbortController()
     const response = await holding(randomUUID(), () =>
       holding(randomUUID(), async () => {
@@ -461,9 +461,7 @@ describe("the import and Letter routes share one gate", () => {
     expect(await response.json()).toMatchObject({
       error: { message: IMPORT_CANCELLED_MESSAGE },
     })
-    expect(await db.select().from(paperPackageHeads)).toHaveLength(
-      before.length
-    )
+    expect(await db.select().from(paperDocs)).toHaveLength(before.length)
   })
 
   it("refuses PDF reading and says so in the health check when the worker memory watch is missing", async () => {

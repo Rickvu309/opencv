@@ -5,14 +5,6 @@
     "module": "apps/api/src/paper/page-writes.ts",
     "export": "detect"
   },
-  "historic": {
-    "mode": "detect",
-    "sha": "b506553c773007315b93131706aa5f2ca9a03f34",
-    "path": "apps/api/src/paper/package-card-actions.ts",
-    "fixed": {
-      "rev": "90f364f85",
-      "path": "apps/api/src/paper/word-package/package-card-actions.ts"
-    }
-  },
-  "reason": "Caught by review. A page row was inserted outside the paper store at b506553c: restoring a Word page from trash wrote its head from package-card-actions.ts, so no closed list of page creators existed and PR 1441 broke opening imported pages unseen. detect fires on that insert and stays quiet once the insert sits behind restoreWordHead in package-store.ts."
+  "historic": null,
+  "reason": "Caught by review. A page row was inserted outside the paper store at b506553c: restoring a Word page from trash wrote its head from package-card-actions.ts into paper_package_heads. Migration 0029_paper_drop_old dropped that table, so the historic insert names no page table any more; the mistake fixtures in page-writes.test.ts keep the same insert shapes against paper_docs."
 }
