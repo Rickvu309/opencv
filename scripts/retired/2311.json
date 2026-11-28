@@ -174,5 +174,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 1
+  },
+  {
+    "subject": "scripts/no-editor-view-framework.test.mjs > CLEAN",
+    "because": "the old core is deleted, so the guard covers the whole repo and the old core paths moved from the quiet fixtures to the firing ones",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
   }
 ]
