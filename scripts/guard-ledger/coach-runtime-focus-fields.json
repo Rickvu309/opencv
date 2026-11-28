@@ -1,0 +1,14 @@
+{
+  "id": "coach-runtime-focus-fields",
+  "file": "scripts/coach-runtime-focus-fields.test.mjs",
+  "detector": {
+    "module": "scripts/lib/coach-runtime-focus-fields.mjs",
+    "export": "detect"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "6acc6b57e",
+    "path": "apps/api/src/coach/task-runtime.ts",
+    "reads": ["apps/api/src/coach/fake.ts"]
+  }
+}

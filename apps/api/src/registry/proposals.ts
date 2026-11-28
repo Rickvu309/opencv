@@ -156,6 +156,30 @@ export async function lockProposal(userId: string, id: string) {
   return { row, task }
 }
 
+export function openProposalsOn(
+  userId: string,
+  command: string,
+  docId: string
+) {
+  return getDb()
+    .select({
+      id: pendingActions.id,
+      input: pendingActions.input,
+      summary: pendingActions.summary,
+    })
+    .from(pendingActions)
+    .where(
+      and(
+        eq(pendingActions.userId, userId),
+        eq(pendingActions.command, command),
+        eq(pendingActions.status, "pending"),
+        sql`${pendingActions.input}->>'docId' = ${docId}`,
+        sql`${pendingActions.createdAt} + interval '24 hours' > clock_timestamp()`
+      )
+    )
+    .orderBy(pendingActions.createdAt, pendingActions.id)
+}
+
 export async function expireTaskApprovals() {
   const rows = await getDb()
     .select()
