@@ -78,5 +78,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 1
+  },
+  {
+    "subject": "apps/api/src/paper/import/word-to-paper.test.ts > a Word file brought in becomes a Paper > keeps headings, lists, marks, alignment, spacing, tables, page breaks and page size",
+    "because": "It built its Word file with the old Word writer under apps/api/src/paper/native-output, which is removed. A Word round trip through the new writer and reader is covered by apps/api/src/paper/word/round-trip.test.ts.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
   }
 ]
