@@ -118,5 +118,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 1
+  },
+  {
+    "subject": "scripts/guard-ledger/paper-pending-content.json",
+    "because": "Only tests engine 1 rich CRDT merges, and engine 1 is gone with the switch; the promise that concurrent edits merge without losing text is now packages/paper-engine/src/collab-rebase.test.ts with no-text-loss.model.test.ts and two-tabs.model.test.ts",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
   }
 ]
