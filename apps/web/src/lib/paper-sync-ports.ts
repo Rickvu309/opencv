@@ -46,8 +46,7 @@ export function catalogTransport(queryClient: QueryClient): SyncTransport {
             refresh: false,
           }
         )
-        if ("ok" in reply || "stale" in reply) return reply as SaveReply
-        throw new RefusedSave("Paper save answered for another engine")
+        return reply as SaveReply
       } catch (error) {
         if (refusedStatus(error))
           throw new RefusedSave(

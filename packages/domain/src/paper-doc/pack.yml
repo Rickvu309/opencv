@@ -7,7 +7,6 @@ public:
     paper-contract.ts,
     paper-contract-views.ts,
     paper-diff.ts,
-    paper-rich-edit.ts,
     paper-start.ts,
     paper-presentation.ts,
   ]

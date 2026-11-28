@@ -1,10 +1,7 @@
 import { z } from "zod"
 import { defineOperation } from "../../../operation.js"
 import type { ResourceRef } from "../../../resources.js"
-import {
-  nativeBasisSchema,
-  nativeWriterSchema,
-} from "../../../paper-doc/native.js"
+import { nativeWriterSchema } from "../../../paper-doc/native.js"
 import {
   paperDocStatusSchema,
   paperStoredKindSchema,
@@ -16,7 +13,7 @@ export const operation = defineOperation({
   version: 2,
   kind: "read",
   description:
-    "Read a bounded outline of a CV or Letter: its name, kind and status, its text blocks with ids, kinds and marks, the revision to pass as basedOn, engine 2 when paper.edit takes commands, and the nativeBasis to copy unchanged into paper.edit. Pass blockIds to mark selected blocks.",
+    "Read a bounded outline of a CV or Letter: its name, kind and status, its text blocks with ids, kinds and marks, the revision to pass as basedOn, and engine 2 when paper.edit takes commands. Pass blockIds to mark selected blocks.",
   label: "Read your Paper outline",
   readLabel: "Read your Paper outline",
   input: z
@@ -35,7 +32,6 @@ export const operation = defineOperation({
       kind: paperStoredKindSchema,
       status: paperDocStatusSchema,
       revision: z.number().int(),
-      nativeBasis: nativeBasisSchema.optional(),
       outline: z.string(),
       truncated: z.boolean(),
       engine: z.literal(2).optional(),

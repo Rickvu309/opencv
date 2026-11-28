@@ -231,7 +231,7 @@ flowchart TD
 | `packages/domain/src/coach` | platform | public.ts, coach.ts, coach-mode.ts, coach-task.ts, chat.ts, chat-messages.ts, chat-title.ts, chat-turn.ts, chat-views.ts | packages/domain/src/apply, packages/domain/src/paper-doc | none |
 | `packages/domain/src/control` | platform | public.ts, control.ts | none | none |
 | `packages/domain/src/inbox` | platform | public.ts, index.ts | packages/domain/src/apply | none |
-| `packages/domain/src/paper-doc` | platform | public.ts, index.ts, paper.ts, paper-contract.ts, paper-contract-views.ts, paper-diff.ts, paper-rich-edit.ts, paper-start.ts, paper-presentation.ts | none | none |
+| `packages/domain/src/paper-doc` | platform | public.ts, index.ts, paper.ts, paper-contract.ts, paper-contract-views.ts, paper-diff.ts, paper-start.ts, paper-presentation.ts | none | none |
 | `packages/paper-corpus` | platform | tests/fixtures/cvs/en-10.expected.json, tests/fixtures/cvs/vi-01.expected.json | none | none |
 | `packages/paper-engine` | platform | src/index.ts | packages/domain/src/paper-doc, packages/paper-engine/src/layout | none |
 | `packages/paper-engine/src/layout` | platform | index.ts | packages/domain/src/paper-doc, packages/paper-fonts | none |

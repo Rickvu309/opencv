@@ -1,5 +1,4 @@
 import { ERROR_CODES, personActor } from "@workspace/domain/kernel"
-import { NATIVE_WRITER } from "@workspace/domain/paper-doc"
 import type { ZodType } from "zod"
 import { describe, expect, it } from "vitest"
 
@@ -158,16 +157,22 @@ describe("every command runs in a transaction unless it declares none", () => {
               : name === "paper.save"
                 ? {
                     docId: UUID,
-                    epoch: 0,
-                    update: "",
-                    stateVector: "",
-                    writer: NATIVE_WRITER,
-                    provenance: {
-                      documentVersion: 4,
-                      schemaRevision: 1,
-                      writerProtocol: 1,
-                      requiredCapabilities: ["structured-prose", "underline"],
-                    },
+                    client: "tab-transaction",
+                    base: 0,
+                    changes: [
+                      {
+                        edit: "edit-transaction",
+                        origin: {
+                          kind: "person",
+                          actor: "person",
+                          client: "tab-transaction",
+                        },
+                        base: 0,
+                        steps: [],
+                        inverse: [],
+                        commands: [],
+                      },
+                    ],
                   }
                 : name === "paper.update"
                   ? { docId: UUID, patch: { name: "Renamed" } }

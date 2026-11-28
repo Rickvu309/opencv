@@ -355,25 +355,8 @@ describe("Anthropic request-bound Coach runtime", () => {
         name: "paper_save",
         input_schema: expect.objectContaining({
           type: "object",
-          anyOf: [
-            expect.objectContaining({
-              type: "object",
-              required: ["docId", "client", "base", "changes"],
-              additionalProperties: false,
-            }),
-            expect.objectContaining({
-              type: "object",
-              required: [
-                "epoch",
-                "update",
-                "stateVector",
-                "docId",
-                "writer",
-                "provenance",
-              ],
-              additionalProperties: false,
-            }),
-          ],
+          required: ["docId", "client", "base", "changes"],
+          additionalProperties: false,
         }),
       })
     )

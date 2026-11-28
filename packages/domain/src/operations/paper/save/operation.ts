@@ -3,12 +3,6 @@ import { documentSchema } from "../../../paper-doc/engine-document.js"
 import { z } from "zod"
 import { defineOperation } from "../../../operation.js"
 import type { ResourceRef } from "../../../resources.js"
-import {
-  nativeProvenanceSchema,
-  nativeSyncOutputSchema,
-  nativeWriterSchema,
-} from "../../../paper-doc/native.js"
-import { paperSyncInputSchema } from "../../../paper-doc/sync.js"
 
 export const saveChangesInputSchema = z.strictObject({
   docId: z.uuid(),
@@ -37,15 +31,6 @@ const saveChangesResultSchema = z.union([
   }),
 ])
 
-const legacyInput = paperSyncInputSchema
-  .omit({ docId: true })
-  .extend({
-    docId: z.string().uuid(),
-    writer: nativeWriterSchema,
-    provenance: nativeProvenanceSchema,
-  })
-  .strict()
-
 export const operation = defineOperation({
   owner: "paper",
   name: "paper.save",
@@ -54,11 +39,8 @@ export const operation = defineOperation({
   description:
     "Save a tab's Paper changes or return the edits since its base version.",
   label: "Save your Paper",
-  input: z.union([saveChangesInputSchema, legacyInput]),
-  publicResult: z.union([
-    saveChangesResultSchema,
-    nativeSyncOutputSchema.strip(),
-  ]),
+  input: saveChangesInputSchema,
+  publicResult: saveChangesResultSchema,
   coach: "never",
   destructive: false,
   idempotency: "none",

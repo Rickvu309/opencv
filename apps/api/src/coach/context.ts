@@ -1,7 +1,7 @@
 import { jobAddNoteInputSchema } from "@workspace/domain/apply"
 import { type CoachFocusDoc } from "@workspace/domain/coach"
 import { catalog, ERROR_CODES, type Actor } from "@workspace/domain/kernel"
-import { NATIVE_WRITER, nativeBasisSchema } from "@workspace/domain/paper-doc"
+import { NATIVE_WRITER } from "@workspace/domain/paper-doc"
 
 import { CommandError } from "../platform/errors.js"
 import type { Registry } from "../registry/registry.js"
@@ -32,23 +32,6 @@ function unreadableForCoach(error: unknown) {
   )
 }
 
-type PaperOutline = ReturnType<
-  (typeof catalog)["paper.outline"]["publicResult"]["parse"]
->
-
-function engineTwoFocus(docId: string, outline: PaperOutline): CoachFocusDoc {
-  const focus: CoachFocusDoc = {
-    id: docId,
-    name: outline.name,
-    kind: outline.kind,
-    status: outline.status,
-    outline: outline.outline,
-    revision: outline.revision,
-    engine: 2,
-  }
-  return focus
-}
-
 async function paperFocus(
   registry: Registry,
   actor: Actor,
@@ -62,10 +45,6 @@ async function paperFocus(
       actor
     )
   )
-  if (outline.engine === 2) return engineTwoFocus(docId, outline)
-  const nativeBasis = nativeBasisSchema.parse(outline.nativeBasis)
-  if (nativeBasis.revision !== outline.revision)
-    throw new Error("Paper outline basis does not match its revision")
   return {
     id: docId,
     name: outline.name,
@@ -73,7 +52,7 @@ async function paperFocus(
     status: outline.status,
     outline: outline.outline,
     revision: outline.revision,
-    nativeBasis,
+    engine: 2,
   }
 }
 

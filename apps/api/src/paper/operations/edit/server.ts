@@ -1,8 +1,7 @@
-import { ERROR_CODES, parsePaperId } from "@workspace/domain/kernel"
+import { parsePaperId } from "@workspace/domain/kernel"
 import type { AgentCommand } from "@workspace/domain/paper-doc"
 import { operation } from "@workspace/domain/operations/paper/edit"
 
-import { CommandError } from "../../../platform/errors.js"
 import {
   undoOnlyReversal,
   type OperationBinding,
@@ -16,11 +15,6 @@ import {
 type EditInput = import("zod").output<typeof operation.input>
 
 function engineEdit(input: EditInput) {
-  if (!input.commands)
-    throw new CommandError(
-      ERROR_CODES.CONFLICT,
-      "This Paper uses the new change log"
-    )
   return {
     ...input,
     docId: parsePaperId(input.docId),

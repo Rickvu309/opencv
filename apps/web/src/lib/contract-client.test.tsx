@@ -1,11 +1,6 @@
 import { undoneActivityRow } from "@/test/control-fixtures.ts"
 import { QueryClient } from "@tanstack/react-query"
 import { parseChatId, parseJobId, parsePaperId } from "@workspace/domain/kernel"
-import {
-  emptyRichPaper,
-  nativeProvenance,
-  RICH_NATIVE_WRITER,
-} from "@workspace/domain/paper-doc"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
 import {
@@ -56,10 +51,11 @@ function seed(queryClient: QueryClient) {
   return keys
 }
 
-function stubFetch(data: unknown) {
+function stubFetch(...replies: unknown[]) {
   const bodies: unknown[] = []
   vi.stubGlobal("fetch", async (_url: unknown, init?: RequestInit) => {
     bodies.push(JSON.parse(String(init?.body)))
+    const data = replies[Math.min(bodies.length, replies.length) - 1]
     return Response.json({ ok: true, data })
   })
   return bodies
@@ -90,25 +86,29 @@ describe("catalogClient.run", () => {
 
   it("takes the idempotency key from the operation, not the call site", async () => {
     const queryClient = new QueryClient()
-    const provenance = nativeProvenance(emptyRichPaper("cv"))
-    const bodies = stubFetch({
-      provenance,
-      epoch: 1,
-      revision: 0,
-      reset: false,
-      stale: false,
-      update: "",
-      stateVector: "",
-      fileId: DOC,
-    }) as Record<string, unknown>[]
+    const bodies = stubFetch({ ok: true, head: 1 }, { fileId: DOC }) as Record<
+      string,
+      unknown
+    >[]
 
     await catalogClient.run(queryClient, "paper.save", {
       docId: parsePaperId("01900000-0000-7000-8000-000000000020"),
-      writer: RICH_NATIVE_WRITER,
-      provenance,
-      epoch: 0,
-      update: "",
-      stateVector: "",
+      client: "tab-contract-client",
+      base: 0,
+      changes: [
+        {
+          edit: "edit-contract-client",
+          origin: {
+            kind: "person",
+            actor: "person",
+            client: "tab-contract-client",
+          },
+          base: 0,
+          steps: [],
+          inverse: [],
+          commands: [],
+        },
+      ],
     })
     await catalogClient.run(queryClient, "paper.deleteFile", { fileId: DOC })
 
