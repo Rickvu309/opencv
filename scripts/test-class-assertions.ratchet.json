@@ -37,7 +37,6 @@
   "apps/web/src/features/landing/landing-page.test.tsx": 1,
   "apps/web/src/features/paper/paper-cv-document.test.tsx": 17,
   "apps/web/src/features/paper/paper-import-outcomes.isolated.test.tsx": 3,
-  "apps/web/src/features/paper/paper-letter-stopped.test.tsx": 2,
   "apps/web/src/features/paper/paper-library-status.isolated.test.tsx": 5,
   "apps/web/src/features/paper/paper-print-parity.test.tsx": 2,
   "apps/web/src/routes/detail-recovery.test.tsx": 1,
