@@ -1,12 +1,7 @@
 import { z } from "zod"
 import { defineOperation } from "../../../operation.js"
 import type { ResourceRef } from "../../../resources.js"
-import {
-  nativeBasisSchema,
-  nativeWriterSchema,
-} from "../../../paper-doc/native.js"
 import { formatRunSchema } from "../../../paper-doc/native-formatting.js"
-import { richTextEditsSchema } from "../../../paper-doc/paper-rich-edit.js"
 import { agentCommandSchema } from "../../../paper-doc/engine-command.js"
 
 const agentCommandsSchema: z.ZodType<z.input<typeof agentCommandSchema>[]> = z
@@ -47,25 +42,15 @@ export const operation = defineOperation({
   version: 3,
   kind: "command",
   description:
-    "Propose a change to a CV or Letter. Nothing is written until the person approves it in OpenCV; a pending result means the document is unchanged. Read it first with paper.outline (paper_read for an agent) and copy its revision as basedOn. When the outline blocks carry kind and text, send commands: replaceText swaps a UTF-16 range of a block for new text, formatText turns bold, italic or underline on or off for a range, insertBlocks adds text blocks after a block, removeBlocks deletes blocks, and setBlockType changes their kind. Every command carries expect, the exact current text of its range or blocks; a mismatch is refused, never guessed. Older Papers instead take edits with blockId, from, to and before, and their nativeBasis copied unchanged. Tables, photos and page layout cannot be edited this way. Use only facts the person gave; do not invent the person's experience or qualifications. If the text changed where you wanted to edit, the edit or its approval is refused and the document stays as it is; read it again and propose again.",
+    "Propose a change to a CV or Letter. Nothing is written until the person approves it in OpenCV; a pending result means the document is unchanged. Read it first with paper.outline (paper_read for an agent) and copy its revision as basedOn. Send commands: replaceText swaps a UTF-16 range of a block for new text, formatText turns bold, italic or underline on or off for a range, insertBlocks adds text blocks after a block, removeBlocks deletes blocks, and setBlockType changes their kind. Every command carries expect, the exact current text of its range or blocks; a mismatch is refused, never guessed. Tables, photos and page layout cannot be edited this way. Use only facts the person gave; do not invent the person's experience or qualifications. If the text changed where you wanted to edit, the edit or its approval is refused and the document stays as it is; read it again and propose again.",
   label: "Edit your Paper",
   input: z
     .object({
       docId: z.string().uuid(),
       basedOn: z.number().int().min(0),
-      commands: agentCommandsSchema.optional(),
-      writer: nativeWriterSchema.optional(),
-      nativeBasis: nativeBasisSchema.optional(),
-      edits: richTextEditsSchema.optional(),
+      commands: agentCommandsSchema,
     })
-    .strict()
-    .refine(
-      (input) => (input.commands === undefined) !== (input.edits === undefined),
-      {
-        message:
-          "Send commands for an engine 2 Paper or edits for an older one, not both",
-      }
-    ),
+    .strict(),
   publicResult: publicRichEdit,
   coach: "confirm",
   delegateRefusal:

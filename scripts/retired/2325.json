@@ -1,0 +1,18 @@
+[
+  {
+    "subject": "apps/api/src/coach/anthropic-runtime.test.ts",
+    "because": "paper.save has one input shape now; the legacy sync union branch is gone from the contract, so the tool schema is a single object",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/api/src/coach/native-context.test.ts",
+    "because": "Coach focus no longer carries nativeBasis; the old native outline path is gone, and paper-focus-context.test.ts keeps the revision, engine command and malformed outline checks for the only remaining path",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 6
+  }
+]

@@ -15,8 +15,6 @@ const outlinedSchema = z.object({
   output: z.object({
     revision: z.number(),
     outline: z.string(),
-    nativeBasis: z.unknown().optional(),
-    engine: z.literal(2).optional(),
   }),
 })
 
@@ -105,10 +103,6 @@ function decide(
             id: docId,
             revision: outlined.revision,
             outline: outlined.outline,
-            ...(outlined.nativeBasis
-              ? { nativeBasis: outlined.nativeBasis as never }
-              : {}),
-            ...(outlined.engine ? { engine: outlined.engine } : {}),
           }),
         },
       ],

@@ -1,11 +1,5 @@
 import { QueryClient } from "@tanstack/react-query"
 import { parsePaperId } from "@workspace/domain/kernel"
-import {
-  emptyRichPaper,
-  richPaperDocumentSchema,
-  nativeProvenance,
-  RICH_NATIVE_WRITER,
-} from "@workspace/domain/paper-doc"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
 import { apiBaseUrl } from "@/lib/api-url.ts"
@@ -21,18 +15,26 @@ function envelope<T>(data: T) {
 
 const docId = parsePaperId("11111111-1111-4111-8111-111111111111")
 
-const provenance = nativeProvenance(
-  richPaperDocumentSchema.parse(emptyRichPaper("cv"))
-)
+const saved = { ok: true, head: 1 }
 
-const saved = {
-  provenance,
-  epoch: 1,
-  revision: 0,
-  reset: false,
-  stale: false,
-  update: "",
-  stateVector: "",
+const typed = {
+  docId,
+  client: "tab-paper-api",
+  base: 0,
+  changes: [
+    {
+      edit: "edit-paper-api",
+      origin: {
+        kind: "person" as const,
+        actor: "person",
+        client: "tab-paper-api",
+      },
+      base: 0,
+      steps: [],
+      inverse: [],
+      commands: [],
+    },
+  ],
 }
 
 afterEach(() => {
@@ -165,19 +167,9 @@ describe("paper commands through the contract client", () => {
     const queryClient = new QueryClient()
     queryClient.setQueryData(paperInfoKey(docId), { stale: true })
 
-    await catalogClient.run(
-      queryClient,
-      "paper.save",
-      {
-        docId,
-        writer: RICH_NATIVE_WRITER,
-        provenance,
-        epoch: 0,
-        update: "",
-        stateVector: "",
-      },
-      { refresh: false }
-    )
+    await catalogClient.run(queryClient, "paper.save", typed, {
+      refresh: false,
+    })
 
     expect(queryClient.getQueryState(paperInfoKey(docId))?.isInvalidated).toBe(
       false
@@ -197,14 +189,7 @@ describe("paper commands through the contract client", () => {
     const input = { docId }
 
     await catalogClient.run(queryClient, "paper.delete", input)
-    await catalogClient.run(queryClient, "paper.save", {
-      docId,
-      writer: RICH_NATIVE_WRITER,
-      provenance,
-      epoch: 0,
-      update: "",
-      stateVector: "",
-    })
+    await catalogClient.run(queryClient, "paper.save", typed)
 
     const bodies = fetchMock.mock.calls.map((c) =>
       JSON.parse(String((c[1] as RequestInit).body))

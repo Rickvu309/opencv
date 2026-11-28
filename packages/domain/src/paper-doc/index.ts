@@ -43,8 +43,6 @@ export type {
 } from "./print.js"
 export { cvPrintModel, letterPrintModel } from "./print.js"
 
-export { paperSyncInputSchema, paperSyncOutputSchema } from "./sync.js"
-
 export type { PaperChange } from "./changes.js"
 
 export type { NativeBasis, NativeProvenance, NativeWriter } from "./native.js"
@@ -56,7 +54,6 @@ export {
   nativeBasisSchema,
   nativeProvenance,
   nativeProvenanceSchema,
-  nativeSyncOutputSchema,
   nativeWriterSchema,
   sameNativeProvenance,
 } from "./native.js"

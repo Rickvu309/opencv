@@ -68,13 +68,14 @@ it("an agent reads its own Paper, lists only its own, and is refused another per
       call("paper_edit", {
         docId,
         basedOn: 1,
-        edits: [
+        commands: [
           {
             op: "replaceText",
-            blockId: "paragraph-1",
-            from: 0,
-            to: 0,
-            before: "",
+            range: {
+              from: { block: "paragraph-1", offset: 0 },
+              to: { block: "paragraph-1", offset: 0 },
+            },
+            expect: "",
             text: "x",
           },
         ],

@@ -9,11 +9,6 @@ import {
 } from "@workspace/domain/coach"
 import { catalog } from "@workspace/domain/kernel"
 import {
-  RICH_NATIVE_WRITER,
-  nativeBasisSchema,
-} from "@workspace/domain/paper-doc"
-
-import {
   createRequestStepBoundary,
   scriptedSteps,
   type WorkerRuntime,
@@ -142,22 +137,6 @@ async function* overlayTurnModel(
 
 const FAKE_COACH_WORDS = "Reviewed by the Coach."
 
-function fakeRichEdits(outline: string) {
-  const nodes = JSON.parse(outline) as { id: string }[]
-  const first = nodes[0]
-  if (!first) throw new Error("A rich Paper proposal needs a text block")
-  return [
-    {
-      op: "replaceText",
-      blockId: first.id,
-      from: 0,
-      to: 0,
-      before: "",
-      text: `${FAKE_COACH_WORDS} `,
-    },
-  ]
-}
-
 function fakeEngineCommands(outline: string) {
   const blocks = JSON.parse(outline) as { id: string; text?: string }[]
   const first = blocks.find((block) => typeof block.text === "string")
@@ -173,35 +152,13 @@ function fakeEngineCommands(outline: string) {
   ]
 }
 
-function fakeEngineTwoEdit(
+export function fakePaperEdit(
   focus: Pick<CoachFocusDoc, "id" | "revision" | "outline">
 ) {
   return catalog["paper.edit"].input.parse({
     docId: focus.id,
     basedOn: focus.revision,
     commands: fakeEngineCommands(focus.outline),
-  })
-}
-
-export function fakePaperEdit(
-  focus: Pick<
-    CoachFocusDoc,
-    "id" | "revision" | "outline" | "nativeBasis" | "engine"
-  >
-) {
-  if (focus.engine === 2) return fakeEngineTwoEdit(focus)
-  if (focus.nativeBasis && focus.nativeBasis.revision !== focus.revision)
-    throw new Error("Native Paper proposal needs a matching outline")
-  return catalog["paper.edit"].input.parse({
-    docId: focus.id,
-    basedOn: focus.revision,
-    ...(focus.nativeBasis
-      ? {
-          writer: RICH_NATIVE_WRITER,
-          nativeBasis: nativeBasisSchema.parse(focus.nativeBasis),
-        }
-      : {}),
-    edits: fakeRichEdits(focus.outline),
   })
 }
 

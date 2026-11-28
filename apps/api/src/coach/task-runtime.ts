@@ -3,7 +3,6 @@ import { eq } from "drizzle-orm"
 import { planSchema } from "@workspace/domain/account"
 import { coachModeSchema } from "@workspace/domain/coach"
 import { coachActor } from "@workspace/domain/kernel"
-import { nativeBasisSchema } from "@workspace/domain/paper-doc"
 import { operation as setJobPriority } from "@workspace/domain/operations/job/set-priority"
 import { coachModelEnv } from "../platform/config.js"
 import { getDb } from "../db/context.js"
@@ -28,8 +27,6 @@ const contextSchema = z.object({
       id: z.string(),
       revision: z.number(),
       outline: z.string(),
-      nativeBasis: nativeBasisSchema.optional(),
-      engine: z.literal(2).optional(),
     })
     .optional(),
   context: z.array(z.object({ kind: z.string(), id: z.string() })).optional(),

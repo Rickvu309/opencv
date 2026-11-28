@@ -1,10 +1,5 @@
 import { ERROR_CODES, personActor } from "@workspace/domain/kernel"
-import {
-  NATIVE_WRITER,
-  RICH_NATIVE_WRITER,
-  nativeProvenance,
-  nativePaperDocumentSchema,
-} from "@workspace/domain/paper-doc"
+import { NATIVE_WRITER } from "@workspace/domain/paper-doc"
 import { expect, it, vi } from "vitest"
 import { CommandError } from "../platform/errors.js"
 import { Registry } from "../registry/registry.js"
@@ -12,40 +7,22 @@ import { resolveTurnGrounding } from "./context.js"
 import { coachTurnContext } from "./instructions.js"
 import { fakePaperEdit } from "./fake.js"
 
-const paper = nativePaperDocumentSchema.parse({
-  version: 4,
-  schemaRevision: 1,
-  kind: "letter",
-  clashes: [],
-  blocks: [
-    {
-      id: "p1",
-      type: "paragraph",
-      content: [{ text: "Việt 😀", underline: true }],
-    },
-  ],
-})
-const basis = {
-  provenance: nativeProvenance(paper),
-  epoch: 1,
-  revision: 8,
-  digest: "a".repeat(64),
-}
 const docId = "01990b00-0000-7000-8000-000000000001"
-const actor = personActor("native-context")
+const actor = personActor("paper-focus-context")
 const outline = {
   name: "Letter",
   kind: "letter",
   status: "draft",
   truncated: false,
   revision: 8,
-  nativeBasis: basis,
+  engine: 2,
   outline: JSON.stringify([
     {
       id: "p1",
-      type: "paragraph",
+      kind: "body",
+      text: "Việt 😀",
+      marks: [{ type: "underline", from: 0, to: 4 }],
       selected: false,
-      content: [{ text: "Việt 😀" }],
     },
   ]),
 }
@@ -60,12 +37,12 @@ function resolve(read: Registry["read"]) {
   })
 }
 
-it("takes revision and basis from the same outline despite older metadata", async () => {
+it("takes the revision from one outline and proposes engine commands against it", async () => {
   const read = vi.fn<Registry["read"]>(async () => outline)
   const result = await resolve(read)
   expect(result.focusDoc).toMatchObject({
     revision: 8,
-    nativeBasis: basis,
+    engine: 2,
     outline: outline.outline,
   })
   expect(read.mock.calls).toEqual([
@@ -75,24 +52,32 @@ it("takes revision and basis from the same outline despite older metadata", asyn
       actor,
     ],
   ])
-  expect(JSON.parse(coachTurnContext(result)).document.nativeBasis).toEqual(
-    basis
-  )
-  expect(fakePaperEdit(result.focusDoc!)).toMatchObject({
+  expect(JSON.parse(coachTurnContext(result)).document.revision).toBe(8)
+  const edit = fakePaperEdit(result.focusDoc!)
+  expect(edit).toEqual({
+    docId,
     basedOn: 8,
-    nativeBasis: basis,
-    writer: RICH_NATIVE_WRITER,
+    commands: [
+      {
+        op: "replaceText",
+        range: {
+          from: { block: "p1", offset: 0 },
+          to: { block: "p1", offset: 0 },
+        },
+        expect: "",
+        text: "Reviewed by the Coach. ",
+      },
+    ],
   })
 })
 
-it.each([undefined, { ...basis, digest: "bad" }, { ...basis, revision: 7 }])(
-  "refuses malformed native outline authority %j",
-  async (nativeBasis) => {
-    await expect(
-      resolve(async () => ({ ...outline, nativeBasis }))
-    ).rejects.toThrow()
-  }
-)
+it.each([
+  { ...outline, revision: undefined },
+  { ...outline, outline: 5 },
+  { ...outline, engine: 1 },
+])("refuses a malformed outline %j", async (bad) => {
+  await expect(resolve(async () => bad)).rejects.toThrow()
+})
 
 it.each([
   ERROR_CODES.CONFLICT,
@@ -126,7 +111,7 @@ it("grounds selected attachments without taking authority from caller content", 
     context: [{ kind: "paper", id: docId, blockIds: ["p1"] }],
   })
   expect(result.focusDoc).toBeUndefined()
-  expect(result.note).toContain(JSON.stringify(basis))
+  expect(result.note).toContain(JSON.stringify(outline.outline))
   expect(read.mock.calls).toHaveLength(1)
   expect(read.mock.calls[0]?.[1]).toEqual({
     docId,
