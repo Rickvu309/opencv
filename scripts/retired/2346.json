@@ -14,5 +14,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 2
+  },
+  {
+    "subject": "packages/domain/src/blank-rich.test.ts",
+    "because": "The old Paper writer, its admission check and the x-paper CORS headers are removed; the server never read them, and the Paper walk (18 of 18) and the Paper tests cover reading, listing, renaming, duplicating and downloading.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
   }
 ]
