@@ -9,6 +9,7 @@
     "strict": true,
     "skipLibCheck": true,
     "noEmit": true,
+    "outDir": "dist",
     "isolatedModules": true,
     "verbatimModuleSyntax": true,
     "customConditions": ["opencv-source"],

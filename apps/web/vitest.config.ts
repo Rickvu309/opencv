@@ -36,6 +36,10 @@ export default defineConfig({
       ),
       "@": path.resolve(__dirname, "./src"),
       ...domainEntryAliases(__dirname),
+      "@workspace/paper-engine": path.resolve(
+        __dirname,
+        "../../packages/paper-engine/src/index.ts"
+      ),
     },
   },
   test: {

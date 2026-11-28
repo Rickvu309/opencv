@@ -443,6 +443,7 @@ test("the real repo names exactly the packages a new task folder must build", ()
   assert.deepEqual(packagesUsedFromBuiltOutput(fs, root), [
     "@workspace/domain",
     "@workspace/paper-crdt",
+    "@workspace/paper-engine",
   ])
 })
 
