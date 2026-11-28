@@ -6,10 +6,7 @@ import { createId } from "../platform/id.js"
 import * as schema from "../db/schema.js"
 import { seedStoredYDoc } from "@workspace/paper-crdt"
 import { richPaper } from "./rich-paper.js"
-import {
-  paperPhotoRef,
-  richPaperDocumentSchema,
-} from "@workspace/domain/paper-doc"
+import { richPaperDocumentSchema } from "@workspace/domain/paper-doc"
 
 const [dataDir, email, out] = process.argv.slice(2)
 if (!dataDir || !email || !out || process.env.NODE_ENV === "production")
@@ -22,7 +19,7 @@ try {
     .from(schema.user)
     .where(eq(schema.user.email, email))
   if (!owner) throw new Error("Missing local UI account")
-  const document = richPaper("cv", paperPhotoRef(createId()))
+  const document = richPaper("cv", `file:${createId()}`)
   const header = document.flow.children[0]!.children[0]!
   if (header.type !== "header") throw new Error("Missing CV header")
   const name = header.children.find(

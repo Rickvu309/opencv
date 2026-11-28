@@ -1,4 +1,3 @@
-import { paperPhotoRef } from "@workspace/domain/paper-doc"
 import { eq } from "drizzle-orm"
 import { describe, expect, it } from "vitest"
 
@@ -231,7 +230,7 @@ describe("CV photo bytes", () => {
     expect(profile.status).toBe(200)
     await db
       .update(paperDocs)
-      .set(seedColumns("cv", richPaper("cv", paperPhotoRef(attachedId))))
+      .set(seedColumns("cv", richPaper("cv", `file:${attachedId}`)))
       .where(eq(paperDocs.id, docId))
 
     const { files } = await import("../db/schema.js")

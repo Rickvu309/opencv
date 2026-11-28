@@ -1,4 +1,3 @@
-import { paperPhotoRef } from "@workspace/domain/paper-doc"
 import { eq } from "drizzle-orm"
 import { describe, expect, it } from "vitest"
 import { z } from "zod"
@@ -74,7 +73,7 @@ describe("Deleting photo files", () => {
           const docId = idResponse.parse(await created.json()).data.id
           await db
             .update(paperDocs)
-            .set(seedColumns("cv", richPaper("cv", paperPhotoRef(fileId))))
+            .set(seedColumns("cv", richPaper("cv", `file:${fileId}`)))
             .where(eq(paperDocs.id, docId))
           releaseReference = () => command("paper.delete", { docId })
         }
