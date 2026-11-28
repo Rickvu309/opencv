@@ -126,5 +126,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 1
+  },
+  {
+    "subject": "scripts/paper-save-keeps-parts.test.mjs",
+    "because": "Scans the engine 1 editor save that rebuilt a document from markdown; the new page saves engine steps, so no save can drop parts, and packages/paper-engine/src/no-text-loss.model.test.ts holds the promise",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
   }
 ]
