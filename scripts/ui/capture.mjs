@@ -1,4 +1,3 @@
-import { openRichDocument } from "./rich-document.mjs"
 import { fileURLToPath } from "node:url"
 
 import { SHOWN_EMAIL } from "./account-pool.mjs"
@@ -116,8 +115,6 @@ export async function runStep(page, origin, step, repo, apiOrigin) {
       fileURLToPath(new URL(step.upload.file, FIXTURES)),
       { timeout: STEP_TIMEOUT_MS }
     )
-  if (step.respond?.fixture === "rich-document")
-    return openRichDocument(page, origin, cannedAnswer, repo)
   if (step.respond) return answerInThisBrowser(page, step.respond)
   if (step.paperDocs)
     return seedPaperDocs(page, apiOrigin, origin, step.paperDocs)

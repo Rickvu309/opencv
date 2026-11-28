@@ -79,14 +79,7 @@ export const WALK_COMMAND = {
         say,
       })
       if (!flags["no-keystrokes"]) {
-        keystrokes = await keystrokeTiming({
-          browser,
-          state,
-          account,
-          build,
-          shotsDir,
-          surface,
-        })
+        keystrokes = await keystrokeTiming({ browser, state, build })
         say(`keystrokes ${JSON.stringify(keystrokes)}`)
       }
     } finally {
