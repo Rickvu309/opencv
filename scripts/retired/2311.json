@@ -198,5 +198,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 1
+  },
+  {
+    "subject": "scripts/ocv-tools/jobs/push-checks.test.mjs",
+    "because": "packages/paper-crdt is deleted, so the push no longer typechecks it and the package links no longer list it",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 3
   }
 ]
