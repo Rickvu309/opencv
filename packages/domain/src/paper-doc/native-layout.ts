@@ -16,7 +16,7 @@ import {
 } from "./native-formatting.js"
 import { documentPresentationSchema } from "./presentation-edit.js"
 
-export const layoutColumnSchema = z
+const layoutColumnSchema = z
   .object({
     id: nodeIdSchema,
     width: z.number().int().min(480).max(31680),
@@ -146,7 +146,6 @@ export const privateLayoutSchema = z
     doc.flow.children.forEach(visit)
     return doc
   })
-export type PrivateLayoutDocument = z.infer<typeof privateLayoutSchema>
 
 export const photoLayoutCellSchema = layoutCellSchema.extend({
   children: z
@@ -302,4 +301,3 @@ export const layoutDocumentSchema = z.union([
   privateLayoutSchema,
   privatePhotoLayoutSchema,
 ])
-export type LayoutDocument = z.infer<typeof layoutDocumentSchema>

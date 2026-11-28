@@ -170,6 +170,5 @@ export const flowDocumentSchema = z
     )
     return document
   })
-export type FlowDocument = z.infer<typeof flowDocumentSchema>
 export type FlowSection = z.infer<typeof flowSectionSchema>
-export type FlowNode = FlowSection["children"][number]
+type FlowNode = FlowSection["children"][number]

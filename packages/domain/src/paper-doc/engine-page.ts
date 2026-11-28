@@ -81,9 +81,4 @@ export const layoutPageSchema = z.strictObject({
   content: layoutRectSchema,
   boxes: z.array(layoutBoxSchema),
 })
-
-export type LayoutRect = z.output<typeof layoutRectSchema>
-export type LayoutSegment = z.output<typeof layoutSegmentSchema>
-export type LayoutMarker = z.output<typeof layoutMarkerSchema>
-export type LayoutBox = z.output<typeof layoutBoxSchema>
 export type LayoutPage = z.output<typeof layoutPageSchema>

@@ -4,7 +4,6 @@ import {
   formattedDocumentSchema,
   formatRunsSchema,
 } from "./paper-doc/native-formatting.js"
-import { formatChangeSchema } from "./paper-doc/native-formatting-patch.js"
 const presentation = {
   codecVersion: 1,
   page: {
@@ -135,37 +134,5 @@ describe("private complete formatting contract", () => {
       }).success,
       false
     )
-  })
-  it("validates complete field tuples and keeps collapsed typing state out of the contract", () => {
-    const target = {
-      kind: "cv-field",
-      ownerId: "skills",
-      fieldId: "field-a",
-      fieldKey: "item",
-      itemId: "item-a",
-    }
-    assert.equal(
-      formatChangeSchema.safeParse({
-        kind: "inline",
-        range: { target, from: 0, to: 1 },
-        expected: [{ text: "x" }],
-        values: { bold: false },
-      }).success,
-      true
-    )
-    for (const range of [
-      { target, from: 1, to: 1 },
-      { target, from: -1, to: 1 },
-      { target: { ...target, extra: true }, from: 0, to: 1 },
-    ])
-      assert.equal(
-        formatChangeSchema.safeParse({
-          kind: "inline",
-          range,
-          expected: [],
-          values: { bold: false },
-        }).success,
-        false
-      )
   })
 })

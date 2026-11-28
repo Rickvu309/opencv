@@ -7,16 +7,3 @@ export const tableBordersSchema = z
     weight: z.enum(["thin", "medium"]),
   })
   .strict()
-export type TableBorders = z.infer<typeof tableBordersSchema>
-
-export function resolveTableBorders(borders: TableBorders | undefined) {
-  return {
-    mode: borders?.mode ?? "all",
-    color: borders
-      ? borders.color === "default"
-        ? "#000000"
-        : borders.color
-      : "#B5B5B5",
-    size: borders?.weight === "medium" ? 12 : 6,
-  }
-}

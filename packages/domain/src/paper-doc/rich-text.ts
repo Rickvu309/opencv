@@ -21,41 +21,6 @@ export function isSafeHref(value: string): value is SafeHref {
   )
 }
 
-function isBareEmail(address: string): boolean {
-  const parts = address.split("@")
-  if (parts.length !== 2) return false
-  const [local, domain] = parts
-  if (!local || !domain || !/^[^\s@:/]+$/.test(local)) return false
-  const labels = domain.split(".")
-  return (
-    labels.length > 1 && labels.every((label) => /^[^\s@:/.]+$/.test(label))
-  )
-}
-
-function isBareDomain(address: string): boolean {
-  const authority = address.split(/[/?#]/, 1)[0]
-  if (!authority) return false
-  const parts = authority.split(":")
-  if (parts.length > 2) return false
-  const [host, port] = parts
-  if (!host || (port !== undefined && !/^\d+$/.test(port))) return false
-  const labels = host.split(".")
-  return (
-    labels.length > 1 && labels.every((label) => /^[\p{L}\d-]+$/u.test(label))
-  )
-}
-
-export function normalizeLinkHref(value: string): SafeHref | undefined {
-  if (value.length > MAX_HREF_LENGTH) return undefined
-  const address = value.trim()
-  const href = isBareEmail(address)
-    ? `mailto:${address}`
-    : isBareDomain(address)
-      ? `https://${address}`
-      : address
-  return isSafeHref(href) ? href : undefined
-}
-
 function safeHrefOf(value: string | undefined): SafeHref | undefined {
   if (value === undefined) return undefined
   let start = 0

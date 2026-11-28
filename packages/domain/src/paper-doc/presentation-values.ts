@@ -35,13 +35,6 @@ export const inlineSchema = z
   })
   .strict()
 export type InlinePresentation = z.infer<typeof inlineSchema>
-function exactWordUnits(amount: number): number | null {
-  const rounded = Math.round(amount)
-  return Number.isFinite(amount) &&
-    Math.abs(amount - rounded) <= Number.EPSILON * Math.max(1, Math.abs(amount))
-    ? rounded
-    : null
-}
 const lineSpacingSchema = z.discriminatedUnion("kind", [
   z
     .object({
@@ -62,16 +55,6 @@ const lineSpacingSchema = z.discriminatedUnion("kind", [
     })
     .strict(),
 ])
-export function lineSpacingWordUnits(
-  line: z.input<typeof lineSpacingSchema>
-): Result<number> {
-  const units = Math.round(
-    line.kind === "multiple" ? line.value * 240 : line.value
-  )
-  return !Number.isFinite(units)
-    ? refuse("Word line spacing must use exact Word units")
-    : ok(units)
-}
 export const paragraphSchema = z
   .object({
     alignment: z.enum(["left", "center", "right", "justify"]).optional(),
@@ -92,17 +75,8 @@ export const paragraphSchema = z
     paragraphStyle: styleIdSchema.optional(),
   })
   .strict()
-const lineSpacingEditSchema = lineSpacingSchema.refine(
-  (line) =>
-    line.kind !== "multiple" || exactWordUnits(line.value * 240) !== null,
-  { message: "Word line spacing must use exact Word units" }
-)
-export const paragraphEditSchema = paragraphSchema.extend({
-  lineSpacing: lineSpacingEditSchema.optional(),
-})
 export type ParagraphPresentation = z.infer<typeof paragraphSchema>
-export type ParagraphPresentationInput = z.input<typeof paragraphSchema>
-export const pagePropertiesSchema = z
+const pagePropertiesSchema = z
   .object({
     width: twipsSchema.refine((v) => v >= 1440),
     height: twipsSchema.refine((v) => v >= 1440),
@@ -150,9 +124,6 @@ export const paragraphPatchSchema = z
     paragraphStyle: styleIdSchema.nullable().optional(),
   })
   .strict()
-export const paragraphEditPatchSchema = paragraphPatchSchema.extend({
-  lineSpacing: lineSpacingEditSchema.nullable().optional(),
-})
 export function canonical(value: unknown): string {
   return (
     JSON.stringify(value, (_key, v: unknown) =>
@@ -172,14 +143,3 @@ export function overlay(base: object, patch: object): Record<string, unknown> {
   }
   return result
 }
-
-export const inlineOperationsSchema = z
-  .array(
-    z
-      .object({
-        insert: z.string().max(1000000),
-        attributes: z.record(z.string(), z.unknown()).optional(),
-      })
-      .strict()
-  )
-  .max(10000)

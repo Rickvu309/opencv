@@ -1,11 +1,4 @@
-import {
-  type InlinePresentation,
-  inlineSchema,
-  paragraphSchema,
-  styleIdSchema,
-} from "./presentation-values.js"
-
-export const paperLinkColor = "#1D4ED8"
+import { paragraphSchema } from "./presentation-values.js"
 
 export const paperParagraphStyles = [
   {
@@ -50,8 +43,6 @@ export const paperParagraphStyles = [
   },
 ] as const
 
-export type PaperParagraphStyle = (typeof paperParagraphStyles)[number]["id"]
-
 export function paperParagraphStyle(id: string | null | undefined) {
   return paperParagraphStyles.find((style) => style.id === id)
 }
@@ -63,47 +54,4 @@ export function paragraphStyleValues(id: string) {
         style.id === "normal" ? {} : { after: 120, keepNext: true }
       )
     : undefined
-}
-
-export function paragraphInlineValues(id: string | null | undefined) {
-  const style = paperParagraphStyle(id)
-  return inlineSchema.parse(
-    style && style.id !== "normal" ? { size: style.size, bold: style.bold } : {}
-  )
-}
-
-export function wordParagraphStyleId(id: string) {
-  return paperParagraphStyle(id)?.wordId ?? `Paper-${id}`
-}
-
-export function effectiveParagraphStyle(
-  type: string,
-  style: string | null | undefined,
-  level?: unknown
-) {
-  if (type === "heading") {
-    const heading = paperParagraphStyles.find(
-      (item) => item.outline !== null && item.outline + 1 === level
-    )
-    if (heading) return styleIdSchema.parse(heading.id)
-  }
-  return style == null ? undefined : styleIdSchema.parse(style)
-}
-
-export type EffectiveRunDecorations = {
-  underline: boolean
-  strike: boolean
-  color: InlinePresentation["color"]
-}
-
-export function effectiveRunDecorations(
-  marks: InlinePresentation,
-  isLink: boolean,
-  inherited: InlinePresentation = {}
-): EffectiveRunDecorations {
-  return {
-    underline: marks.underline ?? (isLink || (inherited.underline ?? false)),
-    strike: marks.strike ?? inherited.strike ?? false,
-    color: marks.color ?? (isLink ? paperLinkColor : inherited.color),
-  }
 }

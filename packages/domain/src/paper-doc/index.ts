@@ -41,7 +41,7 @@ export type {
   CvTemplateId,
   LetterPrintList,
 } from "./print.js"
-export { cvPrintModel, letterPrintModel, paperPlainText } from "./print.js"
+export { cvPrintModel, letterPrintModel } from "./print.js"
 
 export { paperSyncInputSchema, paperSyncOutputSchema } from "./sync.js"
 
@@ -63,12 +63,8 @@ export {
 export {
   richPaperDocumentSchema,
   storedPaperDocumentSchema,
-  storedPaperPhotoIds,
 } from "./stored-document.js"
-export type {
-  RichPaperDocument,
-  StoredPaperDocument,
-} from "./stored-document.js"
+export type { RichPaperDocument } from "./stored-document.js"
 
 export { cvRichTextSchema, cvSlots } from "./cv-fields.js"
 export type { CvField } from "./cv-fields.js"

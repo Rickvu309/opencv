@@ -5,13 +5,11 @@ import {
   type LetterPaper,
 } from "./document.js"
 import {
-  nodePlainText,
   type CvPaperBlock,
   type CvSectionKind,
   type CvSectionMarker,
   type ListItem,
   type NodeId,
-  type PaperNode,
 } from "./nodes.js"
 import { plainTextOfRuns, type RichText } from "./rich-text.js"
 
@@ -483,17 +481,4 @@ export function letterPrintModel(document: LetterPaper): LetterPrintModel {
     }
   }
   return { fragments }
-}
-
-function nodesOf(document: CvPaper | LetterPaper): PaperNode[] {
-  return document.kind === "cv" && document.header
-    ? [document.header, ...document.blocks]
-    : [...document.blocks]
-}
-
-export function paperPlainText(document: CvPaper | LetterPaper): string {
-  return nodesOf(document)
-    .map(nodePlainText)
-    .filter((text) => text.length > 0)
-    .join("\n")
 }
