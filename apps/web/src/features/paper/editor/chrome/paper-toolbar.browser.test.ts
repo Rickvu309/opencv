@@ -123,6 +123,25 @@ const focusedLabel = (page: Page) =>
     return active.getAttribute("aria-label") ?? active.tagName.toLowerCase()
   })
 
+const holdMenuExit = (page: Page) =>
+  page.evaluate(() => {
+    new MutationObserver((records) => {
+      for (const record of records) {
+        const popup = record.target as HTMLElement
+        if (
+          popup.matches(
+            '[data-slot="dropdown-menu-content"][data-ending-style]'
+          )
+        )
+          popup.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 800 })
+      }
+    }).observe(document.body, {
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["data-ending-style"],
+    })
+  })
+
 describe("the flat Paper toolbar", () => {
   it("shows headings and lists on one row at 1440 without opening More", async () => {
     const page = await open(DESK)
@@ -284,6 +303,36 @@ describe("the flat Paper toolbar", () => {
         focused: await focusedLabel(page),
       })
       await page.keyboard.type(letters[index]!)
+    }
+    expect(detect({ ...(await measure(page)), escape })).toEqual([])
+    expect(await firstText(page)).toBe(`Bef${letters}ore`)
+    await page.context().close()
+  })
+
+  it("puts typing back on the page as Escape closes a pointer-opened menu, before its exit motion ends", async () => {
+    const page = await open(DESK)
+    await holdMenuExit(page)
+    await page.keyboard.type("Before")
+    for (let step = 0; step < 3; step += 1)
+      await page.keyboard.press("ArrowLeft")
+    const escape = []
+    const letters = "vwxyz"
+    for (const [index, name] of MENUS.entries()) {
+      await page.getByRole("button", { name, exact: true }).click()
+      await page.getByRole("menu", { name, exact: true }).waitFor()
+      await page.keyboard.press("Escape")
+      await page
+        .locator('[data-slot="dropdown-menu-content"][data-ending-style]')
+        .waitFor({ state: "attached" })
+      escape.push({
+        menu: name,
+        opened: "pointer",
+        focused: await focusedLabel(page),
+      })
+      await page.keyboard.type(letters[index]!)
+      await page.getByRole("menu", { name, exact: true }).waitFor({
+        state: "detached",
+      })
     }
     expect(detect({ ...(await measure(page)), escape })).toEqual([])
     expect(await firstText(page)).toBe(`Bef${letters}ore`)
