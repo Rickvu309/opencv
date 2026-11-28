@@ -54,5 +54,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 1
+  },
+  {
+    "subject": "scripts/guard-ledger/paper-journal-preservation.json",
+    "because": "Only tests engine 1 native bootstrap keeping its CRDT identity, and engine 1 is gone with the switch; none needed, the new Paper log replays to the same Paper in apps/api/src/paper/log/replay.test.ts",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
   }
 ]
