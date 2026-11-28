@@ -5,13 +5,13 @@ description: Check an OpenCV screen against Apple's Human Interface Guidelines, 
 
 # Verify against the Human Interface Guidelines
 
-Last confirmed on 2026-11-13 against `origin/main` at `33cdfab1` plus the sweep rules added with this skill (issue #1482): every command below was run on Paper home, the Coach page and Settings and printed what this file says.
+Last confirmed on 2026-11-28 against `origin/main` at `9bff8a608`: every command below was run on Paper home, the Coach page and Settings and printed what this file says.
 
 OpenCV is a web app, not a native Apple app. The rules here are the guideline rules that are about people and screens, carried over as they are or with a named web equivalent. Each one keeps its source page, URL and source wording in `references/`. iOS-only rules are in `references/left-out.md` with the reason.
 
 ## When this file is stale
 
-Run `git log --oneline 33cdfab1..origin/main -- scripts/ui/sweep packages/ui/src/lib/hig-rules.ts .agents/skills/verify-hig` first. When it prints commits, run `node scripts/ui.mjs help` and trust its usage lines over this file. If a step fails or prints something else, follow the command, fix this file in the same PR and move the commit above.
+Run `git log --oneline 9bff8a608..origin/main -- scripts/ui/sweep packages/ui/src/lib/hig-rules.ts .agents/skills/verify-hig` first. When it prints commits, run `node scripts/ui.mjs help` and trust its usage lines over this file. If a step fails or prints something else, follow the command, fix this file in the same PR and move the commit above.
 
 The guidelines change too. To reread a page, fetch its Markdown copy with TinyFish Fetch (free): `npx -y @tiny-fish/cli@latest fetch content get https://developer.apple.com/design/human-interface-guidelines/<slug>.md`. The HTML page only says to turn on JavaScript. Never write a rule from memory; quote the page.
 
@@ -19,12 +19,12 @@ The guidelines change too. To reread a page, fetch its Markdown copy with TinyFi
 
 Run in your worktree, in order. One `up` per machine where you can; `down` when done.
 
-| Step | Command                                             | Takes                | Expect                                                                                                                           |
-| ---- | --------------------------------------------------- | -------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| 1    | `node scripts/ui.mjs up`                            | 1 to 2 min           | one JSON line with `web`, `api`, `email`                                                                                         |
-| 2    | `node scripts/ui.mjs sweep screen <id...>`          | 7 to 11 s per screen | per screen a summary ending `, N HIG findings` when any, then `FAIL` lines and `HIG` lines, then a JSON total with `higFindings` |
-| 3    | open the sweep shots, then walk the checklist below |                      | your own findings, each with its screenshot                                                                                      |
-| 4    | `node scripts/ui.mjs down`                          | a few s              | the app and its throwaway database are gone                                                                                      |
+| Step | Command                                             | Takes                | Expect                                                                                                                              |
+| ---- | --------------------------------------------------- | -------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| 1    | `node scripts/ui.mjs up`                            | 20 s to 2 min        | one JSON line with `web`, `api`, `email`                                                                                            |
+| 2    | `node scripts/ui.mjs sweep screen <id...>`          | 6 to 13 s per screen | per screen a summary that counts `N HIG findings` when any, then `FAIL` lines and `HIG` lines, then a JSON total with `higFindings` |
+| 3    | open the sweep shots, then walk the checklist below |                      | your own findings, each with its screenshot                                                                                         |
+| 4    | `node scripts/ui.mjs down`                          | a few s              | the app and its throwaway database are gone                                                                                         |
 
 Pick the screens from `node scripts/ui.mjs screens`: every screen and state your change reaches. `--size 390x844` checks one size. `sweep all` checks every recipe and route.
 

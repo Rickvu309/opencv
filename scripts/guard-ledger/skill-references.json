@@ -1,0 +1,11 @@
+{
+  "id": "skill-references",
+  "file": "scripts/skill-references.test.mjs",
+  "historic": {
+    "mode": "restore",
+    "sha": "75e68a52a",
+    "paths": [".agents/skills/verify-hig/references/accessibility.md"],
+    "command": ["node", "--test", "scripts/skill-references.test.mjs"]
+  },
+  "reason": "Caught by agent-self while maintaining the screen skills. Introduced by 75e68a52a, which emptied the verify-hig accessibility reference while the skill's checklist still cited rules A3, A8 and A12 from it."
+}

@@ -5,24 +5,26 @@ description: Verify your own OpenCV screen change with no reviewer. See any scre
 
 # Verify UI
 
-Last confirmed on 2026-11-19 against a worktree of `e22a63892` with the design frames and the compare commands removed: every command below printed what this file says.
+Last confirmed on 2026-11-28 against a worktree of `9bff8a608`, after the new Paper editor replaced the old one: every command below printed what this file says.
 
 ## When this file is stale
 
-Run `git log --oneline e22a63892..origin/main -- scripts/ui scripts/ui.mjs .agents/skills/verify-ui` before you start. When it prints commits, run `node scripts/ui.mjs help`: the usage lines there are the truth. If a step here fails or prints something else, follow `help`, then fix this file in the same PR and move the commit above. Never trust a list in prose over a command that prints it.
+Run `git log --oneline 9bff8a608..origin/main -- scripts/ui scripts/ui.mjs .agents/skills/verify-ui` before you start. When it prints commits, run `node scripts/ui.mjs help`: the usage lines there are the truth. If a step here fails or prints something else, follow `help`, then fix this file in the same PR and move the commit above. Never trust a list in prose over a command that prints it.
 
 ## I changed a screen: the self-verify path
 
 No reviewer reads every PR. This path is your review. Run it in your worktree, in order, and keep each output. Only one `up` session may run per worktree (and at most one on the machine at a time): a second `up` reuses the first.
 
-| Step | Command                                                 | Takes                 | Expect                                                         |
-| ---- | ------------------------------------------------------- | --------------------- | -------------------------------------------------------------- |
-| 1    | `node scripts/ui.mjs up`                                | 1 to 2 min            | one JSON line with `web`, `api`, `email`                       |
-| 2    | `node scripts/ui.mjs screens`                           | 1 s                   | one JSON line per screen with `steps` or `unreachable`         |
-| 3    | `node scripts/ui.mjs shot <screen...> --width 1440,390` | about 10 s per screen | one JSON line per PNG                                          |
-| 4    | `node scripts/ui.mjs measure <screen> --slot <name>`    | a few s               | one JSON line per element with box, radius, padding and colors |
-| 5    | `node scripts/ui.mjs sweep screen <screen...>`          | about 1 min a screen  | a summary line per screen, then any failures and HIG lines     |
-| 6    | `node scripts/ui.mjs down`                              | a few s               | the app and the throwaway database are gone                    |
+| Step | Command                                                 | Takes                 | Expect                                                                    |
+| ---- | ------------------------------------------------------- | --------------------- | ------------------------------------------------------------------------- |
+| 1    | `node scripts/ui.mjs up`                                | 20 s to 2 min         | one JSON line with `web`, `api`, `email`                                  |
+| 2    | `node scripts/ui.mjs screens`                           | 1 s                   | one JSON line per screen with `steps` or `unreachable`                    |
+| 3    | `node scripts/ui.mjs shot <screen...> --width 1440,390` | about 20 s per screen | one JSON line per PNG                                                     |
+| 4    | `node scripts/ui.mjs measure <screen> --slot <name>`    | about 10 s            | one JSON line per slot; its `items` hold box, radius, padding and colors  |
+| 5    | `node scripts/ui.mjs sweep screen <screen...>`          | about 10 s a screen   | a summary line per screen, then `FAIL` and `HIG` lines, then a JSON total |
+| 6    | `node scripts/ui.mjs down`                              | a few s               | the app and the throwaway database are gone                               |
+
+A step waits up to a minute when it prints `account pool is empty`; that is the sign-in limit, not a hang. `sweep` exits 1 when any case fails.
 
 Pick the screens for steps 3 to 5 from `screens`: every screen whose route or steps reach the file you changed, and every state of it you touched (open and closed panel, empty and full list, waiting and settled Coach). A state no recipe reaches is a gap: add a recipe (see Add a screen) or say so in the PR.
 
@@ -37,11 +39,11 @@ Open every PNG from `node scripts/ui.mjs shot <screen>` with your image reader, 
 | Step | Command                                                     | Takes            | Expect                                                                        |
 | ---- | ----------------------------------------------------------- | ---------------- | ----------------------------------------------------------------------------- |
 | 1    | `node scripts/ui.mjs up`                                    | 1 to 2 min       | one JSON line                                                                 |
-| 2    | `node scripts/ui.mjs walk paper --production`               | about 5 min      | one line per row, a `keystrokes` line, then a summary JSON line with `report` |
+| 2    | `node scripts/ui.mjs walk paper --production`               | 1 to 2 min       | one line per row, a `keystrokes` line, then a summary JSON line with `report` |
 | 3    | `node scripts/ui.mjs walk paper --row <id> --no-keystrokes` | about 20 s a row | rerun the rows you are fixing                                                 |
 | 4    | `node scripts/ui.mjs down`                                  | a few s          | the app and the production build server are gone                              |
 
-Each row prints `pass`, `fail`, `expected-fail` or `now-passes`. A row that fails today is pinned to its issue in `scripts/ui/walk/expected-failures.json`, so the walk stays green on main. When your change fixes a row it prints `now-passes` and the walk fails until you delete its pin in the same PR. A new `fail` is a regression. `--production` replaces the dev web with a `vite build` served by `vite preview` on the same port until `down`; compare keystroke numbers only between production runs. The JSON report holds every row, its problem and `keystrokes` (keydown to next frame and Event Timing over 16 ms, p50, p95 and max, on a pasted 1,400 word CV). A screenshot per row lands next to it. Put the row table and the keystroke numbers in the PR.
+Each row prints `pass`, `fail`, `expected-fail` or `now-passes`. A row that fails today is pinned to its issue in `scripts/ui/walk/expected-failures.json`, so the walk stays green on main. When your change fixes a row it prints `now-passes` and the walk fails until you delete its pin in the same PR. A new `fail` is a regression. `--production` replaces the dev web with a `vite build` served by `vite preview` on the same port until `down`; compare keystroke numbers only between production runs. The rows run on `/paper`; `--route /paper-lab` runs them on the lab page instead. The keystroke pass always types into a 3-page CV on `/paper-lab` and times a bare textarea beside it, so `p95OverBare` is the editor's own cost. The JSON report holds every row, its problem and `keystrokes` (keydown to next frame, p50, p95 and max, for the editor and the bare textarea). A screenshot per row lands next to it. Put the row table and the keystroke numbers in the PR.
 
 ## What the tool cannot verify
 
@@ -71,9 +73,9 @@ The design the owner approved wins: a prototype the owner said yes to, or the ow
 ## Commands in detail
 
 - `up` starts a throwaway app for the worktree: pglite database, fake Coach, fake mail, a signed-in test account, and a background account pool (`pool/filler.log`) that recipes take from. State, logs and shots live in `~/tmp/ocv-ui/<worktree>/`. It never uses `.env` secrets or a real database.
-- `shot` writes `<screen>-<width>.png` with fonts loaded and motion stopped.
+- `shot` writes `<screen>-<width>.png` with fonts loaded and motion stopped. `--scale 2` doubles the pixels; `--out <dir>` writes somewhere other than `shots/`.
 - `measure <screen> --slot <name>` or `--selector <css>` prints box, radius, padding, gap, type and colours. Without either it lists the `data-slot`s on the screen, capped at 40.
-- `sweep screen <id...> | all | loop` opens screens at ten window sizes and fails on a box that does not fit, a control that cannot be clicked, requests that do not settle, focus lost after Escape or a console error. It reports the Apple interface guideline rules (contrast, 200% text, focus ring, reduced motion) at 1440 and 390 as HIG lines without failing.
+- `sweep screen <id...> | all | loop` opens screens at ten window sizes and fails on a box that does not fit, a control that cannot be clicked, requests that do not settle, focus lost after Escape or a console error. It reports the Apple interface guideline rules (contrast, 200% text, focus ring, reduced motion) at 1440 and 390 as HIG lines without failing. `--size 390x844` checks one size. `sweep loop` runs the Paper core loop instead: import, open, type, Coach edit, approve, download Word; `--file` picks the imported fixture.
 - `down` stops both servers and deletes the throwaway database. Always run it.
 
 ## Add a screen
