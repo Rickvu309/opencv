@@ -30,5 +30,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 1
+  },
+  {
+    "subject": "scripts/design-system/baseline.json.no-raw-values.apps/web/src/features/paper/rich-editor/rich-text-toolbar-control.tsx is new",
+    "because": "revert of #2307 (main red, issue #2312) restores the old editor files and the baseline, ledger and ratchet entries they had on a8379f104; the re-land of #2307 removes them again",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
   }
 ]
