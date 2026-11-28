@@ -41,7 +41,9 @@ async function bundle(): Promise<string> {
                 `window.paperLab = mountPaperEditor(document.getElementById("host"), { doc: labDocument(name) })`,
                 `window.paperLab.focus()`,
                 `window.portCalls = []`,
-                `const record = (kind) => (id) => { window.portCalls.push([kind, id]); return Promise.resolve() }`,
+                `const saved = new URLSearchParams(location.search).get("saved") === "1"`,
+                `const receipt = (id) => ({ undo: () => { window.portCalls.push(["undo", id]); return Promise.resolve() } })`,
+                `const record = (kind) => (id) => { window.portCalls.push([kind, id]); return Promise.resolve(saved && kind === "approve" ? receipt(id) : undefined) }`,
                 `window.paperLab.suggest(labSuggestions(name), { approve: record("approve"), deny: record("deny") })`,
               ].join("\n")
             : null,
@@ -82,7 +84,12 @@ async function launch(): Promise<Browser> {
   }
 }
 
-async function open(doc: string, viewport = DESK, isMobile = false) {
+async function open(
+  doc: string,
+  viewport = DESK,
+  isMobile = false,
+  saved = false
+) {
   const context = await browser.newContext({
     viewport,
     isMobile,
@@ -100,7 +107,7 @@ async function open(doc: string, viewport = DESK, isMobile = false) {
   })
   const errors: string[] = []
   page.on("pageerror", (error) => errors.push(error.message))
-  await page.goto(`${ORIGIN}/?doc=${doc}`)
+  await page.goto(`${ORIGIN}/?doc=${doc}${saved ? "&saved=1" : ""}`)
   await page
     .waitForFunction(() => Boolean(window.paperLab), null, { timeout: 15_000 })
     .catch(() => {
@@ -229,6 +236,57 @@ describe("Coach suggestions on the page", () => {
     await page.keyboard.press("Control+z")
     expect(await bullets(page)).toEqual([OLD_8, OLD_9])
     await page.context().close()
+  }, 60_000)
+
+  it("leaves a saved accept to the Paper and its Undo takes the saved receipts back newest first", async () => {
+    const page = await open("en-10", DESK, false, true)
+    await page.locator(".paper-suggest-all").click()
+    await page.waitForFunction(() => window.portCalls!.length === 2)
+    expect(await bullets(page)).toEqual([OLD_8, OLD_9])
+    expect(await page.locator(".paper-suggest-chips").count()).toBe(0)
+    const toast = page.locator(".paper-suggest-toast")
+    expect(await toast.textContent()).toContain("Accepted 2 changes")
+    await toast.getByRole("button", { name: "Undo" }).click()
+    await page.waitForFunction(() => window.portCalls!.length === 4)
+    expect(await page.evaluate(() => window.portCalls)).toEqual([
+      ["approve", "lab-proposal-1"],
+      ["approve", "lab-proposal-2"],
+      ["undo", "lab-proposal-2"],
+      ["undo", "lab-proposal-1"],
+    ])
+    expect(await bullets(page)).toEqual([OLD_8, OLD_9])
+    await page.context().close()
+  }, 60_000)
+
+  it("hides the Undo toast once Ctrl+Z takes the Accept back", async () => {
+    const page = await open("en-10")
+    await chip(page, "lab-proposal-1", "accept").click()
+    await page.waitForFunction(() => window.portCalls!.length === 1)
+    const toast = page.locator(".paper-suggest-toast")
+    expect(await toast.isVisible()).toBe(true)
+    await page.keyboard.press("Control+z")
+    expect(await bullets(page)).toEqual([OLD_8, OLD_9])
+    expect(await toast.isVisible()).toBe(false)
+    await page.context().close()
+  }, 60_000)
+
+  it("hides the Undo toast of a saved accept after Cmd+Z or the toolbar Undo", async () => {
+    for (const undo of ["Meta+z", "toolbar"]) {
+      const page = await open("en-10", DESK, false, true)
+      await chip(page, "lab-proposal-1", "accept").click()
+      await page.waitForFunction(() => window.portCalls!.length === 1)
+      const toast = page.locator(".paper-suggest-toast")
+      expect(await toast.isVisible()).toBe(true)
+      await page.keyboard.type("x")
+      if (undo === "toolbar")
+        await page.evaluate(() => window.paperLab!.act({ do: "undo" }))
+      else await page.keyboard.press(undo)
+      expect(await toast.isVisible()).toBe(false)
+      expect(await page.evaluate(() => window.portCalls)).toEqual([
+        ["approve", "lab-proposal-1"],
+      ])
+      await page.context().close()
+    }
   }, 60_000)
 
   it("makes Accept all, Accept and Reject 44px tall on a phone", async () => {

@@ -21,6 +21,7 @@ import {
 } from "@/lib/paper-engine-download.ts"
 import { openPaperSync } from "@/lib/paper-sync.ts"
 import { browserSyncPorts } from "@/lib/paper-sync-ports.ts"
+import { holdWritingCoachFocus } from "@/lib/writing-coach-focus.ts"
 import { loadedSessionCheck } from "@/lib/session-check.ts"
 
 declare global {
@@ -154,6 +155,12 @@ export function PaperLabPage() {
       if (opened?.kind === "saved") opened.sync.paper.close()
     }
   }, [queryClient])
+
+  const savedId = lab.kind === "saved" ? lab.docId : null
+  useEffect(
+    () => (savedId === null ? undefined : holdWritingCoachFocus(savedId)),
+    [savedId]
+  )
 
   if (lab.kind === "opening")
     return <main aria-label="Paper test page" aria-busy="true" />

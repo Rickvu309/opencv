@@ -41,6 +41,7 @@ import {
   pendingGroups,
   rebaseOnto,
   receiveChanges,
+  receiveSegments,
   sendableChanges,
   tagPending,
 } from "./collab.js"
@@ -53,6 +54,8 @@ export type EditorState = { readonly brand: "EditorState" }
 
 type EditResult = { state: EditorState; change: Change }
 type Received = { state: EditorState; lost: Run[] }
+
+export type AcceptedBatch = (change: Change) => string | null
 
 export interface PaperEngine {
   load(
@@ -73,7 +76,11 @@ export interface PaperEngine {
   revert: typeof revert
   apply: typeof applySteps
   sendable(state: EditorState): Change[]
-  receive(state: EditorState, changes: readonly Change[]): Received
+  receive(
+    state: EditorState,
+    changes: readonly Change[],
+    accepted?: AcceptedBatch
+  ): Received
   rebase(
     state: EditorState,
     doc: Document,
@@ -100,6 +107,7 @@ type Inner = {
   client: string
   actor: string
   group: HistoryGroup | null
+  batch: string | null
 }
 
 const inners = new WeakMap<EditorState, Inner>()
@@ -149,7 +157,39 @@ export function createEngine(ports: Ports): PaperEngine {
       origin.kind === "person" && origin.client === inner.client
         ? origin.actor
         : inner.actor
-    return { state: wrap({ ...inner, pm, actor, group }), change }
+    return {
+      state: wrap({ ...inner, pm, actor, group, batch: null }),
+      change,
+    }
+  }
+
+  function receiveInto(
+    inner: Inner,
+    changes: readonly Change[],
+    batch: string | null
+  ): { inner: Inner; lost: Run[] } {
+    const { tr, versions, lost } = receiveChanges(
+      inner.pm,
+      inner.plugin,
+      changes
+    )
+    const problem = invariantProblem(tr.doc)
+    if (problem) throw new Error(`Received changes break the Paper: ${problem}`)
+    const owned = batch !== null && tr.getMeta("rebased") === undefined
+    if (owned) {
+      tr.setMeta("addToHistory", true).setMeta("composition", batch)
+      if (batch !== inner.batch) closeHistory(tr)
+    }
+    return {
+      inner: {
+        ...inner,
+        pm: inner.pm.apply(tr),
+        version: inner.version + versions,
+        group: null,
+        batch: owned ? batch : inner.batch,
+      },
+      lost,
+    }
   }
 
   function runHistory(
@@ -269,7 +309,15 @@ export function createEngine(ports: Ports): PaperEngine {
       pm = pm.apply(tr)
       base += change.steps.length
     }
-    return { pm, plugin, version, client, actor: client, group: null }
+    return {
+      pm,
+      plugin,
+      version,
+      client,
+      actor: client,
+      group: null,
+      batch: null,
+    }
   }
 
   return {
@@ -291,25 +339,15 @@ export function createEngine(ports: Ports): PaperEngine {
       }
     },
 
-    receive(state, changes) {
-      const inner = unwrap(state)
-      const { tr, versions, lost } = receiveChanges(
-        inner.pm,
-        inner.plugin,
-        changes
-      )
-      const problem = invariantProblem(tr.doc)
-      if (problem)
-        throw new Error(`Received changes break the Paper: ${problem}`)
-      return {
-        state: wrap({
-          ...inner,
-          pm: inner.pm.apply(tr),
-          version: inner.version + versions,
-          group: null,
-        }),
-        lost,
+    receive(state, changes, accepted) {
+      let inner = unwrap(state)
+      const lost: Run[] = []
+      for (const segment of receiveSegments(changes, accepted)) {
+        const received = receiveInto(inner, segment.changes, segment.batch)
+        inner = received.inner
+        lost.push(...received.lost)
       }
+      return { state: wrap(inner), lost }
     },
 
     rebase(state, doc, version, landed) {
