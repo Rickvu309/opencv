@@ -104,22 +104,13 @@ const PAPER_FENCE = {
   ],
 }
 
-test("the shipped fence file fences the old Paper core for #2207 until 2027-03-31", () => {
-  const fences = JSON.parse(readFileSync(FENCES_FILE, "utf8")).fences
-  assert.deepEqual(fences, [
-    {
-      issue: 2207,
-      expires: "2027-03-31",
-      paths: [
-        "apps/web/src/features/paper/rich-editor/**",
-        "apps/api/src/paper/content/**",
-        "apps/api/src/paper/native-output/**",
-      ],
-    },
-  ])
+test("the shipped fence file fences nothing once the old Paper core is deleted", () => {
+  assert.deepEqual(JSON.parse(readFileSync(FENCES_FILE, "utf8")), {
+    fences: [],
+  })
 })
 
-test("a brief prints the shipped fence while its issue is open", () => {
+test("a brief from the shipped fence file prints no fenced paths", () => {
   const { code, text } = run(["brief", "90", "--role", "build"], {
     files: { [FENCES_FILE]: readFileSync(FENCES_FILE, "utf8") },
     issues: [
@@ -128,14 +119,8 @@ test("a brief prints the shipped fence while its issue is open", () => {
     ],
   })
   assert.equal(code, 0, text)
-  assert.match(
-    text,
-    /^ {2}apps\/web\/src\/features\/paper\/rich-editor\/\*\* \(issue #2207\)$/m
-  )
-  assert.match(
-    text,
-    /^ {2}apps\/api\/src\/paper\/native-output\/\*\* \(issue #2207\)$/m
-  )
+  assert.match(text, /^Fenced paths: none$/m)
+  assert.doesNotMatch(text, /rich-editor|native-output|paper\/content/)
 })
 
 test("a brief prints no shipped fence", () => {

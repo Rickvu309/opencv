@@ -1,0 +1,16 @@
+[
+  {
+    "subject": "scripts/ocv-tools/brief.test.mjs",
+    "because": "The old Paper core is deleted, so the #2207 fence is removed; the replacement pins an empty shipped fence file and a brief that prints no fenced paths.",
+    "replacedBy": "scripts/ocv-tools/brief.test.mjs",
+    "proof": {
+      "fork": "0e4157135902e0ea811eb5d851986ce6bc6edf6a",
+      "replacedByBlob": "7491d9dc880fdfd2e25e36b15b6fbe9d56e96173",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "owner",
+    "classBecause": "a guard case-removed",
+    "items": 3
+  }
+]
