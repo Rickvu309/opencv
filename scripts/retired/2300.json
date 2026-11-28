@@ -30,5 +30,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 2
+  },
+  {
+    "subject": "apps/api/src/paper/rich-edit.test.ts",
+    "because": "The old rich paper.edit and paper.undoEdit are gone; Coach edits use engine commands with paper.revert, covered by the paper-engine and suggestion-undo scenarios.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
   }
 ]
