@@ -1,10 +1,7 @@
 import { z } from "zod"
 import { defineOperation } from "../../../operation.js"
 import type { ResourceRef } from "../../../resources.js"
-import {
-  nativeProvenanceSchema,
-  nativeWriterSchema,
-} from "../../../paper-doc/native.js"
+import { nativeProvenanceSchema } from "../../../paper-doc/native.js"
 import { documentSchema } from "../../../paper-doc/engine-document.js"
 import { paperStoredKindSchema } from "../../../paper-doc/paper.js"
 
@@ -24,7 +21,6 @@ export const operation = defineOperation({
         .object({
           view: z.literal("info"),
           docId: z.string().uuid(),
-          writer: nativeWriterSchema.optional(),
         })
         .strict(),
       z.strictObject({ docId: z.uuid(), view: z.literal("engine") }),

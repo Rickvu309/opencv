@@ -127,8 +127,6 @@ export function createApp({
       origin: (origin) => (isAllowedOrigin(webOrigins, origin) ? origin : null),
       credentials: true,
       allowHeaders: [
-        "x-paper-writer",
-        "x-paper-basis",
         "Content-Type",
         "Last-Event-ID",
         "Authorization",
@@ -138,7 +136,6 @@ export function createApp({
         "Mcp-Session-Id",
       ],
       exposeHeaders: [
-        "x-paper-basis",
         "Content-Disposition",
         "WWW-Authenticate",
         "MCP-Protocol-Version",

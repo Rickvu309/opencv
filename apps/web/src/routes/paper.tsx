@@ -5,7 +5,7 @@ import { parseFileId } from "@workspace/domain/kernel"
 
 import { catalogClient } from "@/lib/contract-client.ts"
 import { useOwnerId } from "@/lib/owner-id.ts"
-import { paperLibraryQuery } from "@/lib/paper-list.ts"
+import { paperListQuery } from "@/lib/paper-list.ts"
 import { PaperLibrary } from "@/features/paper/paper-library.tsx"
 import { validatePaperSearch } from "@/features/paper/paper-templates.ts"
 
@@ -24,7 +24,7 @@ export function PaperPage() {
       resetScroll: false,
     })
   const docs = useQuery({
-    ...paperLibraryQuery(useOwnerId()),
+    ...paperListQuery(useOwnerId()),
     refetchOnMount: false,
   })
   const files = catalogClient.useRead(useOwnerId(), "paper.files", {})

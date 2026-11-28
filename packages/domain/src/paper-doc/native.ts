@@ -2,27 +2,6 @@ import { z } from "zod"
 import type { NativePaperDocument } from "./document.js"
 import type { RichPaperDocument } from "./stored-document.js"
 
-export const nativeWriterSchema = z
-  .object({
-    documentVersion: z.literal(4),
-    writerProtocol: z.literal(1),
-    supportedSchemaRevisions: z
-      .array(z.number().int().positive())
-      .min(1)
-      .max(16),
-    capabilities: z.array(z.string().min(1).max(64)).max(32),
-  })
-  .strict()
-
-export type NativeWriter = z.infer<typeof nativeWriterSchema>
-
-export const NATIVE_WRITER: NativeWriter = {
-  documentVersion: 4,
-  writerProtocol: 1,
-  supportedSchemaRevisions: [1],
-  capabilities: ["structured-prose", "underline"],
-}
-
 const proseProvenanceSchema = z
   .object({
     documentVersion: z.literal(4),
@@ -45,20 +24,6 @@ const richCapabilities = [
   "photos-1",
   "flow-sections-1",
 ] as const
-
-export const RICH_NATIVE_WRITER: NativeWriter = {
-  documentVersion: 4,
-  writerProtocol: 1,
-  supportedSchemaRevisions: [2],
-  capabilities: [...richCapabilities],
-}
-
-export const LIBRARY_WRITER: NativeWriter = {
-  documentVersion: 4,
-  writerProtocol: 1,
-  supportedSchemaRevisions: [1, 2],
-  capabilities: [...NATIVE_WRITER.capabilities, ...richCapabilities],
-}
 
 const richProvenanceSchema = z
   .object({
@@ -108,27 +73,6 @@ export function nativeProvenance(
     writerProtocol: 1,
     requiredCapabilities: ["structured-prose", "underline"],
   }
-}
-
-export function nativeAdmission(
-  document: NativePaperDocument | RichPaperDocument,
-  writer: NativeWriter | undefined
-): string | null {
-  if (
-    !writer ||
-    writer.documentVersion !== document.version ||
-    writer.writerProtocol !== 1
-  )
-    return "This document needs a newer Paper editor. Nothing was acknowledged or changed."
-  if (!writer.supportedSchemaRevisions.includes(document.schemaRevision))
-    return "This editor cannot read this document schema. Nothing was acknowledged or changed."
-  if (
-    nativeProvenance(document).requiredCapabilities.some(
-      (capability) => !writer.capabilities.includes(capability)
-    )
-  )
-    return "This editor is missing a document capability. Nothing was acknowledged or changed."
-  return null
 }
 
 export const nativeBasisSchema = z

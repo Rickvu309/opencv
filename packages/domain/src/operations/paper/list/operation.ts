@@ -1,7 +1,6 @@
 import { z } from "zod"
 import { defineOperation } from "../../../operation.js"
 import type { ResourceRef } from "../../../resources.js"
-import { nativeWriterSchema } from "../../../paper-doc/native.js"
 import { paperStoredKindSchema } from "../../../paper-doc/paper.js"
 
 const listedPaper = z.object({ id: z.string(), name: z.string() }).passthrough()
@@ -18,7 +17,6 @@ export const operation = defineOperation({
   input: z
     .object({
       query: z.string().optional(),
-      writer: nativeWriterSchema.optional(),
       kind: paperStoredKindSchema.optional(),
     })
     .strict(),

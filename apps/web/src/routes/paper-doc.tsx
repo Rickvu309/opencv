@@ -9,7 +9,7 @@ import {
   paperIdSchema,
   parsePaperId,
 } from "@workspace/domain/kernel"
-import { RICH_NATIVE_WRITER, type Document } from "@workspace/domain/paper-doc"
+import { type Document } from "@workspace/domain/paper-doc"
 
 import { Button } from "@workspace/ui/components/button"
 
@@ -81,7 +81,7 @@ async function openSavedPaper(
   const info = await qualifiedPaperRead(
     catalog["paper.read"].name,
     parsePaperId(docId),
-    { ownerId, sessionId, writer: RICH_NATIVE_WRITER }
+    { ownerId, sessionId }
   )
   if (info.format !== "rich") return olderFormat
   const metadata = await catalogClient.read(catalog["paper.read"].name, {

@@ -2,8 +2,6 @@ import { useEffect, useReducer, useRef, type DragEvent } from "react"
 import { Plus } from "lucide-react"
 import { useQueryClient } from "@tanstack/react-query"
 import {
-  NATIVE_WRITER,
-  RICH_NATIVE_WRITER,
   paperDocNameSchema,
   type PaperFile,
   type PaperView,
@@ -289,7 +287,6 @@ export function PaperLibrary({
       await catalogClient.run(queryClient, "paper.update", {
         docId: mode.doc.id,
         patch: { name: parsed.data },
-        ...(mode.doc.format === "rich" ? { writer: RICH_NATIVE_WRITER } : {}),
       })
       closeDialog()
     } catch (err) {
@@ -331,7 +328,6 @@ export function PaperLibrary({
     try {
       const copy = await catalogClient.run(queryClient, "paper.duplicate", {
         docId: doc.id,
-        writer: doc.format === "rich" ? RICH_NATIVE_WRITER : NATIVE_WRITER,
       })
       if (!("pending" in copy))
         await rememberUndo(copy.id, `Duplicated ${doc.name}`)

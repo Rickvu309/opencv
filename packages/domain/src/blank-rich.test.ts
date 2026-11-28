@@ -4,9 +4,7 @@ import { describe, it } from "node:test"
 import {
   cvSlots,
   emptyRichPaper,
-  nativeAdmission,
   richPaperDocumentSchema,
-  RICH_NATIVE_WRITER,
 } from "./paper-doc/index.ts"
 
 describe("emptyRichPaper", () => {
@@ -34,15 +32,6 @@ describe("emptyRichPaper", () => {
         assert.equal(nodes[0]!.type, "paragraph")
         assert.deepEqual(nodes[0]!.content, [])
       }
-      assert.equal(nativeAdmission(document, RICH_NATIVE_WRITER), null)
     })
   }
-
-  it("refuses admission without a rich writer", () => {
-    const document = richPaperDocumentSchema.parse(emptyRichPaper("cv"))
-    assert.match(
-      nativeAdmission(document, undefined) ?? "",
-      /newer Paper editor/
-    )
-  })
 })
