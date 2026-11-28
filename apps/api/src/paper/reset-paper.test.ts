@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs"
 import path from "node:path"
 
 import { parseUserId, personActor } from "@workspace/domain/kernel"
-import { paperPhotoRef, RICH_NATIVE_WRITER } from "@workspace/domain/paper-doc"
+import { RICH_NATIVE_WRITER, type Document } from "@workspace/domain/paper-doc"
 import { eq, sql } from "drizzle-orm"
 import { describe, expect, it } from "vitest"
 
@@ -19,9 +19,7 @@ import { createId } from "../platform/id.js"
 import { installRegistry } from "../install.js"
 import { seedCoachActor } from "../test/coach-turn.js"
 import { createMigratedTestDb } from "../test/harness.js"
-import { richPaper } from "../test/rich-paper.js"
 import { journalTag } from "../test/migration-journal.js"
-import { seedColumns } from "./content/content-document.js"
 import { saveFile } from "./store.js"
 import { OLD_EDITOR_UNDO_REASON } from "./undo-guard.js"
 
@@ -141,9 +139,32 @@ describe("reset paper rows", () => {
           actor: person,
         })
         const letterId = (letter.output as { id: string }).id
+        const [source] = await db
+          .select({ snapshot: paperDocs.snapshot })
+          .from(paperDocs)
+          .where(eq(paperDocs.id, cvId))
+        const page = source?.snapshot as Document
         await db
           .update(paperDocs)
-          .set(seedColumns("cv", richPaper("cv", paperPhotoRef(photo.id))))
+          .set({
+            snapshot: {
+              ...page,
+              content: [
+                ...page.content,
+                {
+                  type: "image",
+                  attrs: {
+                    id: "photo-1",
+                    fileId: photo.id,
+                    widthMpt: 72000,
+                    heightMpt: 72000,
+                    align: "left",
+                    alt: "Photo",
+                  },
+                },
+              ],
+            },
+          })
           .where(eq(paperDocs.id, cvId))
         await db
           .insert(paperShares)

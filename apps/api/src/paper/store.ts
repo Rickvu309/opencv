@@ -10,11 +10,7 @@ import {
 import {
   DEFAULT_PAPER_DOC_NAME,
   IMPORT_PAGES_MESSAGE,
-  emptyRichPaper,
-  RICH_NATIVE_WRITER,
-  richPaperDocumentSchema,
   type Document,
-  type NativeWriter,
   type PaperStoredKind,
 } from "@workspace/domain/paper-doc"
 import { and, desc, eq, ne } from "drizzle-orm"
@@ -24,7 +20,6 @@ import { files, paperDocs } from "../db/schema.js"
 import { trashStoredWordPage } from "./word-page-trash.js"
 import { createId } from "../platform/id.js"
 import { CommandError } from "../platform/errors.js"
-import { admitDocument } from "./content/native-admission.js"
 import {
   IMPORT_GENERIC_MESSAGE,
   classifyImport,
@@ -32,16 +27,10 @@ import {
   mediaTypeForImport,
 } from "./import/import-parse.js"
 
-import { seedColumns } from "./content/content-store.js"
 import {
   dropServerReleasedPhoto,
   referencedPhotoFileIds,
 } from "./photo-references.js"
-import {
-  isRichPaper,
-  toListedPaper,
-  tryReadRichPaper,
-} from "./content/read-paper.js"
 import { isEnginePaper, toListedEnginePaper } from "./listed-engine-paper.js"
 import { readPaperDocumentInfo } from "./document-info.js"
 import { admitted, engineLog, headOf } from "./engine-sync-log.js"
@@ -54,16 +43,12 @@ function iso(value: Date) {
   return value.toISOString()
 }
 
-export { toListedPaper, tryReadRichPaper }
-
 function documentNotFound(): never {
   throw new CommandError(ERROR_CODES.NOT_FOUND, "Document not found")
 }
 
-function listedRow(row: typeof paperDocs.$inferSelect, writer?: NativeWriter) {
-  return isEnginePaper(row)
-    ? toListedEnginePaper(row)
-    : toListedPaper(row, writer)
+function listedRow(row: typeof paperDocs.$inferSelect) {
+  return isEnginePaper(row) ? toListedEnginePaper(row) : documentNotFound()
 }
 
 export async function ownedPaperOrNull(userId: UserId, docId: PaperId) {
@@ -75,24 +60,10 @@ export async function ownedPaperOrNull(userId: UserId, docId: PaperId) {
   return rows[0] ?? null
 }
 
-function listedForEditor(
-  row: typeof paperDocs.$inferSelect,
-  writer?: NativeWriter
-) {
-  if (!writer) return []
-  try {
-    return [toListedPaper(row, writer)]
-  } catch (error) {
-    if (error instanceof CommandError) return []
-    throw error
-  }
-}
-
 export async function listPapers(
   userId: UserId,
   query?: string,
-  kind?: PaperStoredKind,
-  writer?: NativeWriter
+  kind?: PaperStoredKind
 ) {
   const rows = await getDb()
     .select()
@@ -103,10 +74,8 @@ export async function listPapers(
   const stored = rows
     .filter((row) => (kind ? row.kind === kind : true))
     .filter((row) => !needle || row.name.toLowerCase().includes(needle))
-    .flatMap((row) => {
-      if (isEnginePaper(row)) return [toListedEnginePaper(row)]
-      return isRichPaper(row) ? listedForEditor(row, writer) : []
-    })
+    .filter(isEnginePaper)
+    .map(toListedEnginePaper)
   return [...stored].sort((left, right) =>
     left.updatedAt < right.updatedAt
       ? 1
@@ -126,20 +95,10 @@ export async function createPaper(
     paper?: unknown
     id?: string
     createdAt?: Date
-  },
-  writer: NativeWriter = RICH_NATIVE_WRITER
+  }
 ) {
   const now = new Date()
   const id = input.id ?? createId(now.getTime())
-  const paper = richPaperDocumentSchema.parse(
-    input.paper ?? emptyRichPaper(input.kind)
-  )
-  if (paper.kind !== input.kind)
-    throw new CommandError(
-      ERROR_CODES.CONFLICT,
-      "The document kind does not match."
-    )
-  admitDocument(paper, writer)
   const inserted = await getDb()
     .insert(paperDocs)
     .values({
@@ -148,8 +107,6 @@ export async function createPaper(
       name: input.name?.trim() || DEFAULT_PAPER_DOC_NAME[input.kind],
       kind: input.kind,
       templateId: input.templateId ?? "simple",
-      ...seedColumns(input.kind, paper),
-      crdtBaseSeq: 1,
       contentVersion: 1,
       createdAt: input.createdAt ?? now,
       updatedAt: now,
@@ -159,13 +116,8 @@ export async function createPaper(
   importParsers.onInsert?.()
   const row = (await ownedPaperOrNull(actor.userId, parsePaperId(id))) ?? null
   if (!row) return documentNotFound()
-  const info = await readPaperDocumentInfo(
-    actor.userId,
-    parsePaperId(id),
-    writer
-  )
   if (inserted.length) admitted(await engineLog.start(id, input.page))
-  return info
+  return readPaperDocumentInfo(actor.userId, parsePaperId(id))
 }
 
 export async function createEngineImportPage(
@@ -195,12 +147,11 @@ export type PaperPatch = {
 export async function updatePaper(
   actor: Actor,
   docId: PaperId,
-  patch: PaperPatch,
-  writer?: NativeWriter
+  patch: PaperPatch
 ) {
   const current = await ownedPaperOrNull(actor.userId, docId)
   if (!current) return documentNotFound()
-  listedRow(current, writer)
+  listedRow(current)
   const touchesPage = patch.name !== undefined || patch.status !== undefined
   const next = {
     ...current,
@@ -221,7 +172,7 @@ export async function updatePaper(
       : {}),
     ...(patch.status !== undefined ? { status: current.status } : {}),
   }
-  return { ...listedRow(next, writer), previous }
+  return { ...listedRow(next), previous }
 }
 
 export type DuplicatePlan = { kind: "block" } | { kind: "missing" }
@@ -238,27 +189,22 @@ export async function planDuplicate(
 export async function duplicatePaper(
   actor: Actor,
   docId: PaperId,
-  plan: DuplicatePlan,
-  writer?: NativeWriter
+  plan: DuplicatePlan
 ) {
   if (plan.kind === "missing") return documentNotFound()
   const source =
     (await ownedPaperOrNull(actor.userId, docId)) ?? documentNotFound()
   const { doc } = await headOf(actor.userId, docId)
-  const created = await createPaper(
-    actor,
-    {
-      kind: source.kind,
-      page: doc,
-      name: `Copy of ${source.name}`.slice(0, 200),
-      templateId: source.templateId ?? undefined,
-    },
-    writer
-  )
+  const created = await createPaper(actor, {
+    kind: source.kind,
+    page: doc,
+    name: `Copy of ${source.name}`.slice(0, 200),
+    templateId: source.templateId ?? undefined,
+  })
   const copy =
     (await ownedPaperOrNull(actor.userId, parsePaperId(created.id))) ??
     documentNotFound()
-  return listedRow(copy, writer)
+  return listedRow(copy)
 }
 
 export async function deletePaper(actor: Actor, docId: PaperId) {

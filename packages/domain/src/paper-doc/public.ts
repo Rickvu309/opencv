@@ -6,7 +6,6 @@ export * from "./paper-contract.js"
 export * from "./paper-start.js"
 export * from "./starting-lines.js"
 export * from "./cv-template-lines.js"
-export * from "./paper-preview.js"
 export {
   blockIdSchema,
   blockSchema,

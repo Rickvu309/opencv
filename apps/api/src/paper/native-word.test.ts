@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto"
-import { catalog, parseFileId, parseUserId } from "@workspace/domain/kernel"
+import { parseFileId, parseUserId } from "@workspace/domain/kernel"
 import {
   NATIVE_WRITER,
   nativeProvenanceSchema,
@@ -121,16 +121,6 @@ it.each(["cv", "letter"] as const)(
     const saved = await savedRichWord(store.db, owner, kind)
     await inDb(async () => {
       const before = await databaseState()
-      const qualified = await store.registry.read(
-        catalog["paper.export"].name,
-        saved.input,
-        store.actor
-      )
-      expect(qualified).toMatchObject({
-        docId: saved.id,
-        kind,
-        basis: saved.basis,
-      })
       const result = await downloadNativeWord(owner, saved.input)
       expect(result.basis).toEqual(saved.basis)
       expect(result.filename).toBe(`Linh Việt ${kind}.docx`)

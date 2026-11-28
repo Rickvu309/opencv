@@ -30,12 +30,7 @@ export const implementation = {
   operation,
   prepare: (input, actor) => planDuplicate(actor, parsePaperId(input.docId)),
   execute: (input, actor, _registry, ahead?) =>
-    duplicatePaper(
-      actor,
-      parsePaperId(input.docId),
-      duplicatePlan(ahead),
-      input.writer
-    ),
+    duplicatePaper(actor, parsePaperId(input.docId), duplicatePlan(ahead)),
   reversal: (_input, result) => deleteNewPaper(result),
   activity: (_input, result) => ({
     subjectKind: "paper",
