@@ -1,6 +1,5 @@
 import { connectionsCases } from "./coverage-connections.test-support.js"
 import { personActor } from "@workspace/domain/kernel"
-import { RICH_NATIVE_WRITER } from "@workspace/domain/paper-doc"
 import { eq } from "drizzle-orm"
 import { expect } from "vitest"
 
@@ -74,11 +73,9 @@ export function coverageCases(
     jobOf: (jobId) => registry.read("job.get", { jobId }, person),
     chatOf: (chatId) => registry.read("chat.get", { chatId }, person),
     paperOf: async (docId) => {
-      const listed = (await registry.read(
-        "paper.list",
-        { writer: RICH_NATIVE_WRITER },
-        person
-      )) as { id: string }[]
+      const listed = (await registry.read("paper.list", {}, person)) as {
+        id: string
+      }[]
       const paper = listed.find((item) => item.id === docId)
       if (!paper) throw new Error("Document not found")
       return paper

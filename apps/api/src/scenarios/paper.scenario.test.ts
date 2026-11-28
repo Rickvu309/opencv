@@ -1,4 +1,3 @@
-import { RICH_NATIVE_WRITER } from "@workspace/domain/paper-doc"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 
 import {
@@ -11,7 +10,6 @@ import {
 
 type Paper = { id: string; name: string; kind: string; format: string }
 
-const writer = RICH_NATIVE_WRITER
 let world: World
 
 beforeAll(async () => {
@@ -29,7 +27,7 @@ async function blank(person: Person, kind: "cv" | "letter", name: string) {
 }
 
 function opened(person: Person, docId: string) {
-  return person.read("paper.read", { view: "info", docId, writer })
+  return person.read("paper.read", { view: "info", docId })
 }
 
 describe("a Paper started blank", () => {
@@ -64,7 +62,6 @@ describe("a Paper started blank", () => {
         dataOf<{ isFavorite: boolean }>(
           await ada.run("paper.update", {
             docId: cv.id,
-            writer,
             patch: { isFavorite },
           })
         ).isFavorite
@@ -81,7 +78,7 @@ describe("a Paper started blank", () => {
   it("is on the person's list of Papers", async () => {
     const ada = await world.person("Ada")
     const cv = await blank(ada, "cv", "Marketing CV")
-    const listed = dataOf<Paper[]>(await ada.read("paper.list", { writer }))
+    const listed = dataOf<Paper[]>(await ada.read("paper.list", {}))
     expect(listed.map((paper) => paper.id)).toContain(cv.id)
   })
 
@@ -90,13 +87,11 @@ describe("a Paper started blank", () => {
     const cv = await blank(ada, "cv", "Marketing CV")
     const renamed = await ada.run("paper.update", {
       docId: cv.id,
-
-      writer,
       patch: { name: "Product CV" },
     })
     expect(renamed.status).toBe(200)
     expect(dataOf<Paper>(await opened(ada, cv.id)).name).toBe("Product CV")
-    const listed = dataOf<Paper[]>(await ada.read("paper.list", { writer }))
+    const listed = dataOf<Paper[]>(await ada.read("paper.list", {}))
     expect(listed.map((paper) => paper.name)).toEqual(["Product CV"])
   })
 
@@ -114,7 +109,7 @@ describe("a Paper started blank", () => {
   it("can be copied, and the copy is a Paper of its own", async () => {
     const ada = await world.person("Ada")
     const cv = await blank(ada, "cv", "Marketing CV")
-    const copy = await ada.run("paper.duplicate", { docId: cv.id, writer })
+    const copy = await ada.run("paper.duplicate", { docId: cv.id })
     expect(copy.status).toBe(200)
     const copied = dataOf<Paper>(copy)
     expect(copied.id).not.toBe(cv.id)
@@ -130,8 +125,6 @@ describe("a Paper started blank", () => {
     const cv = await blank(ada, "cv", "Marketing CV")
     const ready = await ada.run("paper.update", {
       docId: cv.id,
-
-      writer,
       patch: { status: "ready" },
     })
     expect(ready.status).toBe(200)

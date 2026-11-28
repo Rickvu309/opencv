@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs"
 import path from "node:path"
 
 import { parseUserId, personActor } from "@workspace/domain/kernel"
-import { RICH_NATIVE_WRITER, type Document } from "@workspace/domain/paper-doc"
+import { type Document } from "@workspace/domain/paper-doc"
 import { eq, sql } from "drizzle-orm"
 import { describe, expect, it } from "vitest"
 
@@ -193,7 +193,6 @@ describe("reset paper rows", () => {
           name: "paper.update",
           input: {
             docId: cvId,
-            writer: RICH_NATIVE_WRITER,
             patch: { name: "CV kept in the receipt" },
           },
           actor: person,

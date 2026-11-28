@@ -1,5 +1,4 @@
 import { catalog } from "@workspace/domain/kernel"
-import { RICH_NATIVE_WRITER } from "@workspace/domain/paper-doc"
 
 import { idOf, text } from "../registry/coverage-helpers.test-support.js"
 import type { ExecuteResult } from "../registry/registry.js"
@@ -12,7 +11,6 @@ async function paperName(world: LaterWorld, a: ExecuteResult) {
   const paper = await world.read("paper.read", {
     view: "info",
     docId: idOf(a.output),
-    writer: RICH_NATIVE_WRITER,
   })
   return text(paper, "name")
 }
@@ -22,7 +20,6 @@ function renamedTo(name: string) {
     act: async (a: ExecuteResult, { run }: LaterWorld) => {
       await run("paper.update", {
         docId: idOf(a.output),
-        writer: RICH_NATIVE_WRITER,
         patch: { name },
       })
     },

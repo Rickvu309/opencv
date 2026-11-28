@@ -1,5 +1,4 @@
 import { ERROR_CODES, personActor } from "@workspace/domain/kernel"
-import { NATIVE_WRITER } from "@workspace/domain/paper-doc"
 import { expect, it, vi } from "vitest"
 import { CommandError } from "../platform/errors.js"
 import { Registry } from "../registry/registry.js"
@@ -46,11 +45,7 @@ it("takes the revision from one outline and proposes engine commands against it"
     outline: outline.outline,
   })
   expect(read.mock.calls).toEqual([
-    [
-      "paper.outline",
-      { docId, blockIds: undefined, writer: NATIVE_WRITER },
-      actor,
-    ],
+    ["paper.outline", { docId, blockIds: undefined }, actor],
   ])
   expect(JSON.parse(coachTurnContext(result)).document.revision).toBe(8)
   const edit = fakePaperEdit(result.focusDoc!)
@@ -116,6 +111,5 @@ it("grounds selected attachments without taking authority from caller content", 
   expect(read.mock.calls[0]?.[1]).toEqual({
     docId,
     blockIds: ["p1"],
-    writer: NATIVE_WRITER,
   })
 })

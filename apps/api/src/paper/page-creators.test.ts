@@ -4,7 +4,6 @@ import path from "node:path"
 import { fileURLToPath } from "node:url"
 
 import { delegateActorSchema } from "@workspace/domain/kernel"
-import { RICH_NATIVE_WRITER } from "@workspace/domain/paper-doc"
 import { eq } from "drizzle-orm"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 import { z } from "zod"
@@ -117,7 +116,6 @@ async function duplicated(app: App, owner: Account, source: string) {
     docIdOf(
       await command(app, owner, "paper.duplicate", {
         docId: source,
-        writer: RICH_NATIVE_WRITER,
       })
     ),
     0,
@@ -294,7 +292,7 @@ describe("a page made any way is listed, opens, and stays hidden from others", (
     const response = await app.request("/api/reads/paper.list", {
       method: "POST",
       headers: authHeaders(who.cookie),
-      body: JSON.stringify({ writer: RICH_NATIVE_WRITER }),
+      body: JSON.stringify({}),
     })
     expect(response.status).toBe(200)
     return listOf.parse(dataOf.parse(await response.json()).data)

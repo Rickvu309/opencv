@@ -1,7 +1,6 @@
 import { jobAddNoteInputSchema } from "@workspace/domain/apply"
 import { type CoachFocusDoc } from "@workspace/domain/coach"
 import { catalog, ERROR_CODES, type Actor } from "@workspace/domain/kernel"
-import { NATIVE_WRITER } from "@workspace/domain/paper-doc"
 
 import { CommandError } from "../platform/errors.js"
 import type { Registry } from "../registry/registry.js"
@@ -39,11 +38,7 @@ async function paperFocus(
   blockIds?: string[]
 ): Promise<CoachFocusDoc> {
   const outline = catalog["paper.outline"].publicResult.parse(
-    await registry.read(
-      "paper.outline",
-      { docId, blockIds, writer: NATIVE_WRITER },
-      actor
-    )
+    await registry.read("paper.outline", { docId, blockIds }, actor)
   )
   return {
     id: docId,
@@ -126,11 +121,7 @@ function linkedCvId(job: Record<string, unknown> | null) {
 }
 
 async function mainCvId(registry: Registry, actor: Actor) {
-  const listed = await registry.read(
-    "paper.list",
-    { kind: "cv", writer: NATIVE_WRITER },
-    actor
-  )
+  const listed = await registry.read("paper.list", { kind: "cv" }, actor)
   if (!Array.isArray(listed)) return undefined
   const rows = listed.flatMap((item) => {
     const row = record(item)

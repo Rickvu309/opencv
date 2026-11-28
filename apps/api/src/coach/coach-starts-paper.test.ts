@@ -6,7 +6,6 @@ import {
   parseUserId,
   personActor,
 } from "@workspace/domain/kernel"
-import { RICH_NATIVE_WRITER } from "@workspace/domain/paper-doc"
 import { asc, eq } from "drizzle-orm"
 import { expect, it } from "vitest"
 import { z } from "zod"
@@ -136,13 +135,7 @@ it("a CV the Coach starts is a Paper it reads, edits with approval and Undo", ()
     expect(before.outline).toContain("[Role, company] | [Dates]")
     const papers = z
       .array(z.object({ id: z.string() }).passthrough())
-      .parse(
-        await registry.read(
-          "paper.list",
-          { writer: RICH_NATIVE_WRITER },
-          personActor(ownerId)
-        )
-      )
+      .parse(await registry.read("paper.list", {}, personActor(ownerId)))
     expect(papers.map((paper) => paper.id)).toEqual([started.docId])
   }))
 

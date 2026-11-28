@@ -1,5 +1,4 @@
 import { personActor } from "@workspace/domain/kernel"
-import { RICH_NATIVE_WRITER } from "@workspace/domain/paper-doc"
 import { eq } from "drizzle-orm"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 
@@ -10,8 +9,6 @@ import { createMigratedTestDb } from "../test/harness.js"
 import { paperRegistry } from "./paper-registry.test-support.js"
 
 const person = personActor("blank-paper-copy")
-const writer = RICH_NATIVE_WRITER
-
 let db: TestDatabase
 let close: () => Promise<void>
 let registry: Registry
@@ -53,7 +50,7 @@ describe("A copy of a Paper that was started blank", () => {
       const sourceId = (created.output as Paper).id
       const copied = await registry.execute({
         name: "paper.duplicate",
-        input: { docId: sourceId, writer },
+        input: { docId: sourceId },
         actor: person,
       })
       const copy = copied.output as Paper
