@@ -4,12 +4,7 @@ import {
   type PaperId,
   type UserId,
 } from "@workspace/domain/kernel"
-import {
-  emptyRichPaper,
-  nativeProvenance,
-  paperDocumentInfoSchema,
-  storedPaperDocumentSchema,
-} from "@workspace/domain/paper-doc"
+import { paperDocumentInfoSchema } from "@workspace/domain/paper-doc"
 import { getDb } from "../db/context.js"
 import { paperDocs } from "../db/schema.js"
 import { CommandError } from "../platform/errors.js"
@@ -28,9 +23,6 @@ export async function readPaperDocumentInfo(userId: UserId, docId: PaperId) {
     name: row.name,
     kind: row.kind,
     format: "rich",
-    provenance: nativeProvenance(
-      storedPaperDocumentSchema.parse(emptyRichPaper(row.kind))
-    ),
     updatedAt: row.updatedAt.toISOString(),
   })
 }

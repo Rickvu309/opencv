@@ -1,7 +1,7 @@
 import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
-import * as paperQualification from "@/lib/paper-qualification.ts"
+import * as paperInfo from "@/lib/paper-info.ts"
 import { ApiError } from "@/lib/api-error.ts"
 import { failJobRead } from "@/test/apply-jobs-mock.ts"
 import { renderApp } from "@/test/render-app.tsx"
@@ -45,7 +45,7 @@ describe("detail recovery", () => {
   ])(
     "keeps a $status failure distinct from a missing record",
     async ({ status, code }) => {
-      vi.spyOn(paperQualification, "qualifiedPaperRead").mockRejectedValue(
+      vi.spyOn(paperInfo, "readPaperInfo").mockRejectedValue(
         new ApiError(status, code, "Request failed")
       )
       renderApp(`/paper/${missingId}`)

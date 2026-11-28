@@ -3,7 +3,6 @@ import { z } from "zod"
 import { fileIdSchema, paperIdSchema, type FileId } from "../ids.js"
 import { layoutPageSchema } from "./engine-page.js"
 import { paperDocumentSchema } from "./document.js"
-import { nativeBasisSchema, nativeProvenanceSchema } from "./native.js"
 import {
   paperDocStatusSchema,
   paperStoredKindSchema,
@@ -30,7 +29,6 @@ export const paperViewSchema = z
     templateId: paperTemplateIdSchema.nullable(),
     status: paperDocStatusSchema,
     paper: paperDocumentSchema,
-    nativeBasis: nativeBasisSchema.optional(),
     contentVersion: z.number().int(),
     checks: z.array(paperCheckSchema),
     pageChoice: paperPageChoiceSchema,
@@ -57,7 +55,6 @@ export const paperDocumentInfoSchema = z.discriminatedUnion("format", [
   paperIdentitySchema
     .extend({
       format: z.literal("rich"),
-      provenance: nativeProvenanceSchema,
       updatedAt: z.string().datetime(),
     })
     .strict(),

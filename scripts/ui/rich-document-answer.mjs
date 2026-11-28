@@ -1,6 +1,6 @@
 export const RICH_DOCUMENT_ID = "16590000-0000-4000-8000-000000000001"
 
-export function richDocumentAnswer(provenance) {
+export function richDocumentAnswer() {
   return {
     ok: true,
     data: {
@@ -8,7 +8,6 @@ export function richDocumentAnswer(provenance) {
       name: "Product designer CV",
       kind: "cv",
       format: "rich",
-      provenance,
       updatedAt: new Date().toISOString(),
     },
   }

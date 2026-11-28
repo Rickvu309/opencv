@@ -7,11 +7,8 @@ export type RichDocumentAnswer = {
     name: string
     kind: string
     format: "rich"
-    provenance: unknown
     updatedAt: string
   }
 }
 
-export declare function richDocumentAnswer(
-  provenance: unknown
-): RichDocumentAnswer
+export declare function richDocumentAnswer(): RichDocumentAnswer

@@ -30,7 +30,7 @@ import { browserSyncPorts } from "@/lib/paper-sync-ports.ts"
 import { SURFACE_PATHS } from "@/lib/product-paths.ts"
 import { holdWritingCoachFocus } from "@/lib/writing-coach-focus.ts"
 import { loadedSessionCheck } from "@/lib/session-check.ts"
-import { qualifiedPaperRead } from "@/lib/paper-qualification.ts"
+import { readPaperInfo } from "@/lib/paper-info.ts"
 
 const PAPER_PREFIX = `${SURFACE_PATHS.paper}/`
 const NOT_FOUND = "Document not found."
@@ -76,13 +76,7 @@ async function openSavedPaper(
       message: "Sign in to open this Paper",
       retry: false,
     }
-  const ownerId = check.session.user.id
-  const sessionId = check.session.session.id
-  const info = await qualifiedPaperRead(
-    catalog["paper.read"].name,
-    parsePaperId(docId),
-    { ownerId, sessionId }
-  )
+  const info = await readPaperInfo(parsePaperId(docId))
   if (info.format !== "rich") return olderFormat
   const metadata = await catalogClient.read(catalog["paper.read"].name, {
     docId,

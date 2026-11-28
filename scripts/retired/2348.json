@@ -1,0 +1,26 @@
+[
+  {
+    "subject": "apps/api/src/paper/blank-rich-create.test.ts",
+    "because": "The web qualification step, the native basis and the provenance computed from an empty paper are removed; the server never sent a basis and nothing read the provenance. The Paper walk (18 of 18) and the Paper info, recovery and creation tests cover opening a Paper.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/lib/paper-qualification.test.ts",
+    "because": "The web qualification step, the native basis and the provenance computed from an empty paper are removed; the server never sent a basis and nothing read the provenance. The Paper walk (18 of 18) and the Paper info, recovery and creation tests cover opening a Paper.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 10
+  },
+  {
+    "subject": "packages/domain/src/paper-native.test.ts",
+    "because": "The web qualification step, the native basis and the provenance computed from an empty paper are removed; the server never sent a basis and nothing read the provenance. The Paper walk (18 of 18) and the Paper info, recovery and creation tests cover opening a Paper.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
+  }
+]
