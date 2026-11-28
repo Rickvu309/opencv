@@ -126,5 +126,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 9
+  },
+  {
+    "subject": "packages/paper-crdt/src/rich-style-parity.test.ts",
+    "because": "its subject, the old Paper engine code, was deleted because nothing reaches it after every Paper moved to the new engine",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 7
   }
 ]
