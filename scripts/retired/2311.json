@@ -206,5 +206,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 3
+  },
+  {
+    "subject": "scripts/ocv-tools/take.test.mjs > the real repo names exactly the packages a new task folder must build",
+    "because": "packages/paper-crdt is deleted, so a new task folder no longer builds it",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
   }
 ]
