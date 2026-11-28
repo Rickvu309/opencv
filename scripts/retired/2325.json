@@ -1,0 +1,10 @@
+[
+  {
+    "subject": "apps/api/src/coach/anthropic-runtime.test.ts",
+    "because": "paper.save has one input shape now; the legacy sync union branch is gone from the contract, so the tool schema is a single object",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  }
+]
