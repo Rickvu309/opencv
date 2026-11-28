@@ -398,3 +398,34 @@ test("finish refuses a body with no Proof before it pushes", () => {
   assert.equal(verdict.refusals[0].id, "BAD_BODY")
   assert.equal(verdict.refusals[0].message, NEEDS_LEAD)
 })
+
+test("a refused body shows a body to copy that passes once its blanks are filled, for a fix and for any other change", () => {
+  const row = jobRows.find((item) => item.id === "BAD_BODY")
+  const fill = (text) =>
+    text
+      .replace(/\*\*<[^>]+>\*\*/, "**Search keeps the words you typed**")
+      .replace(
+        /<the tree\.md[^>]+>/,
+        "*Why did search forget the words?*\n\n- **A.** The box cleared on every open.\n- **B.** The box now keeps them."
+      )
+      .replace(/<what changes[^>]+>/, "Search keeps the words you typed.")
+      .replace("<test command>", "node --test scripts/x.test.mjs")
+      .replace("<N>", "4")
+      .replace("<sha>", "39fbe5781")
+  const facts = (title, text) => ({
+    body: { file: "/b.md", text },
+    migrations: NO_MIGRATIONS,
+    diff: { files: [] },
+    pull: { title },
+  })
+  for (const title of ["fix: keep search (#7)", "feat: keep search (#7)"]) {
+    const refused = evaluate(row.id, facts(title, "**Now:** Only this"))
+    assert.match(refused.fix, /Closes #7/, title)
+    const example = refused.fix.slice(refused.fix.indexOf("\n\n") + 2)
+    assert.equal(row.check(facts(title, fill(example))), null, title)
+  }
+  assert.match(
+    evaluate(row.id, facts("fix: keep search (#7)", "x")).fix,
+    /Caught by: agent-self\nIntroduced by: <sha>/
+  )
+})
