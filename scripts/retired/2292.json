@@ -62,5 +62,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 1
+  },
+  {
+    "subject": "scripts/paper-native-journal-bound.test.mjs",
+    "because": "Only tests the engine 1 native browser journal, which no Paper uses after the switch; none needed, unsent edits on the new page live in the pending store checked by apps/web/src/lib/paper-pending-store.test.ts",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
   }
 ]
