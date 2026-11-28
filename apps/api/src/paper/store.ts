@@ -34,7 +34,6 @@ import {
 import { isEnginePaper, toListedEnginePaper } from "./listed-engine-paper.js"
 import { readPaperDocumentInfo } from "./document-info.js"
 import { admitted, engineLog, headOf } from "./engine-sync-log.js"
-import { NEW_ENGINE } from "./log/index.js"
 
 export const IMPORT_FILE_CAP = 8_000_000
 export const IMPORT_SIZE_MESSAGE = "File must be 8 MB or smaller."

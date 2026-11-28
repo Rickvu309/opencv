@@ -48,19 +48,3 @@ export function seedColumns(kind: PaperStoredKind, paper: StoredPaperDocument) {
     ) as unknown as Record<string, unknown>,
   }
 }
-
-export function sameDocumentIdentity(
-  current: StoredPaperDocument,
-  candidate: StoredPaperDocument
-) {
-  if (
-    current.kind !== candidate.kind ||
-    current.version !== candidate.version ||
-    (current.version === 4 &&
-      (candidate.version !== 4 ||
-        current.schemaRevision !== candidate.schemaRevision))
-  )
-    throw invalidDocument(
-      "The candidate belongs to a different document schema"
-    )
-}

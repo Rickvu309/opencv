@@ -4,42 +4,13 @@ import {
   type PaperId,
   type UserId,
 } from "@workspace/domain/kernel"
-import {
-  canonicalPaper,
-  nativeProvenance,
-  sameNativeProvenance,
-  type RichPaperDocument,
-} from "@workspace/domain/paper-doc"
-import {
-  absorbUpdate,
-  forkOf,
-  carriesChange,
-  knownAfter,
-  loadYDoc,
-  materializeStored,
-  stateVectorOf,
-  updateSince,
-  writeStoredYDoc,
-} from "@workspace/paper-crdt"
+import { absorbUpdate, forkOf, loadYDoc } from "@workspace/paper-crdt"
 import { and, asc, eq, gte, gt } from "drizzle-orm"
 
-import {
-  getDb,
-  insideTransaction,
-  transaction,
-  ownedTaskTransaction,
-} from "../../db/context.js"
+import { getDb, ownedTaskTransaction } from "../../db/context.js"
 import { paperDocUpdates, paperDocs } from "../../db/schema.js"
 import { CommandError } from "../../platform/errors.js"
-import {
-  COMPACT_EVERY_SEQ,
-  droppedPhotoIds,
-  foldSettledLog,
-} from "./content-compact.js"
 
-import { validatedStored, sameDocumentIdentity } from "./content-document.js"
-import { admitDocument } from "./native-admission.js"
-import { readRichPaper } from "./read-paper.js"
 import {
   qualifyRichDocument,
   qualifyRichSnapshot,
@@ -49,7 +20,7 @@ import {
 
 export { seedColumns } from "./content-document.js"
 
-import type { PaperRow, Live, SyncRequest, SyncReply } from "./content-types.js"
+import type { PaperRow, Live } from "./content-types.js"
 export type {
   ContentEdit,
   LogRow,
@@ -61,41 +32,11 @@ export type {
 } from "./content-types.js"
 
 const FIRST_EPOCH = 1
-const NO_LOCAL_COPY = 0
 
-const CACHE_LIMIT = 200
 const live = new Map<string, Live>()
-
-function remember(docId: string, entry: Live) {
-  live.delete(docId)
-  live.set(docId, entry)
-  for (const oldest of live.keys()) {
-    if (live.size <= CACHE_LIMIT) break
-    live.delete(oldest)
-  }
-}
 
 function detached(entry: Live): Live {
   return { ...entry, yDoc: forkOf(entry.yDoc) }
-}
-
-async function withLiveTransaction<T>(
-  run: (retain: (docId: string, entry: Live) => void) => Promise<T>
-): Promise<T> {
-  const committed: { head?: { docId: string; entry: Live } } = {}
-  const result = await transaction(() =>
-    run((docId, entry) => {
-      committed.head = { docId, entry }
-    })
-  )
-  if (committed.head && !insideTransaction()) {
-    remember(committed.head.docId, committed.head.entry)
-  }
-  return result
-}
-
-function refuse(message: string) {
-  return new CommandError(ERROR_CODES.VALIDATION_ERROR, message)
 }
 
 function sameBytes(a: Uint8Array, b: Uint8Array) {
@@ -107,10 +48,6 @@ export function cacheRevisionUsable(
   contentVersion: number
 ) {
   return cachedRevision <= contentVersion
-}
-
-export function nextContentSeq(entryRevision: number) {
-  return entryRevision + 1
 }
 
 async function lockedRow(userId: UserId, docId: PaperId): Promise<PaperRow> {
@@ -219,70 +156,6 @@ async function hydrate(row: PaperRow): Promise<Live> {
     live.delete(row.id)
   }
   return freshLive(row, base)
-}
-
-async function commit(
-  row: PaperRow,
-  entry: Live,
-  effective: Uint8Array,
-  change: {
-    origin: string
-    editId?: string
-    basedOn?: number
-    touched?: string[]
-    rebuilt?: string[]
-  }
-): Promise<PaperRow> {
-  const materialized = materializeStored(entry.yDoc)
-  if (!materialized.ok) throw refuse(materialized.reason)
-  const paper = validatedStored(materialized.document, row.kind)
-  sameDocumentIdentity(validatedStored(row.crdtDocument, row.kind), paper)
-  const seq = nextContentSeq(entry.revision)
-  const update = Buffer.from(effective)
-  await getDb()
-    .insert(paperDocUpdates)
-    .values({
-      paperId: row.id,
-      seq,
-      origin: change.origin,
-      editId: change.editId ?? null,
-      basedOn: change.basedOn ?? null,
-      touched: change.touched ?? null,
-      rebuilt: change.rebuilt ?? null,
-      update,
-      releasedPhotoRefs: droppedPhotoIds(row.crdtDocument, paper),
-    })
-  const patch = {
-    crdtDocument: paper as unknown as Record<string, unknown>,
-    contentVersion: seq,
-    updatedAt: new Date(),
-  }
-  await getDb().update(paperDocs).set(patch).where(eq(paperDocs.id, row.id))
-  if (seq % COMPACT_EVERY_SEQ === 0) {
-    const folded = await foldSettledLog(row.id, entry)
-    if (folded) {
-      entry.base = folded.base
-      entry.baseSeq = folded.baseSeq
-    }
-  }
-  entry.revision = seq
-  entry.tip = update
-  return { ...row, ...patch }
-}
-
-type Mended = { effective: Uint8Array | null; rebuilt?: string[] }
-
-async function mended(
-  row: PaperRow,
-  entry: Live,
-  effective: Uint8Array | null
-): Promise<Mended> {
-  if (!effective) return { effective }
-  const previous = validatedStored(row.crdtDocument, row.kind)
-  const candidate = materializeStored(entry.yDoc)
-  if (!candidate.ok) throw refuse(candidate.reason)
-  sameDocumentIdentity(previous, candidate.document)
-  return { effective }
 }
 
 export async function withRichSnapshot<T>(
