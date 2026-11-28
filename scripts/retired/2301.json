@@ -1,0 +1,106 @@
+[
+  {
+    "subject": "apps/web/src/features/paper/rich-editor/rich-document-menu.test.tsx",
+    "because": "Every Paper opens on the new page since the switch (#2287); this test only covered the old Paper page, which is being removed in parts (#2301).",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 12
+  },
+  {
+    "subject": "apps/web/src/features/paper/rich-editor/rich-document-menubar.test.tsx",
+    "because": "Every Paper opens on the new page since the switch (#2287); this test only covered the old Paper page, which is being removed in parts (#2301).",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
+  },
+  {
+    "subject": "apps/web/src/features/paper/rich-editor/rich-find-bar-keyboard.test.tsx",
+    "because": "Every Paper opens on the new page since the switch (#2287); this test only covered the old Paper page, which is being removed in parts (#2301).",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 5
+  },
+  {
+    "subject": "apps/web/src/features/paper/rich-editor/rich-find-bar.test.ts",
+    "because": "Every Paper opens on the new page since the switch (#2287); this test only covered the old Paper page, which is being removed in parts (#2301).",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 3
+  },
+  {
+    "subject": "apps/web/src/features/paper/rich-editor/rich-page-controls.test.tsx",
+    "because": "Every Paper opens on the new page since the switch (#2287); this test only covered the old Paper page, which is being removed in parts (#2301).",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 7
+  },
+  {
+    "subject": "apps/web/src/features/paper/rich-editor/rich-page-lifecycle.isolated.test.tsx",
+    "because": "Every Paper opens on the new page since the switch (#2287); this test only covered the old Paper page, which is being removed in parts (#2301).",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 11
+  },
+  {
+    "subject": "apps/web/src/features/paper/rich-editor/rich-photo-controls.isolated.test.tsx",
+    "because": "Every Paper opens on the new page since the switch (#2287); this test only covered the old Paper page, which is being removed in parts (#2301).",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 31
+  },
+  {
+    "subject": "apps/web/src/features/paper/rich-editor/rich-photo-form.test.ts",
+    "because": "Every Paper opens on the new page since the switch (#2287); this test only covered the old Paper page, which is being removed in parts (#2301).",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 4
+  },
+  {
+    "subject": "apps/web/src/features/paper/rich-editor/rich-status-detail.test.tsx",
+    "because": "Every Paper opens on the new page since the switch (#2287); this test only covered the old Paper page, which is being removed in parts (#2301).",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 6
+  },
+  {
+    "subject": "apps/web/src/features/paper/rich-editor/rich-structure-controls.test.tsx",
+    "because": "Every Paper opens on the new page since the switch (#2287); this test only covered the old Paper page, which is being removed in parts (#2301).",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 10
+  },
+  {
+    "subject": "apps/web/src/features/paper/rich-editor/rich-text-custom-spacing.test.tsx",
+    "because": "Every Paper opens on the new page since the switch (#2287); this test only covered the old Paper page, which is being removed in parts (#2301).",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 21
+  },
+  {
+    "subject": "apps/web/src/features/paper/rich-editor/rich-text-formatting.test.tsx",
+    "because": "Every Paper opens on the new page since the switch (#2287); this test only covered the old Paper page, which is being removed in parts (#2301).",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 20
+  },
+  {
+    "subject": "apps/web/src/features/paper/rich-editor/rich-text-point-value.test.ts",
+    "because": "Every Paper opens on the new page since the switch (#2287); this test only covered the old Paper page, which is being removed in parts (#2301).",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 15
+  }
+]
