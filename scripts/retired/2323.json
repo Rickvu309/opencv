@@ -1,0 +1,10 @@
+[
+  {
+    "subject": "packages/domain/src/paper-line-spacing-edit.test.ts",
+    "because": "Its subject, the old Paper formatting patch and presentation patch validator, is deleted: nothing live used them after every Paper moved to the new engine",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  }
+]
