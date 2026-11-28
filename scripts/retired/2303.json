@@ -62,5 +62,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 2
+  },
+  {
+    "subject": "scripts/guard-ledger/fixed-relative-time.json .historic",
+    "because": "the route no longer renders the old Paper editor, so the module this case tested is unreachable and deleted with it (#2303)",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
   }
 ]
