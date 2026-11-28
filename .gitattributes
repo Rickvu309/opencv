@@ -6,4 +6,3 @@ apps/api/src/generated/** linguist-generated
 packages/domain/src/generated/** linguist-generated
 packages/stageshow/src/kit/** linguist-generated
 packages/paper-fonts/metrics/** linguist-generated
-docs/packs.md linguist-generated

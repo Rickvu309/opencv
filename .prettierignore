@@ -6,4 +6,3 @@ pnpm-lock.yaml
 .pnpm-store/
 # drizzle-kit rewrites these on every generate, in its own format
 apps/api/drizzle/meta/
-docs/packs.md
