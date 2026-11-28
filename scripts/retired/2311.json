@@ -182,5 +182,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 2
+  },
+  {
+    "subject": "scripts/ocv-tools/brief.test.mjs > the shipped fence file fences the old Paper core for #2207 until 2027-03-31",
+    "because": "the fenced packages/paper-crdt folder is deleted, so the fence no longer lists it",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
   }
 ]
