@@ -21,7 +21,7 @@ export const screen = {
     },
     { press: "Enter" },
     { waitFor: { selector: PANEL_APPROVE } },
-    { waitFor: { selector: 'section[aria-label="Coach proposal"]' } },
+    { waitFor: { selector: 'section[aria-label="Coach suggestions"]' } },
   ],
   after: DENY_THE_WAITING_EDIT,
 }

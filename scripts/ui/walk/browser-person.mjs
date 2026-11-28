@@ -4,12 +4,6 @@ import { fileURLToPath } from "node:url"
 
 import { LOOP_FILES } from "../sweep/loop.mjs"
 import {
-  KEYSTROKE_PROBE,
-  cvText,
-  keystrokeStats,
-  lineStart,
-} from "./keystrokes.mjs"
-import {
   LAB_SURFACE,
   PAPER_SURFACE,
   labKeystrokeTiming,
@@ -17,8 +11,6 @@ import {
 import { wordBytesFacts } from "./word-file.mjs"
 
 const FIXTURES = new URL("../fixtures/", import.meta.url)
-const PAGE = '[contenteditable="true"]'
-const PARAGRAPH = `${PAGE} .bn-block-content[data-content-type="paragraph"]`
 const SAVED = 'p.writing-note[title="Saved"], p.writing-note:text-is("Saved")'
 const DESK = { width: 1440, height: 900 }
 const PHONE = { width: 390, height: 844 }
@@ -28,56 +20,11 @@ const SETTLE_MS = 120
 const PASTE_SETTLE_MS = 700
 const OPEN_SETTLE_MS = 800
 const PERF_KEYS = 40
-const PERF_TEXT = { lines: 42, wordsPerLine: 20 }
-const PERF_TARGET = lineStart(PERF_TEXT.lines / 2)
 const CHROME =
   'nav, header, aside, [role="toolbar"], [role="menubar"], [role="navigation"], [data-slot="sidebar"]'
 
-export function blocksInPage(editorSelector) {
-  const editor = document.querySelector(editorSelector)
-  if (!editor) return []
-  return [...editor.querySelectorAll(".bn-block-content")]
-    .filter((block) => {
-      const type = block.getAttribute("data-content-type")
-      return (
-        block.getBoundingClientRect().height > 0 &&
-        getComputedStyle(block).display !== "none" &&
-        type !== "paperCvHeader" &&
-        !(type === "paperCvField" && !block.textContent.trim())
-      )
-    })
-    .map((block) => {
-      let depth = 0
-      for (
-        let node = block.parentElement;
-        node && node !== editor;
-        node = node.parentElement
-      )
-        if (node.classList.contains("bn-block-group")) depth += 1
-      const weights = []
-      const walker = document.createTreeWalker(block, NodeFilter.SHOW_TEXT)
-      while (walker.nextNode())
-        if (walker.currentNode.textContent.trim())
-          weights.push(
-            Number(
-              getComputedStyle(walker.currentNode.parentElement).fontWeight
-            )
-          )
-      return {
-        type: block.getAttribute("data-content-type"),
-        level: Number(block.getAttribute("data-level")) || null,
-        depth,
-        text: block.innerText.replaceAll("​", "").trim(),
-        bold: weights.length > 0 && weights.every((weight) => weight >= 600),
-        links: [...block.querySelectorAll("a[href]")].map((link) =>
-          link.getAttribute("href")
-        ),
-      }
-    })
-}
-
 function chromeInPrint(selector) {
-  const editor = document.querySelector('[contenteditable="true"]')
+  const editor = document.querySelector(".paper-editor")
   return [...document.querySelectorAll(selector)]
     .filter((element) => {
       if (editor && (editor.contains(element) || element.contains(editor)))
@@ -99,57 +46,17 @@ function chromeInPrint(selector) {
     )
 }
 
-function caretInPage(editorSelector) {
-  const editor = document.querySelector(editorSelector)
-  const selection = document.getSelection()
-  return Boolean(
-    editor &&
-    selection?.anchorNode &&
-    editor.contains(selection.anchorNode) &&
-    editor.contains(document.activeElement)
-  )
-}
-
-function textRect(word) {
-  const walker = document.createTreeWalker(
-    document.querySelector('[contenteditable="true"]'),
-    NodeFilter.SHOW_TEXT
-  )
-  while (walker.nextNode()) {
-    const at = walker.currentNode.textContent.indexOf(word)
-    if (at < 0) continue
-    const range = document.createRange()
-    range.setStart(walker.currentNode, at)
-    range.setEnd(walker.currentNode, at + word.length)
-    range.startContainer.parentElement.scrollIntoView({ block: "center" })
-    const box = range.getBoundingClientRect()
-    return { x: box.right - 1, y: box.top + box.height / 2 }
-  }
-  return null
-}
-
 const twoFrames = () =>
   new Promise((resolve) =>
     requestAnimationFrame(() => requestAnimationFrame(resolve))
   )
 
-const RICH_SURFACE = {
-  name: "rich",
-  page: PAGE,
-  line: PARAGRAPH,
-  ready: PAGE,
-  blocksInPage,
-  caretInPage,
-  pointer: {},
-}
-
 export const SURFACES = {
-  rich: RICH_SURFACE,
   lab: LAB_SURFACE,
   paper: PAPER_SURFACE,
 }
 
-function tab(page, surface = RICH_SURFACE) {
+function tab(page, surface = PAPER_SURFACE) {
   const settle = async (ms = SETTLE_MS) => {
     await page.evaluate(twoFrames)
     await page.waitForTimeout(ms)
@@ -225,7 +132,7 @@ export function browserPerson({
   state,
   account,
   shotsDir,
-  surface = RICH_SURFACE,
+  surface = PAPER_SURFACE,
 }) {
   let context = null
   let current = null
@@ -270,7 +177,7 @@ export function browserPerson({
       current = null
     },
     openBlankCv: async () => {
-      if (surface !== RICH_SURFACE && !surface.fromLibrary) {
+      if (!surface.fromLibrary) {
         await page().goto(`${state.webOrigin}${state.route}?doc=blank`, {
           waitUntil: "domcontentloaded",
         })
@@ -401,72 +308,14 @@ export function browserPerson({
   return person
 }
 
-export async function keystrokeTiming({
-  browser,
-  state,
-  account,
-  build,
-  shotsDir,
-  surface = RICH_SURFACE,
-}) {
-  if (surface !== RICH_SURFACE) {
-    const context = await browser.newContext({ viewport: DESK })
-    try {
-      return {
-        build,
-        ...(await labKeystrokeTiming({ context, state, keys: PERF_KEYS })),
-      }
-    } finally {
-      await context.close()
-    }
-  }
-  const person = browserPerson({ browser, state, account, shotsDir })
-  await person.begin()
+export async function keystrokeTiming({ browser, state, build }) {
+  const context = await browser.newContext({ viewport: DESK })
   try {
-    const page = person.currentPage()
-    await page.addInitScript(KEYSTROKE_PROBE)
-    await person.openBlankCv()
-    await person.paste({ text: cvText(PERF_TEXT) })
-    await page.waitForTimeout(1500)
-    const target = await page.evaluate(textRect, PERF_TARGET)
-    if (!target) throw new Error(`the pasted CV has no ${PERF_TARGET}`)
-    await page.mouse.click(target.x, target.y)
-    await page.waitForTimeout(500)
-    await page.evaluate(() => {
-      window.__walkKeys = []
-      if (window.__walkEventTimings) window.__walkEventTimings = []
-    })
-    for (let key = 0; key < PERF_KEYS; key += 1) {
-      await page.keyboard.press(key % 8 === 7 ? "Space" : "KeyX")
-      await page.waitForFunction(
-        (count) => window.__walkKeys.length >= count,
-        key + 1,
-        { timeout: STEP_MS }
-      )
-    }
-    const { samples, events, height, width } = await page.evaluate(() => {
-      const editor = document
-        .querySelector('[contenteditable="true"]')
-        .getBoundingClientRect()
-      return {
-        samples: window.__walkKeys,
-        events: window.__walkEventTimings,
-        height: editor.height,
-        width: editor.width,
-      }
-    })
     return {
       build,
-      words: PERF_TEXT.lines * PERF_TEXT.wordsPerLine,
-      pagesApprox: Math.round((height / width) * (8.5 / 11) * 10) / 10,
-      editorHeightPx: Math.round(height),
-      editorWidthPx: Math.round(width),
-      keydownToNextFrame: keystrokeStats(samples),
-      eventTimingKeydown: events
-        ? { over16ms: events.length, ...keystrokeStats(events) }
-        : null,
+      ...(await labKeystrokeTiming({ context, state, keys: PERF_KEYS })),
     }
   } finally {
-    await person.end({ id: "keystrokes" })
+    await context.close()
   }
 }

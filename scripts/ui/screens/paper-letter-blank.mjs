@@ -14,6 +14,6 @@ export const screen = {
       },
     },
     { waitFor: { selector: PAGE } },
-    { waitFor: DOWNLOAD_READY },
+    ...DOWNLOAD_READY,
   ],
 }

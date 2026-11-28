@@ -1,0 +1,90 @@
+[
+  {
+    "subject": "apps/api/src/paper/native-output/flow-photos.test.ts",
+    "because": "The old Word writer under apps/api/src/paper/native-output is removed: after the switch every Paper is written to Word by apps/api/src/paper/word, which apps/api/src/paper/word/round-trip.test.ts covers.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
+  },
+  {
+    "subject": "apps/api/src/paper/native-output/flow.test.ts",
+    "because": "The old Word writer under apps/api/src/paper/native-output is removed: after the switch every Paper is written to Word by apps/api/src/paper/word, which apps/api/src/paper/word/round-trip.test.ts covers.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 4
+  },
+  {
+    "subject": "apps/api/src/paper/native-output/formatted-fonts.test.ts",
+    "because": "The old Word writer under apps/api/src/paper/native-output is removed: after the switch every Paper is written to Word by apps/api/src/paper/word, which apps/api/src/paper/word/round-trip.test.ts covers.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/api/src/paper/native-output/formatted-layout.test.ts",
+    "because": "The old Word writer under apps/api/src/paper/native-output is removed: after the switch every Paper is written to Word by apps/api/src/paper/word, which apps/api/src/paper/word/round-trip.test.ts covers.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 5
+  },
+  {
+    "subject": "apps/api/src/paper/native-output/formatted-links.test.ts",
+    "because": "The old Word writer under apps/api/src/paper/native-output is removed: after the switch every Paper is written to Word by apps/api/src/paper/word, which apps/api/src/paper/word/round-trip.test.ts covers.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 6
+  },
+  {
+    "subject": "apps/api/src/paper/native-output/formatted-photos.test.ts",
+    "because": "The old Word writer under apps/api/src/paper/native-output is removed: after the switch every Paper is written to Word by apps/api/src/paper/word, which apps/api/src/paper/word/round-trip.test.ts covers.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 10
+  },
+  {
+    "subject": "apps/api/src/paper/native-output/formatted.test.ts",
+    "because": "The old Word writer under apps/api/src/paper/native-output is removed: after the switch every Paper is written to Word by apps/api/src/paper/word, which apps/api/src/paper/word/round-trip.test.ts covers.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 26
+  },
+  {
+    "subject": "apps/api/src/paper/native-output/letter.test.ts",
+    "because": "The old Word writer under apps/api/src/paper/native-output is removed: after the switch every Paper is written to Word by apps/api/src/paper/word, which apps/api/src/paper/word/round-trip.test.ts covers.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 43
+  },
+  {
+    "subject": "packages/paper-crdt/src/rich-style-parity.test.ts",
+    "because": "It compared the old editor styles with the old Word writer under apps/api/src/paper/native-output, which is removed. The new Word writer is covered by apps/api/src/paper/word/round-trip.test.ts.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 7
+  },
+  {
+    "subject": "scripts/guard-ledger/paper-word-fonts.json",
+    "because": "Ledger row of the old Word writer font test under apps/api/src/paper/native-output, which is removed with that writer.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/api/src/paper/import/word-to-paper.test.ts > a Word file brought in becomes a Paper > keeps headings, lists, marks, alignment, spacing, tables, page breaks and page size",
+    "because": "It built its Word file with the old Word writer under apps/api/src/paper/native-output, which is removed. A Word round trip through the new writer and reader is covered by apps/api/src/paper/word/round-trip.test.ts.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  }
+]

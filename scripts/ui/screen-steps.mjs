@@ -1,5 +1,5 @@
 export const COMPOSER = '[data-slot="coach-workspace-composer"] textarea'
-export const PAGE = '[contenteditable="true"]'
+export const PAGE = ".paper-editor .paper-editor-page"
 export const SAVED =
   'p.writing-note[title="Saved"], p.writing-note:text-is("Saved")'
 
@@ -69,7 +69,10 @@ export const REOPEN_LATEST_CHAT = [
   { waitFor: { selector: PANEL } },
 ]
 
-export const DOWNLOAD_READY = { role: "link", name: "Download Word" }
+export const DOWNLOAD_READY = [
+  { click: { role: "button", name: "File" } },
+  { waitFor: { role: "menuitem", name: "Download Word" } },
+]
 
 const JOB_DIALOG = '[role="dialog"]'
 
