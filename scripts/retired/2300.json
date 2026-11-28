@@ -6,5 +6,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 1
+  },
+  {
+    "subject": "apps/api/src/paper/content/content-rich-http.test.ts",
+    "because": "The old paper.save sync over HTTP now refuses; every Paper is engine 2 and saves through engine changes. D9 deletes the old storage folder.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
   }
 ]
