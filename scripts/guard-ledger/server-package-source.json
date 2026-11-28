@@ -1,0 +1,14 @@
+{
+  "id": "server-package-source",
+  "file": "scripts/server-package-source.test.mjs",
+  "detector": {
+    "module": "scripts/lib/server-package-source.mjs",
+    "export": "detect"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "49f84e8a0",
+    "path": "packages/paper-engine/package.json"
+  },
+  "reason": "Caught by agent-self from a failed production deploy. Introduced by 49f84e8a0 (#2232), which made the server depend on the Paper engine while the engine pointed plain Node at its TypeScript source, so every built server after it failed with ERR_MODULE_NOT_FOUND and production stayed on an old build."
+}
