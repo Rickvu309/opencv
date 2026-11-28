@@ -1,0 +1,11 @@
+{
+  "id": "doc-paths",
+  "file": "scripts/doc-paths.test.mjs",
+  "historic": {
+    "mode": "restore",
+    "sha": "0ced81aac",
+    "paths": ["docs/adr/0009-paper-engine-on-prosemirror-steps.md"],
+    "command": ["node", "--test", "scripts/doc-paths.test.mjs"]
+  },
+  "reason": "Caught by a docs audit. Introduced by 0ced81aac, which deleted packages/paper-crdt while ADR 0009 kept naming it with three other deleted Paper folders as live code."
+}
