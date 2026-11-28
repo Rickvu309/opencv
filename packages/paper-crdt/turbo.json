@@ -1,8 +1,0 @@
-{
-  "extends": ["//"],
-  "tasks": {
-    "test": {
-      "inputs": ["$TURBO_DEFAULT$", ".env*", "$TURBO_ROOT$/apps/api/src/**"]
-    }
-  }
-}

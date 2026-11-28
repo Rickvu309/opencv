@@ -5,20 +5,13 @@ import { run } from "./common.mjs"
 
 const BATCH = 200
 const LINTABLE = /\.(?:[cm]?[jt]s|[jt]sx)$/
-const LINT_DIRS = [
-  "apps/api",
-  "apps/web",
-  "packages/domain",
-  "packages/paper-crdt",
-  "packages/ui",
-]
+const LINT_DIRS = ["apps/api", "apps/web", "packages/domain", "packages/ui"]
 
 const TYPED = /\.(?:[cm]?ts|tsx)$|(?:^|\/)(?:tsconfig[^/]*|package)\.json$/
 const TYPE_PROJECTS = Object.freeze({
   "apps/api": ["tsconfig.json"],
   "apps/web": ["tsconfig.app.json", "tsconfig.node.json"],
   "packages/domain": ["tsconfig.json"],
-  "packages/paper-crdt": ["tsconfig.json"],
   "packages/ui": ["tsconfig.json"],
 })
 

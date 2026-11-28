@@ -5,10 +5,7 @@ import path from "node:path"
 import { test } from "node:test"
 import { fileURLToPath } from "node:url"
 
-import {
-  NEW_PAPER_PACKS,
-  editorViewFrameworkProblems,
-} from "./lib/no-editor-view-framework.mjs"
+import { editorViewFrameworkProblems } from "./lib/no-editor-view-framework.mjs"
 
 const root = path.resolve(fileURLToPath(new URL(".", import.meta.url)), "..")
 
@@ -40,6 +37,16 @@ const MISTAKES = [
     }),
     "packages/paper-engine/package.json",
   ],
+  [`import * as Y from "yjs"`, "packages/paper-crdt/src/client.ts"],
+  [
+    `import { BlockNoteView } from "@blocknote/react"`,
+    "apps/web/src/features/paper/rich-editor/rich-page.tsx",
+  ],
+  [
+    JSON.stringify({ dependencies: { "@blocknote/core": "0.57.0" } }),
+    "apps/web/package.json",
+  ],
+  [JSON.stringify({ devDependencies: { yjs: "13.6.33" } }), "package.json"],
 ]
 
 const CLEAN = [
@@ -55,18 +62,14 @@ const CLEAN = [
     `import { history } from "prosemirror-history"`,
     "packages/paper-engine/src/history.ts",
   ],
-  [`import * as Y from "yjs"`, "packages/paper-crdt/src/client.ts"],
-  [
-    `import { BlockNoteView } from "@blocknote/react"`,
-    "apps/web/src/features/paper/rich-editor/rich-page.tsx",
-  ],
+  [`import * as Y from "yjs"`, "scripts/property-seed.test.mjs"],
   [
     JSON.stringify({ dependencies: { "prosemirror-model": "1.25.12" } }),
     "packages/paper-engine/package.json",
   ],
 ]
 
-test("prosemirror-view, Tiptap, BlockNote and Yjs fire in new Paper packs", () => {
+test("prosemirror-view, Tiptap, BlockNote and Yjs fire anywhere in the repo", () => {
   for (const [source, file] of MISTAKES) {
     assert.ok(
       editorViewFrameworkProblems(source, file).length > 0,
@@ -75,28 +78,22 @@ test("prosemirror-view, Tiptap, BlockNote and Yjs fire in new Paper packs", () =
   }
 })
 
-test("headless ProseMirror in new packs and the old core outside them stay quiet", () => {
+test("headless ProseMirror and guard fixtures under scripts stay quiet", () => {
   for (const [source, file] of CLEAN) {
     assert.deepEqual(editorViewFrameworkProblems(source, file), [], file)
   }
 })
 
-test("new Paper packs use no editor view framework", () => {
+test("the repo uses no editor view framework", () => {
   const files = execFileSync(
     "git",
-    [
-      "ls-files",
-      "--cached",
-      "--others",
-      "--exclude-standard",
-      ...NEW_PAPER_PACKS,
-    ],
+    ["ls-files", "--cached", "--others", "--exclude-standard"],
     { cwd: root, encoding: "utf8" }
   )
     .split("\n")
     .filter((name) => /(?:\.[cm]?[jt]sx?|package\.json)$/.test(name))
     .filter((name) => existsSync(path.join(root, name)))
-  assert.ok(files.length > 0, "expected new Paper pack files")
+  assert.ok(files.length > 0, "expected repo source files")
   const problems = files.flatMap((name) =>
     editorViewFrameworkProblems(
       readFileSync(path.join(root, name), "utf8"),

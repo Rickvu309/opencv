@@ -6,5 +6,5 @@
     "export": "editorViewFrameworkProblems"
   },
   "historic": null,
-  "reason": "preventive: the new Paper packs start in #2212 without an editor view framework; the old core in packages/paper-crdt and rich-editor uses BlockNote and Yjs and stays out of scope until its deletion unit"
+  "reason": "preventive: the new Paper packs started in #2212 without an editor view framework; the old core that used BlockNote and Yjs is deleted, so the guard covers the whole repo outside guard fixtures"
 }

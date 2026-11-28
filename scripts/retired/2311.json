@@ -1,0 +1,218 @@
+[
+  {
+    "subject": "packages/domain/src/paper-page-scale.test.ts",
+    "because": "its subject, scalePaperPage, lost its last user when the old Paper engine page layout was deleted, so it is deleted",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 3
+  },
+  {
+    "subject": "packages/paper-crdt/src/measured-page-breaks.test.ts",
+    "because": "its subject, the old Paper engine code, was deleted because nothing reaches it after every Paper moved to the new engine",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 17
+  },
+  {
+    "subject": "packages/paper-crdt/src/native-layout-flow.test.ts",
+    "because": "its subject, the old Paper engine code, was deleted because nothing reaches it after every Paper moved to the new engine",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 10
+  },
+  {
+    "subject": "packages/paper-crdt/src/native-layout-formatting.test.ts",
+    "because": "its subject, the old Paper engine code, was deleted because nothing reaches it after every Paper moved to the new engine",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 10
+  },
+  {
+    "subject": "packages/paper-crdt/src/native-layout-line-box.test.ts",
+    "because": "its subject, the old Paper engine code, was deleted because nothing reaches it after every Paper moved to the new engine",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 21
+  },
+  {
+    "subject": "packages/paper-crdt/src/native-layout-measured-pagination.test.ts",
+    "because": "its subject, the old Paper engine code, was deleted because nothing reaches it after every Paper moved to the new engine",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 5
+  },
+  {
+    "subject": "packages/paper-crdt/src/native-layout-mount.test.ts",
+    "because": "its subject, the old Paper engine code, was deleted because nothing reaches it after every Paper moved to the new engine",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 16
+  },
+  {
+    "subject": "packages/paper-crdt/src/native-layout-search.test.ts",
+    "because": "its subject, the old Paper engine code, was deleted because nothing reaches it after every Paper moved to the new engine",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 4
+  },
+  {
+    "subject": "packages/paper-crdt/src/native-layout.test.ts",
+    "because": "its subject, the old Paper engine code, was deleted because nothing reaches it after every Paper moved to the new engine",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 21
+  },
+  {
+    "subject": "packages/paper-crdt/src/native-photo-mount.test.ts",
+    "because": "its subject, the old Paper engine code, was deleted because nothing reaches it after every Paper moved to the new engine",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 5
+  },
+  {
+    "subject": "packages/paper-crdt/src/pagination-browser-contract.test.ts",
+    "because": "its subject, the old Paper engine code, was deleted because nothing reaches it after every Paper moved to the new engine",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
+  },
+  {
+    "subject": "packages/paper-crdt/src/pending-content.test.ts",
+    "because": "its subject, the old Paper engine code, was deleted because nothing reaches it after every Paper moved to the new engine",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 8
+  },
+  {
+    "subject": "packages/paper-crdt/src/rich-client.test.ts",
+    "because": "its subject, the old Paper engine code, was deleted because nothing reaches it after every Paper moved to the new engine",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 12
+  },
+  {
+    "subject": "packages/paper-crdt/src/rich-editor-search.test.ts",
+    "because": "its subject, the old Paper engine code, was deleted because nothing reaches it after every Paper moved to the new engine",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 9
+  },
+  {
+    "subject": "packages/paper-crdt/src/rich-editor.test.ts",
+    "because": "its subject, the old Paper engine code, was deleted because nothing reaches it after every Paper moved to the new engine",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 17
+  },
+  {
+    "subject": "packages/paper-crdt/src/rich-recovery.test.ts",
+    "because": "its subject, the old Paper engine code, was deleted because nothing reaches it after every Paper moved to the new engine",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 9
+  },
+  {
+    "subject": "packages/paper-crdt/src/rich-table-pagination.test.ts",
+    "because": "its subject, the old Paper engine code, was deleted because nothing reaches it after every Paper moved to the new engine",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 6
+  },
+  {
+    "subject": "packages/paper-crdt/src/rich-tables.test.ts",
+    "because": "its subject, the old Paper engine code, was deleted because nothing reaches it after every Paper moved to the new engine",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 27
+  },
+  {
+    "subject": "packages/paper-crdt/src/test/photo-engine.test.ts",
+    "because": "its subject, the old Paper engine code, was deleted because nothing reaches it after every Paper moved to the new engine",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 7
+  },
+  {
+    "subject": "packages/paper-crdt/src/native-layout-flow-headless.test.ts",
+    "because": "its subject, the old Paper engine package, was deleted because nothing imports it after every Paper moved to the new engine",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "packages/paper-crdt/src/stored-document.test.ts",
+    "because": "its subject, the old Paper engine package, was deleted because nothing imports it after every Paper moved to the new engine",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 9
+  },
+  {
+    "subject": "scripts/dev-scan.test.mjs > a dev config that aliases domain but not paper-crdt fires",
+    "because": "the old engine package is gone, so the guard now checks the new engine package paper-engine is aliased to its source, with its own mistake and clean fixtures",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/no-editor-view-framework.test.mjs > CLEAN",
+    "because": "the old core is deleted, so the guard covers the whole repo and the old core paths moved from the quiet fixtures to the firing ones",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
+  },
+  {
+    "subject": "scripts/ocv-tools/brief.test.mjs > the shipped fence file fences the old Paper core for #2207 until 2027-03-31",
+    "because": "the fenced packages/paper-crdt folder is deleted, so the fence no longer lists it",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/ocv-tools/brief.test.mjs > a brief prints the shipped fence while its issue is open",
+    "because": "the fenced packages/paper-crdt folder is deleted, so the brief prints the remaining fence paths instead",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/ocv-tools/jobs/push-checks.test.mjs",
+    "because": "packages/paper-crdt is deleted, so the push no longer typechecks it and the package links no longer list it",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 3
+  },
+  {
+    "subject": "scripts/ocv-tools/take.test.mjs > the real repo names exactly the packages a new task folder must build",
+    "because": "packages/paper-crdt is deleted, so a new task folder no longer builds it",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  }
+]

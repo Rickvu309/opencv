@@ -9,6 +9,5 @@ public:
     paper-diff.ts,
     paper-rich-edit.ts,
     paper-start.ts,
-    paper-page-scale.ts,
     paper-presentation.ts,
   ]

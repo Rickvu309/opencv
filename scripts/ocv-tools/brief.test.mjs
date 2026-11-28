@@ -111,7 +111,6 @@ test("the shipped fence file fences the old Paper core for #2207 until 2027-03-3
       issue: 2207,
       expires: "2027-03-31",
       paths: [
-        "packages/paper-crdt/**",
         "apps/web/src/features/paper/rich-editor/**",
         "apps/api/src/paper/content/**",
         "apps/api/src/paper/native-output/**",
@@ -129,7 +128,10 @@ test("a brief prints the shipped fence while its issue is open", () => {
     ],
   })
   assert.equal(code, 0, text)
-  assert.match(text, /^ {2}packages\/paper-crdt\/\*\* \(issue #2207\)$/m)
+  assert.match(
+    text,
+    /^ {2}apps\/web\/src\/features\/paper\/rich-editor\/\*\* \(issue #2207\)$/m
+  )
   assert.match(
     text,
     /^ {2}apps\/api\/src\/paper\/native-output\/\*\* \(issue #2207\)$/m

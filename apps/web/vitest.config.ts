@@ -22,14 +22,6 @@ export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
-      "@workspace/paper-crdt/editor": path.resolve(
-        __dirname,
-        "../../packages/paper-crdt/src/editor.ts"
-      ),
-      "@workspace/domain/internal/paper-page-scale": path.resolve(
-        __dirname,
-        "../../packages/domain/src/paper-doc/paper-page-scale.ts"
-      ),
       "@workspace/domain/internal/paper-presentation": path.resolve(
         __dirname,
         "../../packages/domain/src/paper-doc/paper-presentation.ts"

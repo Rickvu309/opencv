@@ -4,11 +4,6 @@
   "type": "module",
   "private": true,
   "exports": {
-    "./internal/paper-page-scale": {
-      "opencv-source": "./src/paper-doc/paper-page-scale.ts",
-      "types": "./dist/paper-doc/paper-page-scale.d.ts",
-      "import": "./dist/paper-doc/paper-page-scale.js"
-    },
     "./internal/paper-presentation": {
       "opencv-source": "./src/paper-doc/paper-presentation.ts",
       "types": "./dist/paper-doc/paper-presentation.d.ts",

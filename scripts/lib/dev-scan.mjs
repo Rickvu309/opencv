@@ -1,6 +1,6 @@
 const WEB_VITE = "apps/web/vite.config.ts"
 const SOURCE =
-  /["']@workspace\/paper-crdt["'][\s\S]{0,240}packages\/paper-crdt\/src\/index\.ts/
+  /["']@workspace\/paper-engine["'][\s\S]{0,240}packages\/paper-engine\/src\/index\.ts/
 
 export function detect(text, path = "") {
   if (!path.endsWith(WEB_VITE)) return []
@@ -12,7 +12,7 @@ export function detect(text, path = "") {
   return [
     {
       line,
-      text: "@workspace/paper-crdt is not aliased to its source, so the dev server skips pre-bundling and reloads a screen while it is being checked",
+      text: "@workspace/paper-engine is not aliased to its source, so the dev server skips pre-bundling and reloads a screen while it is being checked",
     },
   ]
 }

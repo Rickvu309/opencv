@@ -72,10 +72,9 @@ test("the GitHub guards job runs every file the push used to run", () => {
 })
 
 const USES = {
-  "apps/api": ["packages/domain", "packages/paper-crdt"],
-  "apps/web": ["packages/domain", "packages/paper-crdt", "packages/ui"],
+  "apps/api": ["packages/domain"],
+  "apps/web": ["packages/domain", "packages/ui"],
   "packages/domain": [],
-  "packages/paper-crdt": ["packages/domain"],
   "packages/ui": [],
 }
 
@@ -94,16 +93,10 @@ test("a change is typechecked in its package and in every package that uses it",
     "apps/web",
     "packages/ui",
   ])
-  assert.deepEqual(typecheckDirs(["packages/paper-crdt/src/a.ts"], USES), [
-    "apps/api",
-    "apps/web",
-    "packages/paper-crdt",
-  ])
   assert.deepEqual(typecheckDirs(["packages/domain/src/a.ts"], USES), [
     "apps/api",
     "apps/web",
     "packages/domain",
-    "packages/paper-crdt",
   ])
 })
 
@@ -119,14 +112,12 @@ test("the package links come from each package file", () => {
         devDependencies: { "@workspace/ui": "workspace:*" },
       },
       "packages/domain": { name: "@workspace/domain" },
-      "packages/paper-crdt": { name: "@workspace/paper-crdt" },
       "packages/ui": { name: "@workspace/ui" },
     })[dir]
   assert.deepEqual(workspaceUses(read), {
     "apps/api": ["packages/domain"],
     "apps/web": ["packages/ui"],
     "packages/domain": [],
-    "packages/paper-crdt": [],
     "packages/ui": [],
   })
   assert.deepEqual(WORKSPACE_USES, USES)

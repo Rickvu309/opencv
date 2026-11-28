@@ -8,7 +8,6 @@ OpenCV is a job-search app for Vietnamese students and new graduates. It combine
 - `apps/api` contains the Hono API, Better Auth, and Drizzle database code.
 - `packages/domain` defines the typed contract shared by the web app and API.
 - `packages/ui` contains shared UI components.
-- `packages/paper-crdt` contains shared document collaboration code.
 - `packages/guards` runs the repository's guard and test groups.
 - `packages/stageshow` contains the product illustration kit.
 

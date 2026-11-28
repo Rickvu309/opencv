@@ -36,24 +36,12 @@ export default defineConfig(({ mode }) => {
     ],
     resolve: {
       alias: {
-        "@workspace/paper-crdt/editor": path.resolve(
-          __dirname,
-          "../../packages/paper-crdt/src/editor.ts"
-        ),
-        "@workspace/domain/internal/paper-page-scale": path.resolve(
-          __dirname,
-          "../../packages/domain/src/paper-doc/paper-page-scale.ts"
-        ),
         "@workspace/domain/internal/paper-presentation": path.resolve(
           __dirname,
           "../../packages/domain/src/paper-doc/paper-presentation.ts"
         ),
         "@": path.resolve(__dirname, "./src"),
         ...domainEntryAliases(__dirname),
-        "@workspace/paper-crdt": path.resolve(
-          __dirname,
-          "../../packages/paper-crdt/src/index.ts"
-        ),
         "@workspace/paper-engine": path.resolve(
           __dirname,
           "../../packages/paper-engine/src/index.ts"
