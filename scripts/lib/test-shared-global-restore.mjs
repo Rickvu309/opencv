@@ -8,7 +8,7 @@ const SHARED_POOL =
   "the shared vitest pool keeps one module graph and one document between test files"
 
 function escape(name) {
-  return name.replace(/\$/g, "\\$")
+  return name.replace(/[\\^$.*+?()[\]{}|]/g, "\\$&")
 }
 
 function atomProblems(source, path) {
