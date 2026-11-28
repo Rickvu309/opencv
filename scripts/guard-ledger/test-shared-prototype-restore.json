@@ -1,0 +1,13 @@
+{
+  "id": "test-shared-prototype-restore",
+  "file": "scripts/test-shared-global-restore.test.mjs",
+  "detector": {
+    "module": "scripts/lib/test-shared-global-restore.mjs",
+    "export": "detect"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "976628fc1",
+    "path": "apps/web/src/features/app-shell/sidebar-follow.test.tsx"
+  }
+}

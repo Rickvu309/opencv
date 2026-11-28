@@ -1,4 +1,13 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest"
 import { act, cleanup, fireEvent } from "@testing-library/react"
 
 import { DESKTOP_MEDIA_QUERY } from "@/lib/use-media-query.ts"
@@ -89,12 +98,21 @@ function pageSlides() {
   return slides.filter((slide) => slide.element === shellMain())
 }
 
-if (!Element.prototype.animate) {
-  Element.prototype.animate = () => ({}) as Animation
-}
-if (!Element.prototype.getAnimations) {
-  Element.prototype.getAnimations = () => []
-}
+const motionApis = Element.prototype as Partial<
+  Pick<Element, "animate" | "getAnimations">
+>
+const hadAnimate = typeof motionApis.animate === "function"
+const hadGetAnimations = typeof motionApis.getAnimations === "function"
+
+beforeAll(() => {
+  if (!hadAnimate) motionApis.animate = () => ({}) as Animation
+  if (!hadGetAnimations) motionApis.getAnimations = () => []
+})
+
+afterAll(() => {
+  if (!hadAnimate) Reflect.deleteProperty(motionApis, "animate")
+  if (!hadGetAnimations) Reflect.deleteProperty(motionApis, "getAnimations")
+})
 
 beforeEach(() => {
   stubPointerApis()
