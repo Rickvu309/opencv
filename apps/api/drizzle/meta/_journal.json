@@ -204,6 +204,13 @@
       "when": 1795812968861,
       "tag": "0028_paper_engine_reset",
       "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1795844308103,
+      "tag": "0029_paper_drop_old",
+      "breakpoints": true
     }
   ]
 }

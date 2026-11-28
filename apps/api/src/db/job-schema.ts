@@ -17,10 +17,9 @@ export function createJobTables(
   refs: {
     user: { id: AnyPgColumn }
     paperDocs: { id: AnyPgColumn }
-    paperPackageHeads: { docId: AnyPgColumn }
   }
 ) {
-  const { user, paperDocs, paperPackageHeads } = refs
+  const { user, paperDocs } = refs
   const jobs = opencvApp.table(
     "jobs",
     {
@@ -60,14 +59,6 @@ export function createJobTables(
       letterDocId: uuid("letter_doc_id").references(() => paperDocs.id, {
         onDelete: "set null",
       }),
-      cvPackageId: uuid("cv_package_id").references(
-        () => paperPackageHeads.docId,
-        { onDelete: "set null" }
-      ),
-      letterPackageId: uuid("letter_package_id").references(
-        () => paperPackageHeads.docId,
-        { onDelete: "set null" }
-      ),
       starred: boolean("starred").notNull().default(false),
       createdAt: timestamptz("created_at").notNull().defaultNow(),
       updatedAt: timestamptz("updated_at").notNull().defaultNow(),

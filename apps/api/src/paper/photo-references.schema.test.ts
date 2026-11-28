@@ -14,7 +14,6 @@ import {
   NOT_PHOTO_JSON,
   PHOTO_BYTE_SOURCES,
   PHOTO_DOCUMENT_COLUMNS,
-  RELEASED_PHOTO_SOURCE,
 } from "./photo-references.js"
 
 const here = path.dirname(fileURLToPath(import.meta.url))
@@ -47,7 +46,7 @@ describe("photo reference schema guard", () => {
     }
     const parsed = jsonbColumnKeys(schema)
     expect(parsed).toContain("jobs.posting")
-    expect(parsed).toContain("paper_package_versions.sidecar")
+    expect(parsed).toContain("paper_changes.steps")
     expect(parsed).toEqual([...classified.keys()].sort())
   })
 
@@ -78,17 +77,5 @@ describe("photo reference schema guard", () => {
     expect(sweepText).toContain("not exists")
     expect(sweepText).toContain("photo_refs")
     expect(migrationText).not.toContain("delete from opencv_app.files")
-  })
-
-  it("records a dropped photo on the update row instead of a second photo_refs migration", () => {
-    const name = readdirSync(path.join(here, "../../drizzle")).find((entry) =>
-      entry.includes("released_photo")
-    )
-    expect(name).toEqual(expect.stringContaining("released_photo"))
-    const text = readFileSync(path.join(here, "../../drizzle", name!), "utf8")
-    expect(text).toContain("released_photo_refs")
-    expect(text).toContain(RELEASED_PHOTO_SOURCE)
-    expect(text).toContain("AFTER DELETE")
-    expect(name!.endsWith("_photo_refs.sql")).toBe(false)
   })
 })

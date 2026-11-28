@@ -2,7 +2,6 @@ import { createAuthLimitTable } from "./auth-limit-schema.js"
 import { createAuthTables } from "./auth-schema.js"
 import { bytea, timestamptz, type CheckpointUsage } from "./column-types.js"
 import { createJobTables } from "./job-schema.js"
-import { createPaperPackageTables } from "./paper-package-schema.js"
 import { createCoachUsageTable } from "./coach-usage-schema.js"
 import { createOAuthTables } from "./oauth-schema.js"
 import type { ReversalExpect } from "@workspace/domain/kernel"
@@ -73,13 +72,6 @@ export const files = opencvApp.table(
   (table) => [index("files_user_id_idx").on(table.userId)]
 )
 
-export const {
-  paperPackageVersions,
-  paperPackageHeads,
-  paperPackageCandidates,
-  paperPackageTrash,
-} = createPaperPackageTables(opencvApp, user, files)
-
 export const paperDocs = opencvApp.table(
   "paper_docs",
   {
@@ -112,10 +104,6 @@ export const paperDocs = opencvApp.table(
     sourceFileId: uuid("source_file_id").references(() => files.id, {
       onDelete: "set null",
     }),
-    crdtEpoch: integer("crdt_epoch"),
-    crdtBase: bytea("crdt_base"),
-    crdtBaseSeq: integer("crdt_base_seq"),
-    crdtDocument: jsonb("crdt_document").$type<Record<string, unknown>>(),
     engine: smallint("engine").notNull().default(1),
     headVersion: integer("head_version").notNull().default(0),
     snapshot: jsonb("snapshot").$type<Record<string, unknown>>(),
@@ -130,28 +118,6 @@ export const paperDocs = opencvApp.table(
       table.updatedAt
     ),
   ]
-)
-
-export const paperDocUpdates = opencvApp.table(
-  "paper_doc_updates",
-  {
-    paperId: uuid("paper_id")
-      .notNull()
-      .references(() => paperDocs.id, { onDelete: "cascade" }),
-    seq: integer("seq").notNull(),
-    origin: text("origin").notNull(),
-    editId: text("edit_id"),
-    basedOn: integer("based_on"),
-    touched: jsonb("touched").$type<string[]>(),
-    rebuilt: jsonb("rebuilt").$type<string[]>(),
-    update: bytea("update").notNull(),
-    releasedPhotoRefs: uuid("released_photo_refs")
-      .array()
-      .notNull()
-      .default(sql`ARRAY[]::uuid[]`),
-    createdAt: timestamptz("created_at").notNull().defaultNow(),
-  },
-  (table) => [primaryKey({ columns: [table.paperId, table.seq] })]
 )
 
 export const paperChanges = opencvApp.table(
@@ -200,7 +166,6 @@ export const paperShares = opencvApp.table("paper_shares", {
 export const { jobs, jobChecklist } = createJobTables(opencvApp, {
   user,
   paperDocs,
-  paperPackageHeads,
 })
 
 export const inboxThreads = opencvApp.table(
