@@ -1,0 +1,10 @@
+[
+  {
+    "subject": "apps/web/src/features/paper/document-share.test.tsx",
+    "because": "the route no longer renders the old Paper editor, so the module this case tested is unreachable and deleted with it (#2303)",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  }
+]
