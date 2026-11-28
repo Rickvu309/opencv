@@ -2,6 +2,19 @@
 
 How the new Paper core works and what it promises. The decision is ADR 0009. The shapes on the wire are zod schemas in `packages/domain/src/paper-doc`; the engine is `packages/paper-engine`, a pure package with no database, server, browser or AI imports. No ProseMirror type leaves it.
 
+## Where it lives
+
+| Part            | Code                                                                             |
+| --------------- | -------------------------------------------------------------------------------- |
+| Shapes          | `packages/domain/src/paper-doc`                                                  |
+| Engine          | `packages/paper-engine`                                                          |
+| Editor          | `apps/web/src/features/paper/editor`                                             |
+| Change log      | `apps/api/src/paper/log`                                                         |
+| Word in and out | `apps/api/src/paper/word`, entered through `apps/api/src/paper/engine-import.ts` |
+| PDF out         | `apps/api/src/paper/pdf`                                                         |
+
+A Paper is a row in `paper_docs` with its ordered Changes in `paper_changes`; `paper_shares` holds its share token. Migration `0029_paper_drop_old` drops the old core's tables: `paper_doc_updates`, `paper_package_heads`, `paper_package_versions`, `paper_package_candidates` and `paper_package_trash`.
+
 ## Shapes
 
 - **Paper**: `doc > block+` on a page setup (A4 by default, portrait, margins in points) with a template.
