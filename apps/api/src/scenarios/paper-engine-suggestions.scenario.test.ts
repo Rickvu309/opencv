@@ -203,6 +203,47 @@ describe("Coach and outside agents only suggest", () => {
     expect((await engineLines(ada, docId)).texts).toEqual(["Built dashboards"])
   })
 
+  it("lists the Coach's open Suggestions on one Paper until the person accepts or rejects them (#2287)", async () => {
+    const ada = await world.person("Ada")
+    const { docId, blocks } = await engineWritten(ada, ["Built dashboards"])
+    const other = await engineWritten(ada, ["Python"])
+    const ask = async () => {
+      const chat = dataOf<{ id: string }>(await ada.run("chat.create", {}))
+      await ada.stream(`/api/chats/${chat.id}/turns`, {
+        text: "Tighten my CV",
+        focusDocId: docId,
+      })
+    }
+    const listed = async (id: string) =>
+      dataOf<{ suggestions: { id: string; commands: unknown[] }[] }>(
+        await ada.read("paper.suggestions", { docId: id })
+      ).suggestions
+    await ask()
+    const first = await listed(docId)
+    expect(first.map((each) => each.commands)).toEqual([
+      [
+        {
+          op: "replaceText",
+          range: span(blocks[0]!.id, 0, 0),
+          expect: "",
+          text: "Reviewed by the Coach. ",
+        },
+      ],
+    ])
+    expect(await listed(other.docId)).toEqual([])
+    const grace = await world.person("Grace")
+    expect(
+      failureOf(await grace.read("paper.suggestions", { docId })).code
+    ).toBe("NOT_FOUND")
+    dataOf(await ada.run("actions.approve", { pendingActionId: first[0]!.id }))
+    expect(await listed(docId)).toEqual([])
+    await ask()
+    const second = await listed(docId)
+    expect(second).toHaveLength(1)
+    dataOf(await ada.run("actions.deny", { pendingActionId: second[0]!.id }))
+    expect(await listed(docId)).toEqual([])
+  })
+
   it("refuses a Suggestion whose expected text is not on the Paper (#2247)", async () => {
     const ada = await world.person("Ada")
     const { docId, blocks } = await engineWritten(ada, ["Built dashboards"])

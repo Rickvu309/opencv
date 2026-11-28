@@ -1,0 +1,13 @@
+{
+  "id": "paper-create-start-lines",
+  "file": "scripts/paper-create-start-lines.test.mjs",
+  "detector": {
+    "module": "scripts/lib/paper-create-start-lines.mjs",
+    "export": "detect"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "79113af48",
+    "path": "apps/api/src/paper/operations/create/server.ts"
+  }
+}

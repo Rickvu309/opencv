@@ -11,6 +11,7 @@ import { catalog } from "@workspace/domain/kernel"
 import { completeCoachStop } from "@/lib/coach-stop-registry.ts"
 import { apiRequest } from "@/lib/api.ts"
 import { catalogClient, refreshReads } from "@/lib/contract-client.ts"
+import { refreshPaperSuggestions } from "@/lib/paper-suggestions.ts"
 import { endpoints } from "@/lib/requests.ts"
 import { createToolRefresher } from "@/lib/coach-stream.ts"
 import { readSseStream } from "@/lib/sse.ts"
@@ -96,6 +97,16 @@ export async function tailCoachTask(input: {
   let state: CoachTaskState | undefined
   const refreshed = new Set<string>()
   const refresh = createToolRefresher(input.queryClient)
+  const proposed = new Set<string>()
+  const onState = (next: CoachTaskState) => {
+    for (const action of next.snapshot.actions) {
+      if (action.state !== "proposed" || proposed.has(action.toolCallId))
+        continue
+      proposed.add(action.toolCallId)
+      void refreshPaperSuggestions(input.queryClient)
+    }
+    input.onState(next)
+  }
   const ingest = (snapshot: TaskSnapshot) => {
     state = state
       ? coachTaskReducer(state, { type: "snapshot", snapshot })
@@ -122,7 +133,7 @@ export async function tailCoachTask(input: {
     }
     if (taskIsTerminal(state.snapshot.state))
       completeCoachStop(state.snapshot.chatId, state.snapshot.taskId)
-    input.onState(state)
+    onState(state)
   }
   while (!input.signal.aborted) {
     try {
@@ -149,7 +160,7 @@ export async function tailCoachTask(input: {
           else {
             if (taskIsTerminal(state.snapshot.state))
               completeCoachStop(state.snapshot.chatId, state.snapshot.taskId)
-            input.onState(state)
+            onState(state)
           }
         } else if (wire.event === "error")
           throw new Error("Coach stream disconnected")
@@ -163,7 +174,7 @@ export async function tailCoachTask(input: {
       state = coachTaskReducer(state, { type: "disconnected" })
       if (taskIsTerminal(state.snapshot.state))
         completeCoachStop(state.snapshot.chatId, state.snapshot.taskId)
-      input.onState(state)
+      onState(state)
     }
     await retryAfterDisconnect(input.signal)
   }

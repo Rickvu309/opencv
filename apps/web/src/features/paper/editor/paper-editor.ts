@@ -312,7 +312,9 @@ export function mountPaperEditor(
     deleteSelection,
     undo() {
       const undone = engine.undo(state)
-      if (undone) adopt(undone.state)
+      if (!undone) return
+      suggestions.undone()
+      adopt(undone.state)
     },
     redo() {
       const redone = engine.redo(state)

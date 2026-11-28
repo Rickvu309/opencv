@@ -1,0 +1,10 @@
+{
+  "id": "paper-route-coach-focus",
+  "file": "scripts/paper-route-coach-focus.test.mjs",
+  "detector": {
+    "module": "scripts/lib/paper-route-coach-focus.mjs",
+    "export": "detect"
+  },
+  "historic": null,
+  "reason": "the mistake, a Paper route mounting the editor without holding the Coach focus, existed only on a branch commit of #2287 and is gone after the squash; the mistake fixture in the test replays that route"
+}
