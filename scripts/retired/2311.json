@@ -166,5 +166,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 9
+  },
+  {
+    "subject": "scripts/dev-scan.test.mjs > a dev config that aliases domain but not paper-crdt fires",
+    "because": "the old engine package is gone, so the guard now checks the new engine package paper-engine is aliased to its source, with its own mistake and clean fixtures",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
   }
 ]
