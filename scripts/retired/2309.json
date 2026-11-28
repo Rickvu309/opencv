@@ -14,5 +14,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 4
+  },
+  {
+    "subject": "apps/api/src/paper/native-output/formatted-fonts.test.ts",
+    "because": "The old Word writer under apps/api/src/paper/native-output is removed: after the switch every Paper is written to Word by apps/api/src/paper/word, which apps/api/src/paper/word/round-trip.test.ts covers.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
   }
 ]
