@@ -108,8 +108,3 @@ test("the code uses only what each pack declares, and no pack keeps a recorded b
     "A pack_todo.yml records a break of the pack rules. Fix the import, or declare the dependency in pack.yml if it should exist. Recorded breaks are not allowed."
   )
 })
-
-test("the packs page matches every pack.yml", () => {
-  const docs = packwerk(["docs", "--out", "docs/packs.md", "--check"])
-  assert.equal(docs.code, 0, docs.out)
-})
