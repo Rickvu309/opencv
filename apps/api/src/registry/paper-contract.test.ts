@@ -119,25 +119,32 @@ describe("a paper binding that drifts from the paper contract is rejected", () =
           })
         ).output
       )
-      const edit = (docId: string, text: string) =>
-        registry.execute({
+      const edit = async (docId: string, text: string) => {
+        const read = (await registry.read(
+          "paper.outline",
+          { docId },
+          person
+        )) as { revision: number; outline: string }
+        const [block] = JSON.parse(read.outline) as { id: string }[]
+        if (!block) throw new Error("Missing first block")
+        const at = { block: block.id, offset: 0 }
+        return registry.execute({
           name: "paper.edit",
           input: {
             docId,
-            basedOn: 1,
-            edits: [
+            basedOn: read.revision,
+            commands: [
               {
                 op: "replaceText",
-                blockId: "intro",
-                from: 0,
-                to: 0,
-                before: "",
-                text: text,
+                range: { from: at, to: at },
+                text,
+                expect: "",
               },
             ],
           },
           actor: coach,
         })
+      }
 
       const allowed = await edit(cv, "Ada")
       expect(allowed.pending).toBe(true)
@@ -145,26 +152,9 @@ describe("a paper binding that drifts from the paper contract is rejected", () =
       await expect(edit(cv, "Grace")).rejects.toMatchObject({
         code: "COACH_NOT_ALLOWED",
       })
-      await expect(
-        registry.execute({
-          name: "paper.edit",
-          input: {
-            docId: letter,
-            basedOn: 1,
-            edits: [
-              {
-                op: "replaceText",
-                blockId: "intro",
-                from: 0,
-                to: 0,
-                before: "",
-                text: "Hello",
-              },
-            ],
-          },
-          actor: coach,
-        })
-      ).rejects.toMatchObject({ code: "COACH_NOT_ALLOWED" })
+      await expect(edit(letter, "Hello")).rejects.toMatchObject({
+        code: "COACH_NOT_ALLOWED",
+      })
     })
     await client.close()
   })

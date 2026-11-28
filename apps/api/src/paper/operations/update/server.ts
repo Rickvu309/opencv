@@ -25,7 +25,7 @@ export const implementation = {
   operation,
   privateResult,
   execute: (input, actor) =>
-    updatePaper(actor, parsePaperId(input.docId), input.patch, input.writer),
+    updatePaper(actor, parsePaperId(input.docId), input.patch),
   reversal: (input, result) => ({
     command: operation.name,
     input: {
