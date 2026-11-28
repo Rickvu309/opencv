@@ -83,10 +83,6 @@ export const paperPhotoValueSchema = z
 
 const PAPER_PHOTO_FILE_PREFIX = "file:"
 
-export function paperPhotoRef(fileId: string) {
-  return `${PAPER_PHOTO_FILE_PREFIX}${fileId}`
-}
-
 const PHOTO_FILE_ID =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 

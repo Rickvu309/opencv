@@ -1,0 +1,13 @@
+{
+  "id": "test-shared-auth-atom-restore",
+  "file": "scripts/test-shared-global-restore.test.mjs",
+  "detector": {
+    "module": "scripts/lib/test-shared-global-restore.mjs",
+    "export": "detect"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "e259aa929",
+    "path": "apps/web/src/features/apply/apply-api.test.ts"
+  }
+}
