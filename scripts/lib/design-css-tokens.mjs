@@ -84,6 +84,10 @@ export const HEX_KEPT = new Map([
     `features/auth/design/${name}.css`,
     "the sign-in screens use error reds that no token names yet; their greys move with the reds in one sweep",
   ]),
+  [
+    "features/paper/rich-editor/design/cv-editor.css",
+    "the Paper document page prints its own ink greys on white paper, the same exception as the CV print templates",
+  ],
   ...[
     "letter-block-editor",
     "letter-drafting",
@@ -100,6 +104,13 @@ export const ROOT_TOKEN_REDECLARE_KEPT = new Map([
     "features/landing/landing.css",
     "the public landing page softens its muted text inside its own hero; it does not render app screens",
   ],
+  ...[
+    "features/paper/design/paper-writing-page.css",
+    "features/paper/rich-editor/design/paper-floating-menus.css",
+  ].map((path) => [
+    path,
+    "the Paper editor still lightens kit borders for its writing page and floating menus; it moves to the shared hairline with the editor's own sweep",
+  ]),
 ])
 
 const HEX = /#[0-9a-f]{3,8}\b/gi

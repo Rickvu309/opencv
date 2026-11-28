@@ -1,0 +1,57 @@
+[data-paper-layout="paperTable"] {
+  position: relative;
+}
+.paper-table-anchor {
+  position: sticky;
+  inset-block-start: 0;
+  block-size: 0;
+  z-index: 3;
+}
+.paper-table-menu {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-end: -48px;
+  z-index: 3;
+}
+.paper-table-resize {
+  position: absolute;
+  inset-block: 0;
+  width: 44px;
+  transform: translateX(-50%);
+  cursor: col-resize;
+  touch-action: none;
+  z-index: 2;
+}
+.paper-table-resize::after {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 21px;
+  width: 2px;
+  background: transparent;
+}
+.paper-table-resize:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 1px;
+}
+.paper-table-resize:focus-visible::after,
+.paper-table-resize:active::after {
+  background: var(--primary);
+}
+@media (hover: hover) and (pointer: fine) {
+  .paper-table-resize:hover::after {
+    background: var(--primary);
+  }
+}
+
+[data-paper-layout="paperRow"]
+  > div:not(.paper-table-anchor)
+  > [data-paper-layout="paperCell"]:first-child {
+  border-inline-start: 1px solid var(--border);
+}
+[data-paper-layout="paperTable"]
+  > div:not([data-paper-table-controls])
+  > [data-paper-layout="paperRow"]:last-child
+  [data-paper-layout="paperCell"] {
+  border-block-end: 1px solid var(--border);
+}

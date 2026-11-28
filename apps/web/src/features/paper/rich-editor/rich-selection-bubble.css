@@ -1,0 +1,22 @@
+.paper-selection-bubble {
+  position: fixed;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  max-inline-size: calc(100vw - 1rem);
+  padding: 0.25rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--popover);
+  color: var(--popover-foreground);
+  box-shadow: 0 4px 16px oklch(0 0 0 / 0.12);
+}
+
+@media (width < 768px) {
+  .paper-selection-bubble {
+    inset-inline: 0.5rem !important;
+    inset-block: auto calc(4rem + env(safe-area-inset-bottom)) !important;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+}

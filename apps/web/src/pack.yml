@@ -13,6 +13,8 @@ dependencies:
     apps/web/src/features/landing,
     apps/web/src/features/paper,
     apps/web/src/features/paper/editor,
+    apps/web/src/features/paper/rich-editor,
+    apps/web/src/features/paper-page,
     apps/web/src/features/seed,
     apps/web/src/features/settings,
     apps/web/src/lib,

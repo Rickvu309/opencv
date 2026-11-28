@@ -1,0 +1,44 @@
+[data-paper-page-viewport] {
+  margin-inline: auto;
+  overflow: clip;
+}
+
+.paper-rich-sheet {
+  box-sizing: border-box;
+  transform: scale(var(--cv-rich-page-scale, 1));
+  transform-origin: top left;
+  inline-size: var(--cv-rich-page-width, 816px);
+  padding-block: var(--cv-rich-page-top, 96px) var(--cv-rich-page-bottom, 96px);
+  padding-inline: var(--cv-rich-page-start, 96px) var(--cv-rich-page-end, 96px);
+  background: var(--background);
+}
+
+.paper-rich-sheet[data-paper-pagination="true"] {
+  min-block-size: var(--cv-rich-page-height, 1056px);
+  background: linear-gradient(
+    to bottom,
+    var(--background) 0 var(--cv-rich-page-height, 1056px),
+    var(--border) var(--cv-rich-page-height, 1056px)
+      calc(var(--cv-rich-page-height, 1056px) + 1px),
+    var(--background) calc(var(--cv-rich-page-height, 1056px) + 1px)
+      var(--cv-rich-page-pitch, 1080px)
+  );
+  background-size: 100% var(--cv-rich-page-pitch, 1080px);
+  background-repeat: repeat-y;
+}
+
+.paper-rich-sheet [data-paper-layout="paperFlowSection"] {
+  margin-block: 0 !important;
+}
+
+.paper-rich-sheet [data-paper-page-break] {
+  position: relative;
+}
+
+.paper-rich-sheet [data-paper-page-break]::before {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline: 0;
+  border-block-start: 1px solid var(--border);
+  content: "";
+}

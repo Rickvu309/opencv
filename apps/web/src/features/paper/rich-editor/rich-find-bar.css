@@ -1,0 +1,35 @@
+.paper-search-match {
+  background-color: color-mix(
+    in oklab,
+    var(--primary) 18%,
+    var(--background)
+  ) !important;
+  color: var(--foreground) !important;
+}
+
+.paper-search-current {
+  background-color: color-mix(
+    in oklab,
+    var(--primary) 30%,
+    var(--background)
+  ) !important;
+  color: var(--foreground) !important;
+  outline: 2px solid var(--primary);
+  outline-offset: 1px;
+}
+
+[data-paper-search-active] {
+  scroll-margin-block: 4rem;
+}
+
+@media (forced-colors: active) {
+  .paper-search-match {
+    background-color: Highlight !important;
+    color: HighlightText !important;
+    forced-color-adjust: none;
+  }
+
+  .paper-search-current {
+    outline-color: CanvasText;
+  }
+}

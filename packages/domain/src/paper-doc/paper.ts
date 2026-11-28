@@ -47,6 +47,13 @@ export const paperDocNameSchema = z
     "Leave out the file extension"
   )
 
+const paperRenameDocInputSchema = z
+  .object({
+    docId: paperDocIdSchema,
+    name: paperDocNameSchema,
+  })
+  .strict()
+
 export type PaperContentKind = z.infer<typeof paperContentKindSchema>
 
 export const PAPER_TEMPLATE_IDS = [
@@ -73,6 +80,8 @@ export type PaperTemplateId = z.infer<typeof paperTemplateIdSchema>
 
 export const paperStoredKindSchema = z.enum(["cv", "letter"])
 export type PaperStoredKind = z.infer<typeof paperStoredKindSchema>
+
+export const paperRenameInputSchema = paperRenameDocInputSchema
 
 export const paperPhotoValueSchema = z
   .string()

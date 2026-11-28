@@ -10,7 +10,7 @@
     "sha": "c17562550^",
     "path": "apps/web/src/features/paper/rich-document-menu.tsx",
     "fixed": {
-      "rev": "8027a2b3a",
+      "rev": "HEAD",
       "path": "apps/web/src/features/paper/rich-editor/rich-document-menu.tsx"
     }
   }
