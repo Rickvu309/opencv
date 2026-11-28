@@ -78,5 +78,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 1
+  },
+  {
+    "subject": "scripts/guard-ledger/retired-design-tool.json .historic",
+    "because": "the old Paper editor file this row proved quiet at HEAD is deleted, so its quiet proof now reads that file at a main commit (#2303)",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
   }
 ]
