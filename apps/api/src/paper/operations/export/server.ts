@@ -71,11 +71,7 @@ async function exportEnginePaper(
 export const implementation = {
   operation,
   execute: (input, actor) =>
-    exportEnginePaper(
-      actor.userId,
-      parsePaperId(input.docId),
-      "format" in input ? input.format : "docx"
-    ),
+    exportEnginePaper(actor.userId, parsePaperId(input.docId), input.format),
 } satisfies OperationBinding<
   typeof operation,
   import("zod").output<typeof operation.publicResult>

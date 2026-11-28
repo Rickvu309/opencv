@@ -91,7 +91,7 @@ describe("request body limit", () => {
 })
 
 describe("CORS", () => {
-  it("allows the browser to send and inspect exact Word download metadata", async () => {
+  it("lets the browser send credentials and read a download's file name", async () => {
     const api = createApp({ webOrigins: ["https://opencv.me"] })
     const path =
       "/api/paper/00000000-0000-4000-8000-000000000001/native-word?kind=cv"
@@ -100,7 +100,7 @@ describe("CORS", () => {
       headers: {
         Origin: "https://opencv.me",
         "Access-Control-Request-Method": "GET",
-        "Access-Control-Request-Headers": "x-paper-writer,x-paper-basis",
+        "Access-Control-Request-Headers": "content-type",
       },
     })
     expect(preflight.status).toBe(204)
@@ -111,9 +111,7 @@ describe("CORS", () => {
       .get("access-control-allow-headers")
       ?.toLowerCase()
       .split(",")
-    expect(allowed).toEqual(
-      expect.arrayContaining(["x-paper-writer", "x-paper-basis"])
-    )
+    expect(allowed).toEqual(expect.arrayContaining(["content-type"]))
     const response = await api.request(path, {
       headers: { Origin: "https://opencv.me" },
     })
@@ -121,9 +119,7 @@ describe("CORS", () => {
       .get("access-control-expose-headers")
       ?.toLowerCase()
       .split(",")
-    expect(exposed).toEqual(
-      expect.arrayContaining(["x-paper-basis", "content-disposition"])
-    )
+    expect(exposed).toEqual(expect.arrayContaining(["content-disposition"]))
   })
 
   it("lets the configured web origin read the health response", async () => {

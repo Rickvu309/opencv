@@ -30,7 +30,6 @@ export const implementation = {
     input: {
       docId: input.docId,
       patch: result.previous,
-      ...(input.writer ? { writer: input.writer } : {}),
     },
     expect: {
       query: "paper.read",

@@ -1,7 +1,6 @@
 import { QueryClient } from "@tanstack/react-query"
 import { parsePaperId } from "@workspace/domain/kernel"
 import {
-  NATIVE_WRITER,
   nativeProvenance,
   nativePaperDocumentSchema,
 } from "@workspace/domain/paper-doc"
@@ -82,25 +81,6 @@ it.each([
   await expect(listQualified(options)).rejects.toThrow()
 })
 
-it("preserves an incompatible writer and propagates refusal without retry", async () => {
-  const fetch = vi.fn().mockResolvedValue(
-    Response.json(
-      {
-        ok: false,
-        error: { code: "CONFLICT", message: "Unsupported writer" },
-      },
-      { status: 409 }
-    )
-  )
-  vi.stubGlobal("fetch", fetch)
-  const writer = { ...NATIVE_WRITER, supportedSchemaRevisions: [2] }
-  await expect(listQualified({ ...options, writer })).rejects.toMatchObject({
-    code: "CONFLICT",
-  })
-  expect(JSON.parse(fetch.mock.calls[0]![1].body).writer).toEqual(writer)
-  expect(fetch).toHaveBeenCalledTimes(1)
-})
-
 it("scopes qualified keys without losing command invalidation prefixes", async () => {
   const client = new QueryClient()
   const key = listKey(options)
@@ -108,7 +88,6 @@ it("scopes qualified keys without losing command invalidation prefixes", async (
   for (const other of [
     { ...options, ownerId: "other" },
     { ...options, sessionId: "new" },
-    { ...options, writer: { ...NATIVE_WRITER, capabilities: [] } },
   ])
     expect(listKey(other)).not.toEqual(key)
   expect(listKey({ ...options })).toEqual(key)
@@ -177,7 +156,7 @@ it("cancellation cannot populate the next session cache", async () => {
   client.clear()
 })
 
-it("keeps the default Coach query separate from explicit qualified context", async () => {
+it("no Paper list read sends the old writer", async () => {
   const fetcher = vi.fn().mockImplementation(async () => response([view]))
   vi.stubGlobal("fetch", fetcher)
   await readPaperList()
@@ -185,7 +164,7 @@ it("keeps the default Coach query separate from explicit qualified context", asy
     "writer"
   )
   await qualifiedPaperRead("paper.list", endpoints.paper, options)
-  expect(JSON.parse(fetcher.mock.calls[1]?.[1].body).writer).toEqual(
-    NATIVE_WRITER
+  expect(JSON.parse(fetcher.mock.calls[1]?.[1].body)).not.toHaveProperty(
+    "writer"
   )
 })

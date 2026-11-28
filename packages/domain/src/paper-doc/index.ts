@@ -45,16 +45,11 @@ export { cvPrintModel, letterPrintModel } from "./print.js"
 
 export type { PaperChange } from "./changes.js"
 
-export type { NativeBasis, NativeProvenance, NativeWriter } from "./native.js"
+export type { NativeBasis, NativeProvenance } from "./native.js"
 export {
-  NATIVE_WRITER,
-  LIBRARY_WRITER,
-  RICH_NATIVE_WRITER,
-  nativeAdmission,
   nativeBasisSchema,
   nativeProvenance,
   nativeProvenanceSchema,
-  nativeWriterSchema,
   sameNativeProvenance,
 } from "./native.js"
 export {

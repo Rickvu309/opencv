@@ -2,11 +2,9 @@ import assert from "node:assert/strict"
 import { describe, it } from "node:test"
 
 import {
-  NATIVE_WRITER,
   blankCv,
   blankLetter,
   legacyPaperDocumentSchema,
-  nativeAdmission,
   nativePaperDocumentSchema,
   nativeProvenance,
   nativeProvenanceSchema,
@@ -83,23 +81,8 @@ describe("isolated native prose model", () => {
     )
   })
 
-  it("computes native writer compatibility without publishing a document", () => {
-    const target = native()
-    assert.equal(nativeAdmission(target, NATIVE_WRITER), null)
-    assert.ok(nativeAdmission(target, undefined))
-    assert.ok(
-      nativeAdmission(target, {
-        ...NATIVE_WRITER,
-        capabilities: ["structured-prose"],
-      })
-    )
-    assert.ok(
-      nativeAdmission(target, {
-        ...NATIVE_WRITER,
-        supportedSchemaRevisions: [2],
-      })
-    )
-    assert.equal(nativeProvenance(target).schemaRevision, 1)
+  it("reads native provenance without publishing a document", () => {
+    assert.equal(nativeProvenance(native()).schemaRevision, 1)
   })
 
   it("refuses omitted, repeated and unknown required capabilities", () => {

@@ -1,14 +1,10 @@
 import { catalog, z } from "@workspace/domain/kernel"
 import {
-  NATIVE_WRITER,
-  nativeWriterSchema,
   nativeBasisSchema,
   nativeProvenance,
-  nativeAdmission,
   sameNativeProvenance,
   paperDocumentInfoSchema,
   paperViewSchema,
-  type NativeWriter,
   type PaperView,
 } from "@workspace/domain/paper-doc"
 
@@ -18,15 +14,10 @@ import { readPaperList } from "./paper-list.ts"
 export type PaperQualification = {
   ownerId: string
   sessionId: string
-  writer?: NativeWriter
   signal?: AbortSignal
 }
 
 type QualifiedRead = "paper.list" | "paper.read"
-
-export function paperWriter(options: PaperQualification) {
-  return nativeWriterSchema.parse(options.writer ?? NATIVE_WRITER)
-}
 
 export function qualifiedPaperKey(
   prefix: readonly unknown[],
@@ -34,32 +25,17 @@ export function qualifiedPaperKey(
 ) {
   if (!options.ownerId || !options.sessionId)
     throw new Error("Qualified Paper reads need an owner and session scope")
-  const writer = paperWriter(options)
-  return [
-    ...prefix,
-    "native",
-    options.ownerId,
-    options.sessionId,
-    writer,
-  ] as const
-}
-
-function admitPaper(paper: PaperView["paper"], writer: NativeWriter) {
-  if (paper.version !== 4) return
-  const refusal = nativeAdmission(paper, writer)
-  if (refusal) throw new Error(refusal)
+  return [...prefix, "native", options.ownerId, options.sessionId] as const
 }
 
 function validateBasis(
-  view: Pick<PaperView, "paper" | "nativeBasis" | "contentVersion">,
-  writer: NativeWriter
+  view: Pick<PaperView, "paper" | "nativeBasis" | "contentVersion">
 ) {
   if (view.paper.version !== 4) {
     if (view.nativeBasis)
       throw new Error("Legacy Paper cannot carry a native basis")
     return
   }
-  admitPaper(view.paper, writer)
   const basis = nativeBasisSchema.parse(view.nativeBasis)
   if (
     basis.revision !== view.contentVersion ||
@@ -83,13 +59,12 @@ export async function qualifiedPaperRead(
   docId: string,
   options: PaperQualification
 ) {
-  const writer = paperWriter(options)
   qualifiedPaperKey([name], options)
   options.signal?.throwIfAborted()
   if (name === "paper.read") {
     const payload = await catalogClient.read(
       catalog["paper.read"].name,
-      { view: "info", docId, writer },
+      { view: "info", docId },
       options.signal ? { signal: options.signal } : {}
     )
     options.signal?.throwIfAborted()
@@ -100,12 +75,9 @@ export async function qualifiedPaperRead(
   const rows = z
     .array(paperViewSchema)
     .parse(
-      await readPaperList(
-        { writer },
-        options.signal ? { signal: options.signal } : {}
-      )
+      await readPaperList({}, options.signal ? { signal: options.signal } : {})
     )
-  rows.forEach((row) => validateBasis(row, writer))
+  rows.forEach((row) => validateBasis(row))
   options.signal?.throwIfAborted()
   return rows
 }

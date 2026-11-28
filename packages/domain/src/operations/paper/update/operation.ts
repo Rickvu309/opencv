@@ -1,7 +1,6 @@
 import { z } from "zod"
 import { defineOperation } from "../../../operation.js"
 import { paperLabelResource, type ResourceRef } from "../../../resources.js"
-import { nativeWriterSchema } from "../../../paper-doc/native.js"
 import {
   paperDocNameSchema,
   paperDocStatusSchema,
@@ -30,7 +29,6 @@ export const operation = defineOperation({
   input: z
     .object({
       docId: z.string().uuid(),
-      writer: nativeWriterSchema.optional(),
       patch: paperPatchSchema,
     })
     .strict(),

@@ -1,7 +1,6 @@
 import { z } from "zod"
 import { defineOperation } from "../../../operation.js"
 import type { ResourceRef } from "../../../resources.js"
-import { nativeWriterSchema } from "../../../paper-doc/native.js"
 import {
   paperDocStatusSchema,
   paperStoredKindSchema,
@@ -23,7 +22,6 @@ export const operation = defineOperation({
         .array(z.string().regex(/^[A-Za-z0-9_-]{1,64}$/))
         .max(50)
         .optional(),
-      writer: nativeWriterSchema.optional(),
     })
     .strict(),
   publicResult: z
