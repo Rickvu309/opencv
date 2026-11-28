@@ -40,10 +40,14 @@ ALTER TABLE "opencv_app"."jobs" DROP COLUMN "cv_package_id";--> statement-breakp
 ALTER TABLE "opencv_app"."jobs" DROP COLUMN "letter_package_id";--> statement-breakpoint
 DROP TABLE "opencv_app"."paper_doc_updates" CASCADE;--> statement-breakpoint
 DROP FUNCTION "opencv_app"."sync_update_photo_refs"();--> statement-breakpoint
+DROP TRIGGER "paper_package_files_immutable" ON "opencv_app"."files";--> statement-breakpoint
+DROP FUNCTION "opencv_app"."reject_package_file_update"();--> statement-breakpoint
 DROP TABLE "opencv_app"."paper_package_candidates" CASCADE;--> statement-breakpoint
 DROP TABLE "opencv_app"."paper_package_trash" CASCADE;--> statement-breakpoint
 DROP TABLE "opencv_app"."paper_package_heads" CASCADE;--> statement-breakpoint
 DROP TABLE "opencv_app"."paper_package_versions" CASCADE;--> statement-breakpoint
+DROP FUNCTION "opencv_app"."reject_retained_word_update"();--> statement-breakpoint
+DROP FUNCTION "opencv_app"."reject_retained_word_version_update"();--> statement-breakpoint
 DELETE FROM "opencv_app"."files" WHERE "purpose" = 'package';--> statement-breakpoint
 ALTER TABLE "opencv_app"."paper_docs" DROP COLUMN "crdt_epoch";--> statement-breakpoint
 ALTER TABLE "opencv_app"."paper_docs" DROP COLUMN "crdt_base";--> statement-breakpoint
