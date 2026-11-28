@@ -190,5 +190,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 1
+  },
+  {
+    "subject": "scripts/ocv-tools/brief.test.mjs > a brief prints the shipped fence while its issue is open",
+    "because": "the fenced packages/paper-crdt folder is deleted, so the brief prints the remaining fence paths instead",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
   }
 ]
