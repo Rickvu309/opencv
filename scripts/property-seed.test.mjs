@@ -35,11 +35,15 @@ it("keeps what was typed", () => {
 test("the detector fires on a property with a random seed and random document ids, and stays quiet once both are fixed", () => {
   assert.equal(detect(RANDOM_ON_EVERY_RUN, FILE).length, 2)
   assert.deepEqual(detect(SAME_ON_EVERY_RUN, FILE), [])
+  assert.equal(
+    detect(RANDOM_ON_EVERY_RUN, "packages/paper-engine/src/a.test.ts").length,
+    2
+  )
   assert.deepEqual(detect(RANDOM_ON_EVERY_RUN, "apps/web/src/a.test.ts"), [])
 })
 
 test("every property test of the Paper editing package gives the same result on the same commit", () => {
-  const files = execFileSync("git", ["ls-files", "packages/paper-crdt/src"], {
+  const files = execFileSync("git", ["ls-files", "packages/paper-engine/src"], {
     cwd: root,
     encoding: "utf8",
     timeout: 30_000,

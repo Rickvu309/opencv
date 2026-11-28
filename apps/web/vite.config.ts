@@ -42,10 +42,6 @@ export default defineConfig(({ mode }) => {
         ),
         "@": path.resolve(__dirname, "./src"),
         ...domainEntryAliases(__dirname),
-        "@workspace/paper-crdt": path.resolve(
-          __dirname,
-          "../../packages/paper-crdt/src/index.ts"
-        ),
         "@workspace/paper-engine": path.resolve(
           __dirname,
           "../../packages/paper-engine/src/index.ts"

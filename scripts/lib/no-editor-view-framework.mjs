@@ -1,14 +1,7 @@
-export const NEW_PAPER_PACKS = [
-  "packages/paper-engine/",
-  "packages/paper-fonts/",
-  "apps/api/src/paper/log/",
-  "apps/api/src/paper/word/",
-  "apps/api/src/paper/pdf/",
-  "apps/web/src/features/paper/editor/",
-]
+export const GUARD_FIXTURES = "scripts/"
 
 export const VIEW_FRAMEWORK_HINT =
-  "the new Paper core owns its view: keep ProseMirror to model, state, transform, history and collab, with no prosemirror-view, Tiptap, BlockNote or Yjs"
+  "the Paper core owns its view: keep ProseMirror to model, state, transform, history and collab, with no prosemirror-view, Tiptap, BlockNote or Yjs anywhere in the repo"
 
 const BANNED =
   /^(?:prosemirror-view|yjs|y-prosemirror|y-protocols|y-indexeddb)(?:\/|$)|^@(?:tiptap|blocknote)\//
@@ -18,8 +11,7 @@ const IMPORT =
 
 const lineOf = (source, index) => source.slice(0, index).split("\n").length
 
-const inNewPack = (fileName) =>
-  NEW_PAPER_PACKS.some((prefix) => fileName.startsWith(prefix))
+const inScope = (fileName) => !fileName.startsWith(GUARD_FIXTURES)
 
 function manifestProblems(source, fileName) {
   const manifest = JSON.parse(source)
@@ -34,7 +26,7 @@ function manifestProblems(source, fileName) {
 }
 
 export function editorViewFrameworkProblems(source, fileName) {
-  if (!inNewPack(fileName)) return []
+  if (!inScope(fileName)) return []
   if (fileName.endsWith("package.json"))
     return manifestProblems(source, fileName)
   const problems = []

@@ -26,7 +26,6 @@
     "@modelcontextprotocol/hono": "2.0.2",
     "@modelcontextprotocol/server": "2.4.0",
     "@workspace/domain": "workspace:*",
-    "@workspace/paper-crdt": "workspace:*",
     "@workspace/paper-engine": "workspace:*",
     "@xmldom/xmldom": "0.8.15",
     "better-auth": "^1.7.7",
@@ -53,7 +52,6 @@
     "tsx": "^4.23.15",
     "typescript": "~6",
     "typescript-eslint": "^8",
-    "vitest": "^5.0.5",
-    "yjs": "13.6.33"
+    "vitest": "^5.0.5"
   }
 }

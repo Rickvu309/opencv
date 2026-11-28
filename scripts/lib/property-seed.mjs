@@ -1,4 +1,4 @@
-const HELD = /^packages\/paper-crdt\/src\/.*\.test\.tsx?$/
+const HELD = /^packages\/paper-(?:crdt|engine)\/src\/.*\.test\.tsx?$/
 const PROPERTY_RUN = /\bfc\.(assert|check)\(/g
 const RANDOM_DOCUMENT = /\bnew Y\.Doc\(/
 const PINNED_DOCUMENT = /\.clientID = /

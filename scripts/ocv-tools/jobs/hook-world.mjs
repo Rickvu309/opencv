@@ -36,16 +36,12 @@ export function world(over = {}) {
       ...(s.noTsc
         ? {}
         : Object.fromEntries(
-            [
-              "apps/api",
-              "apps/web",
-              "packages/domain",
-              "packages/paper-crdt",
-              "packages/ui",
-            ].flatMap((dir) => [
-              [`/repo/${dir}/node_modules/.bin/tsc`, ""],
-              [`/repo/${dir}/node_modules/.bin/vitest`, ""],
-            ])
+            ["apps/api", "apps/web", "packages/domain", "packages/ui"].flatMap(
+              (dir) => [
+                [`/repo/${dir}/node_modules/.bin/tsc`, ""],
+                [`/repo/${dir}/node_modules/.bin/vitest`, ""],
+              ]
+            )
           )),
     },
     env: s.env ?? {},

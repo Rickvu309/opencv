@@ -18,7 +18,7 @@ const MISTAKE = `resolve: {
 const CLEAN = `resolve: {
   alias: {
     "@workspace/domain": path.resolve(__dirname, "../../packages/domain/src/index.ts"),
-    "@workspace/paper-crdt": path.resolve(__dirname, "../../packages/paper-crdt/src/index.ts"),
+    "@workspace/paper-engine": path.resolve(__dirname, "../../packages/paper-engine/src/index.ts"),
   },
 }
 `
@@ -51,13 +51,13 @@ function sourceAlias(viteText, name) {
   )?.[0]
 }
 
-test("a dev config that aliases domain but not paper-crdt fires", () => {
+test("a dev config that aliases domain but not paper-engine fires", () => {
   const hits = detect(MISTAKE, vitePath)
   assert.equal(hits.length, 1)
-  assert.match(hits[0].text, /paper-crdt/)
+  assert.match(hits[0].text, /paper-engine/)
 })
 
-test("a dev config that aliases paper-crdt to its source stays quiet", () => {
+test("a dev config that aliases paper-engine to its source stays quiet", () => {
   assert.deepEqual(detect(CLEAN, vitePath), [])
   assert.deepEqual(detect(MISTAKE, "apps/web/vite.config.js"), [])
 })
