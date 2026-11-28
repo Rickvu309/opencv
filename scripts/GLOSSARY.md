@@ -209,7 +209,7 @@ _Not_: the merge queue, which tested the merged tree before the merge and was re
 _Avoid_: post-merge check, full run (bare)
 
 **Main red**:
-The state after a main run fails. An open main-red issue names the commit, and while it is open only the revert merges and nothing deploys. The failed jobs run again once by themselves, and a green main run that contains the red commit closes the issue. The limit is 3 red runs in the last 30.
+The state after a main run fails twice: the failed jobs run again once by themselves, and the issue opens only when that second attempt fails too. An open main-red issue names the commit, and while it is open only the revert merges and nothing deploys. A green main run that contains the red commit closes the issue. The limit is 3 red runs in the last 30.
 _Not_: production red, which the probe sets.
 _Avoid_: broken main, red build
 

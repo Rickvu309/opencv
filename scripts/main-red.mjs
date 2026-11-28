@@ -84,6 +84,13 @@ export function mainRedActions({
   attempt = 1,
   runs = null,
 }) {
+  if (result === "failure" && attempt < 2)
+    return [
+      {
+        do: "wait",
+        line: `ci failed on ${sha} at attempt ${attempt}; the failed jobs run again once by themselves, and main-red opens only if that second attempt fails too`,
+      },
+    ]
   if (result === "failure") {
     const body = redReport({ sha, parent, runUrl, attempt, runs })
     const oldest = [...open].sort((a, b) => a.number - b.number)[0]
@@ -218,6 +225,8 @@ export function main(env, io) {
     } else if (action.do === "comment") {
       io.gh(["issue", "comment", String(action.number), "--body", action.body])
       io.out(`added ${sha} to #${action.number}`)
+    } else if (action.do === "wait") {
+      io.out(action.line)
     } else if (action.do === "close") {
       io.gh(["issue", "close", String(action.number), "--comment", action.body])
       io.out(`closed #${action.number}: main is green at ${sha}`)
