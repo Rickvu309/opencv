@@ -1,4 +1,0 @@
-layer: feature
-dependencies: [apps/web/src/lib, apps/web/src/components]
-public:
-  - document-chrome.tsx
