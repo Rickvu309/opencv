@@ -43,7 +43,6 @@
   "scripts/check.test.mjs",
   "scripts/checks-doc.test.mjs",
   "scripts/kit-duplicates.test.mjs",
-  "scripts/paper-save-keeps-parts.test.mjs",
   "scripts/unused-domain-exports.test.mjs",
   "scripts/verify-auth-production.test.mjs",
   "scripts/web-lint-rules.test.mjs",

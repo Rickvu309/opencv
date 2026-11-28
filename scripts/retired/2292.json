@@ -1,0 +1,138 @@
+[
+  {
+    "subject": "scripts/paper-content-isolation.test.mjs",
+    "because": "Engine 1 cached CRDT heads are gone with the switch; the promise that only one place writes Paper content, inside the outer commit, is now scripts/paper-one-writer.test.mjs with apps/api/src/paper/log/log.test.ts",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 15
+  },
+  {
+    "subject": "scripts/guard-ledger/paper-content-isolation.json",
+    "because": "Ledger row of the retired paper-content-isolation guard; scripts/paper-one-writer.test.mjs replaces it",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/guard-ledger/paper-content-rollback.json",
+    "because": "Ledger row on the retired paper-content-isolation test; rollback of a Paper write is now the Paper log transaction in apps/api/src/paper/log/log.test.ts",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/paper-native-client.test.mjs",
+    "because": "Only tests the engine 1 native client basis, which no Paper reaches after the switch; none needed, the new page sends engine steps checked by packages/paper-engine/src/wire-steps.test.ts",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 3
+  },
+  {
+    "subject": "scripts/guard-ledger/paper-native-client.json",
+    "because": "Only tests the engine 1 native client basis, which no Paper reaches after the switch; none needed, the new page sends engine steps checked by packages/paper-engine/src/wire-steps.test.ts",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/paper-native-durable.test.mjs",
+    "because": "Only tests engine 1 native bootstrap keeping its CRDT identity, and engine 1 is gone with the switch; none needed, the new Paper log replays to the same Paper in apps/api/src/paper/log/replay.test.ts",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 6
+  },
+  {
+    "subject": "scripts/guard-ledger/paper-native-durable.json",
+    "because": "Only tests engine 1 native bootstrap keeping its CRDT identity, and engine 1 is gone with the switch; none needed, the new Paper log replays to the same Paper in apps/api/src/paper/log/replay.test.ts",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/guard-ledger/paper-journal-preservation.json",
+    "because": "Only tests engine 1 native bootstrap keeping its CRDT identity, and engine 1 is gone with the switch; none needed, the new Paper log replays to the same Paper in apps/api/src/paper/log/replay.test.ts",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/paper-native-journal-bound.test.mjs",
+    "because": "Only tests the engine 1 native browser journal, which no Paper uses after the switch; none needed, unsent edits on the new page live in the pending store checked by apps/web/src/lib/paper-pending-store.test.ts",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/guard-ledger/paper-native-journal-bound.json",
+    "because": "Only tests the engine 1 native browser journal, which no Paper uses after the switch; none needed, unsent edits on the new page live in the pending store checked by apps/web/src/lib/paper-pending-store.test.ts",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/paper-native-word.test.mjs",
+    "because": "Only tests when the engine 1 rich Word compiler may run, and engine 1 is gone with the switch; the promise that Word out keeps the page is now apps/api/src/paper/word/round-trip.test.ts",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 6
+  },
+  {
+    "subject": "scripts/guard-ledger/paper-native-word.json",
+    "because": "Only tests when the engine 1 rich Word compiler may run, and engine 1 is gone with the switch; the promise that Word out keeps the page is now apps/api/src/paper/word/round-trip.test.ts",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/guard-ledger/paper-native-word-photo.json",
+    "because": "Only tests when the engine 1 rich Word compiler may run, and engine 1 is gone with the switch; the promise that Word out keeps the page is now apps/api/src/paper/word/round-trip.test.ts",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/paper-rich-convergence.test.mjs",
+    "because": "Only tests engine 1 rich CRDT merges, and engine 1 is gone with the switch; the promise that concurrent edits merge without losing text is now packages/paper-engine/src/collab-rebase.test.ts with no-text-loss.model.test.ts and two-tabs.model.test.ts",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
+  },
+  {
+    "subject": "scripts/guard-ledger/paper-rich-convergence.json",
+    "because": "Only tests engine 1 rich CRDT merges, and engine 1 is gone with the switch; the promise that concurrent edits merge without losing text is now packages/paper-engine/src/collab-rebase.test.ts with no-text-loss.model.test.ts and two-tabs.model.test.ts",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/guard-ledger/paper-pending-content.json",
+    "because": "Only tests engine 1 rich CRDT merges, and engine 1 is gone with the switch; the promise that concurrent edits merge without losing text is now packages/paper-engine/src/collab-rebase.test.ts with no-text-loss.model.test.ts and two-tabs.model.test.ts",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/paper-save-keeps-parts.test.mjs",
+    "because": "Scans the engine 1 editor save that rebuilt a document from markdown; the new page saves engine steps, so no save can drop parts, and packages/paper-engine/src/no-text-loss.model.test.ts holds the promise",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
+  }
+]
