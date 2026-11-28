@@ -17,7 +17,6 @@ import { and, desc, eq, ne } from "drizzle-orm"
 
 import { getDb, insideTransaction } from "../db/context.js"
 import { files, paperDocs } from "../db/schema.js"
-import { trashStoredWordPage } from "./word-page-trash.js"
 import { createId } from "../platform/id.js"
 import { CommandError } from "../platform/errors.js"
 import {
@@ -209,7 +208,6 @@ export async function duplicatePaper(
 
 export async function deletePaper(actor: Actor, docId: PaperId) {
   if (!(await ownedPaperOrNull(actor.userId, docId))) return documentNotFound()
-  await trashStoredWordPage(actor.userId, docId)
   await getDb().delete(paperDocs).where(eq(paperDocs.id, docId))
   return { id: docId }
 }

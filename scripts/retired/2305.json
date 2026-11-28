@@ -1,0 +1,50 @@
+[
+  {
+    "subject": "apps/api/src/paper/native-word.test.ts",
+    "because": "It tests old Paper Word page code that this change deletes; every Paper is on the new engine and downloads Word through the engine export.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 18
+  },
+  {
+    "subject": "apps/api/src/paper/owned-word-output.test.ts",
+    "because": "It tests old Paper Word page code that this change deletes; every Paper is on the new engine and downloads Word through the engine export.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/api/src/paper/word-page-export.test.ts",
+    "because": "It tests old Paper Word page code that this change deletes; every Paper is on the new engine and downloads Word through the engine export.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 9
+  },
+  {
+    "subject": "apps/api/src/paper/word-pages-to-papers.test.ts",
+    "because": "It tests old Paper Word page code that this change deletes; every Paper is on the new engine and downloads Word through the engine export.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/api/src/registry/ownership.test.ts > readsBetweenContexts[\"paper/word-page-export.ts reads jobs\"]",
+    "because": "The file that read jobs is deleted with the old Paper Word page code, so its allowed cross-context read has no subject.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/api/src/registry/ownership.test.ts > readsBetweenContexts[\"paper/word-page-trash.ts reads jobs\"]",
+    "because": "The file that read jobs is deleted with the old Paper Word page code, so its allowed cross-context read has no subject.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  }
+]

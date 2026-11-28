@@ -6,7 +6,7 @@ import {
   nativeWriterSchema,
 } from "../../../paper-doc/native.js"
 
-export const richExportInputSchema = z
+const richExportInputSchema = z
   .object({
     docId: z.string().uuid(),
     kind: z.enum(["cv", "letter"]),

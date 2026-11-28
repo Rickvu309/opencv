@@ -29,7 +29,6 @@ import {
 import { importedLines, importedPageName } from "./import/import-word.js"
 import { handImportedLines } from "./engine-import.js"
 import { createPaperChangesRoutes } from "./changes-http.js"
-import { createNativeWordRoutes } from "./native-word-http.js"
 import {
   IMPORT_FILE_CAP,
   IMPORT_SIZE_MESSAGE,
@@ -175,7 +174,6 @@ export function createPaperRoutes(signedIn: SignedIn) {
 
   routes.use("*", signedIn)
 
-  routes.route("/", createNativeWordRoutes())
   routes.route("/", createPaperChangesRoutes())
 
   routes.post("/letter-attachment", async (c) => {

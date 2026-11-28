@@ -16,7 +16,6 @@ import {
 import { readExportedParts } from "../coach/chat/index.js"
 import { isUndoRow } from "../registry/expectation.js"
 import type { Registry } from "../registry/registry.js"
-import { collectWordPageExport } from "../paper/index.js"
 import { zipArchive } from "./export-archive.js"
 import { getProfileRow, toProfile } from "./store.js"
 
@@ -194,14 +193,13 @@ export async function exportAccount(userId: string) {
 }
 
 export async function exportAccountArchive(userId: string) {
-  const { index, wordFiles } = await collectAccountExport(userId)
+  const { index } = await collectAccountExport(userId)
   return zipArchive([
     {
       path: ACCOUNT_EXPORT_INDEX,
       bytes: Buffer.from(JSON.stringify(index, null, 2)),
       compress: true,
     },
-    ...wordFiles.map((file) => ({ ...file, compress: false })),
   ])
 }
 
@@ -256,11 +254,9 @@ async function collectAccountExport(userId: string) {
     })
     .from(connections)
     .where(eq(connections.userId, userId))
-  const word = await collectWordPageExport(userId)
   return {
     index: {
       profile,
-      wordPages: word.pages,
       documents: documents.map(publicDoc),
       files: fileRows.map((file) => ({
         ...file,
@@ -302,7 +298,6 @@ async function collectAccountExport(userId: string) {
         })),
       connections: connectionRows,
     },
-    wordFiles: word.files,
   }
 }
 

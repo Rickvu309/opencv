@@ -10,7 +10,7 @@ import {
   startEmbeddedCoachWorker,
   withScanJobPosting,
 } from "./coach/index.js"
-import { convertWordPages, sweepUnattachedPhotos } from "./paper/index.js"
+import { sweepUnattachedPhotos } from "./paper/index.js"
 import {
   apiPortFromEnv,
   authUrlFromEnv,
@@ -88,17 +88,6 @@ if (db && !process.env.VITEST) {
     UNATTACHED_PHOTO_SWEEP_INTERVAL_MS
   )
   sweepTimer.unref()
-  convertWordPages()
-    .then(({ converted, unreadable }) => {
-      if (converted.length || unreadable.length)
-        console.log("[paper] Word pages became Papers", {
-          converted: converted.length,
-          unreadable,
-        })
-    })
-    .catch((error) =>
-      console.error("[paper] converting Word pages failed", error)
-    )
 }
 
 const coachRuntimeMode = coachRuntimeModeFromEnv(process.env)
