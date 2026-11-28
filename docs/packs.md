@@ -221,7 +221,7 @@ flowchart TD
 | `apps/api/src/limits` | platform | index.ts | none | none |
 | `apps/api/src/mail` | platform | none | none | none |
 | `apps/api/src/paper` | feature | index.ts, operations | apps/api/src/paper/import, apps/api/src/paper/log, apps/api/src/paper/native-output, apps/api/src/paper/content, apps/api/src/paper/pdf, apps/api/src/paper/word, apps/api/src/registry, apps/api/src/db, apps/api/src/limits, apps/api/src/platform | none |
-| `apps/api/src/paper/content` | feature | content-store.ts, native-admission.ts, rich-snapshot.ts | apps/api/src/db, apps/api/src/platform | none |
+| `apps/api/src/paper/content` | feature | content-document.ts | apps/api/src/db, apps/api/src/platform | none |
 | `apps/api/src/paper/import` | feature | import-parse.ts, import-text-pool.ts, import-word.ts, package-xml.ts, package-zip.ts, word-to-paper.ts | apps/api/src/platform | none |
 | `apps/api/src/paper/log` | feature | index.ts | apps/api/src/db, packages/paper-engine | none |
 | `apps/api/src/paper/native-output` | feature | formatted.ts, formatted-photos.ts | none | none |

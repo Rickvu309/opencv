@@ -242,8 +242,6 @@ const readsBetweenContexts: string[] = [
   "job/linked-papers.ts reads paperDocs",
   "job/linked-papers.ts reads paperPackageHeads",
   "job/linked-papers.ts reads paperPackageVersions",
-  "paper/word-page-export.ts reads jobs",
-  "paper/word-page-trash.ts reads jobs",
   "registry/delegate-policy.ts reads agentConnections",
   "registry/proposals.ts reads user",
   "registry/registry-reads.ts reads user",

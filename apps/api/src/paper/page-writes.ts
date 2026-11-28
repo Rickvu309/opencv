@@ -24,9 +24,7 @@ const READ_CALLS = new Set([
 const SQL_TARGET =
   /\b(?:insert\s+into|update(?:\s+only)?|delete\s+from(?:\s+only)?|merge\s+into|truncate(?:\s+table)?(?:\s+only)?|copy)\s+(?:"?\w+"?\s*\.\s*)?"?(\w+)"?/gi
 
-export const PAGE_TABLE_VALUE_USES: Record<string, number> = {
-  "paper/word-page-export.ts": 1,
-}
+export const PAGE_TABLE_VALUE_USES: Record<string, number> = {}
 
 function parse(file: SourceFile) {
   return ts.createSourceFile(
