@@ -201,6 +201,8 @@ export const jobPriorityCountsKey = () => null
 routes.get("/priority-counts", () => {})
 `
 
+const realSessionAtom = authClient.$store.atoms.session
+
 function signIn(ownerId: string) {
   authClient.$store.atoms.session = {
     get: () => ({ data: { user: { id: ownerId } } }),
@@ -220,7 +222,7 @@ function event(type: "tool-call" | "tool-result", name: string, extra: object) {
 
 describe("coach catalog refresh", () => {
   afterEach(() => {
-    delete authClient.$store.atoms.session
+    authClient.$store.atoms.session = realSessionAtom
   })
 
   it("flags a legacy door that skips the catalog bridge", () => {
