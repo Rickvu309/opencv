@@ -62,5 +62,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 43
+  },
+  {
+    "subject": "packages/paper-crdt/src/rich-style-parity.test.ts",
+    "because": "It compared the old editor styles with the old Word writer under apps/api/src/paper/native-output, which is removed. The new Word writer is covered by apps/api/src/paper/word/round-trip.test.ts.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 7
   }
 ]
