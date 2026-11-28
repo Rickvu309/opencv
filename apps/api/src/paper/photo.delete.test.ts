@@ -1,3 +1,4 @@
+import { type Document } from "@workspace/domain/paper-doc"
 import { eq } from "drizzle-orm"
 import { describe, expect, it } from "vitest"
 import { z } from "zod"
@@ -10,8 +11,7 @@ import {
   signUp,
   testWebOrigin,
 } from "../test/harness.js"
-import { richPaper } from "../test/rich-paper.js"
-import { seedColumns } from "./content/content-document.js"
+import { pageWithPhoto } from "./photo.fixtures.js"
 
 const png = Uint8Array.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
 const idResponse = z.object({ data: z.object({ id: z.string() }) })
@@ -71,9 +71,15 @@ describe("Deleting photo files", () => {
           })
           expect(created.status).toBe(200)
           const docId = idResponse.parse(await created.json()).data.id
+          const [stored] = await db
+            .select({ snapshot: paperDocs.snapshot })
+            .from(paperDocs)
+            .where(eq(paperDocs.id, docId))
           await db
             .update(paperDocs)
-            .set(seedColumns("cv", richPaper("cv", `file:${fileId}`)))
+            .set({
+              snapshot: pageWithPhoto(stored?.snapshot as Document, fileId),
+            })
             .where(eq(paperDocs.id, docId))
           releaseReference = () => command("paper.delete", { docId })
         }

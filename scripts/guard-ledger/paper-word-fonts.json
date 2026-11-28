@@ -1,6 +1,0 @@
-{
-  "id": "paper-word-fonts",
-  "file": "apps/api/src/paper/native-output/formatted-fonts.test.ts",
-  "historic": null,
-  "reason": "Word font fidelity is an API compiler behavior test. Its suite builds the domain prerequisite; the independent guards suite must not import API runtime. It checks all saved font IDs and encodings in document and style XML. scripts/retired/1578.json records the assertion flip on the previous compiler."
-}
