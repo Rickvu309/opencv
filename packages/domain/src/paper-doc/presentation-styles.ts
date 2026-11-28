@@ -1,15 +1,10 @@
-import type { DocumentPresentation } from "./presentation-edit.js"
 import { z } from "zod"
-import {
-  paragraphInlineValues,
-  paragraphStyleValues,
-} from "./paragraph-styles.js"
+import { paragraphStyleValues } from "./paragraph-styles.js"
 import {
   inlineSchema,
   inlinePatchSchema,
   paragraphSchema,
   paragraphPatchSchema,
-  paragraphEditPatchSchema,
   styleIdSchema,
   parse,
   ok,
@@ -37,10 +32,6 @@ export const styleSchema = z.discriminatedUnion("kind", [
       values: paragraphPatchSchema,
     })
     .strict(),
-])
-export const styleEditSchema = z.discriminatedUnion("kind", [
-  styleSchema.options[0],
-  styleSchema.options[1].extend({ values: paragraphEditPatchSchema }),
 ])
 export const catalogSchema = z.array(styleSchema).max(128)
 type StyleDefinition = z.infer<typeof styleSchema>
@@ -137,28 +128,5 @@ export function resolveParagraph(
   return parse(
     paragraphSchema,
     overlay(style?.values ?? builtin ?? {}, patch.value)
-  )
-}
-
-export function effectiveRunInline(
-  document: DocumentPresentation,
-  paragraphStyle: string | null | undefined,
-  marks: InlinePresentation
-): Result<InlinePresentation> {
-  const styles = resolveStyles(document.styles)
-  if (styles.kind === "refused") return styles
-  const { characterStyle: defaultStyle, ...defaults } = document.inline
-  const base = resolveInline(styles.value, defaultStyle ?? null, defaults)
-  if (base.kind === "refused") return base
-  const { characterStyle, ...direct } = marks
-  const character = resolveInline(styles.value, characterStyle ?? null, {})
-  if (character.kind === "refused") return character
-  const paragraph = overlay(
-    base.value,
-    paragraphInlineValues(paragraphStyle ?? document.paragraph.paragraphStyle)
-  )
-  return parse(
-    inlineSchema,
-    overlay(overlay(paragraph, character.value), direct)
   )
 }

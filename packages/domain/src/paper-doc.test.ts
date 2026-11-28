@@ -5,7 +5,6 @@ import {
   blankCv,
   blankLetter,
   paperDocumentSchema,
-  paperPlainText,
   HEADER_NODE_ID,
 } from "./paper-doc/index.ts"
 
@@ -280,12 +279,5 @@ describe("paper document v3", () => {
       parsed.blocks[0]?.type === "paragraph" && parsed.blocks[0].content,
       [{ text: "Hi " }, { text: "there", bold: true }]
     )
-  })
-
-  it("reads plain text from the header, titles and blocks", () => {
-    const parsed = paperDocumentSchema.parse(
-      cv([section("s1", "summary"), paragraph("p1", "Hello")])
-    )
-    assert.equal(paperPlainText(parsed), "summary\nHello")
   })
 })

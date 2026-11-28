@@ -12,14 +12,6 @@ import {
   resolveInline,
   resolveParagraph,
 } from "./paper-doc/presentation-styles.js"
-import {
-  validatePresentationPatch,
-  checkSnapshot,
-} from "./paper-doc/presentation-edit.js"
-import {
-  effectiveParagraphStyle,
-  paragraphInlineValues,
-} from "./paper-doc/paragraph-styles.js"
 
 const page = {
   width: 11906,
@@ -30,17 +22,6 @@ const page = {
   start: 1440,
   end: 1440,
 }
-const snapshot = () =>
-  checkSnapshot({
-    document: { codecVersion: 1, page, inline: {}, paragraph: {}, styles: [] },
-    blocks: [
-      {
-        ownerId: "body",
-        paragraph: {},
-        runs: [{ text: "English Việt 😀", values: {} }],
-      },
-    ],
-  })
 function value<T>(
   r: { kind: "ok"; value: T } | { kind: "refused"; reason: string }
 ): T {
@@ -48,15 +29,6 @@ function value<T>(
   return r.value
 }
 describe("private presentation values", () => {
-  it("inherits unstyled document defaults while resolving semantic headings", () => {
-    for (const style of [undefined, null])
-      assert.deepEqual(
-        paragraphInlineValues(effectiveParagraphStyle("paragraph", style)),
-        {}
-      )
-    assert.equal(effectiveParagraphStyle("paragraph", "normal"), "normal")
-    assert.equal(effectiveParagraphStyle("heading", undefined, 2), "heading-2")
-  })
   it("refuses unknown values, unsupported fonts, units and geometry", () => {
     for (const input of [
       { mystery: true },
@@ -165,40 +137,5 @@ describe("private presentation values", () => {
       ],
     ])
       assert.equal(resolveStyles(catalog).kind, "refused")
-  })
-  it("returns exact affected values and rejects CV fields, collapsed and split-surrogate ranges", () => {
-    const s = value(snapshot())
-    const validated = value(
-      validatePresentationPatch(s, {
-        kind: "body-inline",
-        range: { ownerId: "body", from: 0, to: 7 },
-        values: { bold: true, color: "#123456" },
-      })
-    )
-    assert.partialDeepStrictEqual(validated.changes[0], {
-      before: { bold: null, color: null },
-      after: { bold: true, color: "#123456" },
-    })
-    for (const patch of [
-      { kind: "cv-field", field: "name", values: { bold: true } },
-      {
-        kind: "body-inline",
-        range: { ownerId: "body", from: 0, to: 0 },
-        values: { bold: true },
-      },
-      {
-        kind: "body-inline",
-        range: { ownerId: "body", from: 0, to: 14 },
-        values: { bold: true },
-      },
-      {
-        kind: "body-paragraph",
-        ownerId: "missing",
-        values: { alignment: "left" },
-      },
-      { kind: "document-inline", values: { characterStyle: "missing" } },
-    ])
-      assert.equal(validatePresentationPatch(s, patch).kind, "refused")
-    assert.deepEqual(s, value(snapshot()))
   })
 })

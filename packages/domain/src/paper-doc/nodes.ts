@@ -166,7 +166,7 @@ type SkillsGroup = z.infer<typeof skillsSchema>
 export type ProseBlock = Paragraph | Heading | Bullet | Numbered | Divider
 type EntryBlock = ExperienceEntry | EducationEntry | SkillsGroup
 export type CvPaperBlock = CvSectionMarker | ProseBlock | EntryBlock
-export type PaperNode = CvHeader | CvPaperBlock | ListItem
+type PaperNode = CvHeader | CvPaperBlock | ListItem
 
 export const proseBlockSchema = z.discriminatedUnion("type", [
   paragraphSchema,
@@ -388,11 +388,6 @@ export const nodeFieldSetSchema = z
   })
   .strict()
 type NodeFieldSet = z.infer<typeof nodeFieldSetSchema>
-
-export function nodePlainText(node: PaperNode): string {
-  const spec = paperNodeSpecs[node.type] as NodeSpec<PaperNode>
-  return spec.plainText(node)
-}
 
 const FIELDS_OF_TYPE = {
   header: ["name", "email", "phone", "city", "linkedin", "photo"],

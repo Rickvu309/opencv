@@ -52,10 +52,6 @@ export {
   layoutPageSchema,
   layoutRectSchema,
   layoutSegmentSchema,
-  type LayoutBox,
-  type LayoutMarker,
   type LayoutPage,
-  type LayoutRect,
-  type LayoutSegment,
 } from "./engine-page.js"
 export * as paperEngineBlank from "./engine-blank.js"

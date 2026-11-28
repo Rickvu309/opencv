@@ -230,7 +230,6 @@ export const formattedDocumentSchema = z
     doc.blocks.forEach(visit)
     return doc
   })
-export type PrivateFormattedDocument = z.infer<typeof formattedDocumentSchema>
 export function mergeFormatRuns(runs: readonly FormatRun[]): FormatRun[] {
   const out: FormatRun[] = []
   for (const run of runs) {

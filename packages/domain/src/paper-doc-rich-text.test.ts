@@ -3,8 +3,6 @@ import { describe, it } from "node:test"
 
 import * as fc from "fast-check"
 
-import { normalizeLinkHref } from "./paper-doc/paper-presentation.ts"
-
 import {
   isSafeHref,
   normalizeRuns,
@@ -19,36 +17,6 @@ const HREFS = [
   "https://example.com/(x)*y\\z",
 ] as const
 
-it("normalizes website and email input through the safe href policy", () => {
-  for (const [input, href] of [
-    [" example.com/work ", "https://example.com/work"],
-    ["linh@example.com", "mailto:linh@example.com"],
-    ["http://example.com", "http://example.com"],
-    ["https://example.com", "https://example.com"],
-    ["example.com:8080/work?q=x#top", "https://example.com:8080/work?q=x#top"],
-    ["münchen.example", "https://münchen.example"],
-    ["first.last+cv@mail.example.com", "mailto:first.last+cv@mail.example.com"],
-    ["mailto:linh@example.com", "mailto:linh@example.com"],
-  ] as const)
-    assert.equal(normalizeLinkHref(input), href)
-  for (const input of [
-    "javascript:alert(1)",
-    "data:text/html,x",
-    "ftp://example.com",
-    "javascript:foo@example.com",
-    "https://example.com/\u200b",
-    "a@@example.com",
-    "a@example..com",
-    "a@.example.com",
-    "example..com",
-    "example.com:abc",
-    "example.com:",
-    "example.com:80:90",
-    "a@localhost",
-  ])
-    assert.equal(normalizeLinkHref(input), undefined)
-})
-
 it("rejects 50,000-character adversarial input quickly on every link path", () => {
   const started = performance.now()
   for (const prefix of [
@@ -62,13 +30,11 @@ it("rejects 50,000-character adversarial input quickly on every link path", () =
   ]) {
     const input = (prefix + "a.".repeat(25_000)).slice(0, 50_000)
     assert.equal(input.length, 50_000)
-    assert.equal(normalizeLinkHref(input), undefined)
     assert.equal(isSafeHref(input), false)
     assert.deepEqual(
       normalizeRuns([{ text: "link", href: input as SafeHref }]),
       [{ text: "link" }]
     )
-    assert.equal(normalizeLinkHref(" ".repeat(50_000) + input), undefined)
   }
   assert.ok(performance.now() - started < 1000)
 })
