@@ -58,13 +58,6 @@ describe("Paper new dialog", () => {
           name: "Untitled CV",
           kind: "cv",
           format: "rich",
-          provenance: {
-            documentVersion: 4,
-            schemaRevision: 2,
-            writerProtocol: 1,
-            profile: "private-layout-3",
-            requiredCapabilities: [],
-          },
           updatedAt: new Date().toISOString(),
         })
       )

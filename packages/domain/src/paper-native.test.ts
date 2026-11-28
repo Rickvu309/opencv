@@ -6,11 +6,8 @@ import {
   blankLetter,
   legacyPaperDocumentSchema,
   nativePaperDocumentSchema,
-  nativeProvenance,
-  nativeProvenanceSchema,
   normalizeRuns,
   paperDocumentSchema,
-  sameNativeProvenance,
   type CvPaper,
   type LetterPaper,
   type PaperDocument,
@@ -78,50 +75,6 @@ describe("isolated native prose model", () => {
       nativePaperDocumentSchema.safeParse({ ...target, schemaRevision: 2 })
         .success,
       false
-    )
-  })
-
-  it("reads native provenance without publishing a document", () => {
-    assert.equal(nativeProvenance(native()).schemaRevision, 1)
-  })
-
-  it("refuses omitted, repeated and unknown required capabilities", () => {
-    const provenance = nativeProvenance(native())
-    for (const requiredCapabilities of [
-      ["structured-prose"],
-      ["structured-prose", "structured-prose"],
-      ["structured-prose", "future-grid"],
-    ])
-      assert.equal(
-        nativeProvenanceSchema.safeParse({
-          ...provenance,
-          requiredCapabilities,
-        }).success,
-        false
-      )
-    assert.equal(
-      sameNativeProvenance(provenance, {
-        ...provenance,
-        requiredCapabilities: ["structured-prose", "structured-prose"],
-      }),
-      false
-    )
-    assert.equal(
-      sameNativeProvenance(
-        {
-          ...provenance,
-          requiredCapabilities: ["structured-prose", "structured-prose"],
-        },
-        provenance
-      ),
-      false
-    )
-    assert.equal(
-      sameNativeProvenance(provenance, {
-        ...provenance,
-        requiredCapabilities: [...provenance.requiredCapabilities].reverse(),
-      }),
-      true
     )
   })
 })

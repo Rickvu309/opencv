@@ -36,12 +36,8 @@ describe("paper.create format rich", () => {
           "paper.read",
           { view: "info", docId: created.id },
           actor
-        )) as {
-          format: "rich"
-          provenance: { documentVersion: number }
-        }
+        )) as { format: "rich" }
         expect(document.format).toBe("rich")
-        expect(document.provenance.documentVersion).toBe(4)
         await expect(
           registry.read("paper.document", { docId: created.id }, actor)
         ).rejects.toThrow()
