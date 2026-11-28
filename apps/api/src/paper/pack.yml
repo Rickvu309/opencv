@@ -4,7 +4,6 @@ dependencies:
   [
     apps/api/src/paper/import,
     apps/api/src/paper/log,
-    apps/api/src/paper/content,
     apps/api/src/paper/log,
     apps/api/src/paper/pdf,
     apps/api/src/paper/word,

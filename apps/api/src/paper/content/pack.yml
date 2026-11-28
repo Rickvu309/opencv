@@ -1,3 +1,0 @@
-layer: feature
-public: [content-document.ts]
-dependencies: [apps/api/src/db, apps/api/src/platform]
