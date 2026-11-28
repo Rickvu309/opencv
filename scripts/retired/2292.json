@@ -94,5 +94,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 1
+  },
+  {
+    "subject": "scripts/guard-ledger/paper-native-word-photo.json",
+    "because": "Only tests when the engine 1 rich Word compiler may run, and engine 1 is gone with the switch; the promise that Word out keeps the page is now apps/api/src/paper/word/round-trip.test.ts",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
   }
 ]
