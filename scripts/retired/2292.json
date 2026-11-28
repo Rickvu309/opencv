@@ -14,5 +14,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 1
+  },
+  {
+    "subject": "scripts/guard-ledger/paper-content-rollback.json",
+    "because": "Ledger row on the retired paper-content-isolation test; rollback of a Paper write is now the Paper log transaction in apps/api/src/paper/log/log.test.ts",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
   }
 ]
