@@ -1,0 +1,10 @@
+[
+  {
+    "subject": "scripts/packs.test.mjs > the packs page matches every pack.yml",
+    "because": "The page is no longer committed; ts-packwerk docs --out prints it on demand, and ts-packwerk check still judges every pack.yml.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  }
+]
