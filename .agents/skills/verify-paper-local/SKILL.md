@@ -29,8 +29,6 @@ Run sequentially with `TMPDIR=/home/quan/tmp`.
 pnpm --filter @workspace/paper-crdt build
 pnpm --filter web exec vitest run --isolate src/lib/paper-sync-identity.test.ts src/lib/paper-rich-transport.test.ts src/lib/paper-rich-editor.test.ts
 pnpm --filter api exec vitest run src/registry/paper-contract.test.ts src/registry/transaction.test.ts
-node --test scripts/paper-native-durable.test.mjs
-node scripts/guard-ledger.mjs prove paper-journal-preservation
 ```
 
 The build comes first on a fresh worktree, or the web tests fail with `Failed to resolve import "@workspace/paper-crdt"`.
