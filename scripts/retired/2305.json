@@ -30,5 +30,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 1
+  },
+  {
+    "subject": "apps/api/src/registry/ownership.test.ts > readsBetweenContexts[\"paper/word-page-export.ts reads jobs\"]",
+    "because": "The file that read jobs is deleted with the old Paper Word page code, so its allowed cross-context read has no subject.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
   }
 ]
