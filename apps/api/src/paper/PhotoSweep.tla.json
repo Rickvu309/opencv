@@ -11,10 +11,10 @@
   },
   "covers": [
     "apps/api/src/paper/photo-sweep.ts",
-    "apps/api/src/paper/photo-references.ts",
-    "apps/api/src/paper/store.ts",
+    "apps/api/src/paper/log/photo-references.ts",
+    "apps/api/src/paper/log/postgres-store.ts",
+    "apps/api/src/paper/log/paper-log.ts",
     "apps/api/src/db/context.ts"
   ],
-  "sync": "f8167a13418e8167eedde62be48f1d01cbee16d5",
-  "retiring": "Photos are attached only by the template CV form (apps/web/src/features/paper/cv-templates/cv-parts.tsx), which is planned for removal with the Yjs editors. The sweep still runs from apps/api/src/index.ts."
+  "sync": "6866d75411576cfeee5194157ba9c2b42bf9eefc"
 }
