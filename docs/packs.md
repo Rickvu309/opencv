@@ -22,7 +22,6 @@ flowchart TD
     p_apps_api_src_paper_content["apps/api/src/paper/content"]
     p_apps_api_src_paper_import["apps/api/src/paper/import"]
     p_apps_api_src_paper_log["apps/api/src/paper/log"]
-    p_apps_api_src_paper_native_output["apps/api/src/paper/native-output"]
     p_apps_api_src_paper_pdf["apps/api/src/paper/pdf"]
     p_apps_api_src_paper_word["apps/api/src/paper/word"]
     p_apps_web_src_features_apply["apps/web/src/features/apply"]
@@ -111,7 +110,6 @@ flowchart TD
   p_apps_api_src_job --> p_apps_api_src_platform
   p_apps_api_src_paper --> p_apps_api_src_paper_import
   p_apps_api_src_paper --> p_apps_api_src_paper_log
-  p_apps_api_src_paper --> p_apps_api_src_paper_native_output
   p_apps_api_src_paper --> p_apps_api_src_paper_content
   p_apps_api_src_paper --> p_apps_api_src_paper_pdf
   p_apps_api_src_paper --> p_apps_api_src_paper_word
@@ -220,11 +218,10 @@ flowchart TD
 | `apps/api/src/job` | feature | index.ts, operations | apps/api/src/registry, apps/api/src/db, apps/api/src/limits, apps/api/src/platform | none |
 | `apps/api/src/limits` | platform | index.ts | none | none |
 | `apps/api/src/mail` | platform | none | none | none |
-| `apps/api/src/paper` | feature | index.ts, operations | apps/api/src/paper/import, apps/api/src/paper/log, apps/api/src/paper/native-output, apps/api/src/paper/content, apps/api/src/paper/pdf, apps/api/src/paper/word, apps/api/src/registry, apps/api/src/db, apps/api/src/limits, apps/api/src/platform | none |
+| `apps/api/src/paper` | feature | index.ts, operations | apps/api/src/paper/import, apps/api/src/paper/log, apps/api/src/paper/content, apps/api/src/paper/pdf, apps/api/src/paper/word, apps/api/src/registry, apps/api/src/db, apps/api/src/limits, apps/api/src/platform | none |
 | `apps/api/src/paper/content` | feature | content-document.ts | apps/api/src/db, apps/api/src/platform | none |
 | `apps/api/src/paper/import` | feature | import-parse.ts, import-text-pool.ts, import-word.ts, package-xml.ts, package-zip.ts, word-to-paper.ts | apps/api/src/platform | none |
 | `apps/api/src/paper/log` | feature | index.ts | apps/api/src/db, packages/paper-engine | none |
-| `apps/api/src/paper/native-output` | feature | formatted.ts, formatted-photos.ts | none | none |
 | `apps/api/src/paper/pdf` | feature | write-pdf.ts | packages/paper-engine | none |
 | `apps/api/src/paper/word` | feature | read-docx.ts, write-docx.ts | apps/api/src/paper/import | none |
 | `apps/api/src/platform` | platform | none | none | none |
