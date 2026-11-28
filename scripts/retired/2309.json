@@ -70,5 +70,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 7
+  },
+  {
+    "subject": "scripts/guard-ledger/paper-word-fonts.json",
+    "because": "Ledger row of the old Word writer font test under apps/api/src/paper/native-output, which is removed with that writer.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
   }
 ]
