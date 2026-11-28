@@ -1,9 +1,8 @@
 import ts from "typescript"
 
 const message =
-  "The Paper page is the same page on every screen; scale the page in rich-page-layout.ts instead"
-const sheet =
-  /\.(?:paper-rich-sheet|writing-page)\b|\[data-paper-(?:layout|wrap-slot|page-flow)/
+  "The Paper page is the same page on every screen; scale the page with pageScale in painter.ts instead"
+const sheet = /\.paper-(?:editor(?:-page|-stage)?|run)(?![\w-])/
 const geometry =
   /^(?:inline-size|block-size|min-(?:inline|block)-size|max-(?:inline|block)-size|width|height|min-width|max-width|min-height|max-height|padding(?:-[\w-]+)?|columns|column-[\w-]+|font(?:-[\w-]+)?|line-height|zoom|transform)$/
 
@@ -22,18 +21,19 @@ function cssMistake(text, physical) {
       }
       const selector = body.slice(start, open).trim()
       const content = body.slice(open + 1, end - 1)
+      if (/^@media\s+print\b/.test(selector)) {
+        start = end
+        continue
+      }
       const active = responsive || /^@(?:media|container)\b/.test(selector)
       const paper = inSheet || sheet.test(selector)
       if (
-        (paper || /\.writing-scroll\b/.test(selector)) &&
+        paper &&
         content
           .split(";")
           .some(
             (declaration) =>
-              (paper
-                ? geometry.test(declaration.split(":")[0].trim())
-                : declaration.split(":")[0].trim() ===
-                  "grid-template-columns") &&
+              geometry.test(declaration.split(":")[0].trim()) &&
               (active ||
                 (physical &&
                   /%|\bclamp\(|[\d.](?:d?vw|cqw)\b/.test(
@@ -74,23 +74,18 @@ function hasPictureRatioMistake(text, path) {
   )
 }
 
+const editorFile = /^apps\/web\/src\/features\/paper\/editor\/(?!chrome\/)/
+const fitFile =
+  /^apps\/web\/src\/features\/paper\/editor\/(?:paper-editor|painter)\.ts$/
+
 export function detect(text, path = "") {
   if (
-    !/^(?:apps\/web\/src\/(?:features\/paper(?:-page)?|styles)|packages\/(?:paper-crdt\/src|domain\/src))\//.test(
+    !/^(?:apps\/web\/src\/features\/paper|packages\/paper-engine\/src)\//.test(
       path
     )
   )
     return []
   if (/\.(?:test|browser)\./.test(path)) return []
-  if (
-    /\.css$/.test(path) &&
-    /(?:^|})\s*\.writing-page\s*{[^}]*\bborder(?:-width|-style)?:\s*(?:0(?:px)?|none)\s*;/m.test(
-      text
-    )
-  )
-    return [
-      "Keep the Word page's 1px border space so its text width and wrapping stay unchanged",
-    ]
   if (hasPictureRatioMistake(text, path)) return [pictureRatioError]
   if (/data-paper-reflow|dataset\.paperReflow/.test(text)) return [message]
   if (cssMistake(text, /\.css$/.test(path))) return [message]
@@ -102,34 +97,6 @@ export function detect(text, path = "") {
     true,
     ts.ScriptKind.TSX
   )
-  const eagerCanvas =
-    path === "apps/web/src/features/paper-page/canvas-viewport.ts"
-  const sharedViewport =
-    path === "packages/domain/src/paper-doc/paper-page-scale.ts"
-  const importsEditor = (node) => {
-    if (
-      (ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) &&
-      !node.isTypeOnly &&
-      !(ts.isImportDeclaration(node) && node.importClause?.isTypeOnly) &&
-      node.moduleSpecifier &&
-      (sharedViewport ||
-        (eagerCanvas &&
-          /^@workspace\/paper-crdt(?:\/|$)/.test(node.moduleSpecifier.text)))
-    )
-      return true
-    if (
-      sharedViewport &&
-      ts.isCallExpression(node) &&
-      (node.expression.kind === ts.SyntaxKind.ImportKeyword ||
-        node.expression.getText(source) === "require")
-    )
-      return true
-    return ts.forEachChild(node, importsEditor) ?? false
-  }
-  if (importsEditor(source))
-    return [
-      "Shared Paper viewport geometry must stay independent of the lazy letter editor",
-    ]
   const widths = new Set(["available", "width", "pageWidth", "innerWidth"])
   const widthDependent = (node) => {
     if (ts.isIdentifier(node) && widths.has(node.text)) return true
@@ -144,6 +111,14 @@ export function detect(text, path = "") {
     })
     return found
   }
+  const comparison = (node) =>
+    ts.isBinaryExpression(node) &&
+    [
+      ts.SyntaxKind.LessThanToken,
+      ts.SyntaxKind.GreaterThanToken,
+      ts.SyntaxKind.LessThanEqualsToken,
+      ts.SyntaxKind.GreaterThanEqualsToken,
+    ].includes(node.operatorToken.kind)
   const visit = (node) => {
     if (
       ts.isVariableDeclaration(node) &&
@@ -152,25 +127,22 @@ export function detect(text, path = "") {
       widthDependent(node.initializer)
     ) {
       widths.add(node.name.text)
-      if (
-        ts.isBinaryExpression(node.initializer) &&
-        [
-          ts.SyntaxKind.LessThanToken,
-          ts.SyntaxKind.GreaterThanToken,
-          ts.SyntaxKind.LessThanEqualsToken,
-          ts.SyntaxKind.GreaterThanEqualsToken,
-        ].includes(node.initializer.operatorToken.kind) &&
-        /(?:rich-page-layout|native-layout-flow-view)\.ts$/.test(path)
-      )
-        return true
+      if (comparison(node.initializer) && fitFile.test(path)) return true
     }
     if (
-      /(?:rich-page|native-layout-flow|features\/paper-page\/)/.test(path) &&
+      editorFile.test(path) &&
       (ts.isIfStatement(node) || ts.isConditionalExpression(node)) &&
       widthDependent(node.expression ?? node.condition) &&
       /(?:style|dataset|setAttribute|setProperty|classList)/.test(
         node.getText(source)
       )
+    )
+      return true
+    if (
+      editorFile.test(path) &&
+      ts.isCallExpression(node) &&
+      /(?:^|\.)layout$/.test(node.expression.getText(source)) &&
+      node.arguments.some((arg) => widthDependent(arg))
     )
       return true
     if (

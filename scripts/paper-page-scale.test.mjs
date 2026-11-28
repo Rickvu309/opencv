@@ -5,8 +5,11 @@ import test from "node:test"
 import { detect } from "./lib/paper-page-scale.mjs"
 import { pathAtRevision } from "./lib/path-at-revision.mjs"
 
-const css = "apps/web/src/features/paper/rich-editor/rich-page-geometry.css"
-const layout = "packages/paper-crdt/src/rich-page-layout.ts"
+const css = "apps/web/src/features/paper/editor/paper-editor.css"
+const editor = "apps/web/src/features/paper/editor/paper-editor.ts"
+const painter = "apps/web/src/features/paper/editor/painter.ts"
+const remedy = /scale the page with pageScale in painter.ts instead/
+const fitLine = "    scale = pageScale(width - 2 * gutter, widthPx)\n"
 
 test("responsive Paper geometry mistakes fail with the scaling remedy", () => {
   for (const query of [
@@ -14,8 +17,9 @@ test("responsive Paper geometry mistakes fail with the scaling remedy", () => {
     "@container paper (inline-size < 800px)",
   ]) {
     for (const selector of [
-      ".paper-rich-sheet",
-      '.paper-rich-sheet [data-paper-layout="paperCell"]',
+      ".paper-editor-page",
+      ".paper-editor-stage",
+      ".paper-editor-page .paper-run",
     ]) {
       for (const declaration of [
         "padding: 20px",
@@ -26,60 +30,86 @@ test("responsive Paper geometry mistakes fail with the scaling remedy", () => {
       ]) {
         assert.match(
           detect(`${query} { ${selector} { ${declaration}; } }`, css).join(),
-          /scale the page in rich-page-layout.ts instead/
+          remedy
         )
       }
     }
   }
-  for (const source of [
-    "const reflow = available < width",
-    "if (host.clientWidth < pageWidth) host.style.padding = '20px'",
-    "host.dataset.paperCompact = String(available < pageWidth)",
-    "host.setAttribute('data-paper-mobile', String(innerWidth < 800))",
-    "const narrow = window.innerWidth < 800; if (narrow) host.classList.add('compact')",
-    "element.dataset.paperReflow = 'false'",
+  assert.match(
+    detect(".paper-editor-page { width: 100%; }", css).join(),
+    remedy
+  )
+  for (const [file, source] of [
+    [painter, "const reflow = available < width"],
+    [editor, "if (host.clientWidth < pageWidth) stage.style.padding = '20px'"],
+    [editor, "host.dataset.paperCompact = String(available < pageWidth)"],
+    [
+      editor,
+      "host.setAttribute('data-paper-mobile', String(innerWidth < 800))",
+    ],
+    [
+      editor,
+      "const narrow = window.innerWidth < 800; if (narrow) host.classList.add('compact')",
+    ],
+    [editor, "element.dataset.paperReflow = 'false'"],
+    [editor, "layout = layouter.layout(doc, { widthPx: host.clientWidth })"],
+    [
+      "packages/paper-engine/src/layout/break-lines.ts",
+      "page.dataset.paperReflow = String(width < 600)",
+    ],
   ])
-    assert.ok(detect(source, layout).length, source)
+    assert.match(detect(source, file).join(), remedy, source)
 })
 
 test("uniform scaling and responsive chrome stay quiet", () => {
   for (const source of [
-    ".paper-rich-sheet { padding: var(--cv-rich-page-start); zoom: var(--cv-rich-page-scale); }",
+    ".paper-editor-stage { position: absolute; transform-origin: 0 0; }",
     "@media (max-width: 767px) { .paper-toolbar { padding: 12px; } }",
-    "@media (prefers-reduced-motion: reduce) { .paper-rich-sheet { transition: none; } }",
-    "@media (hover: hover) and (pointer: fine) { .paper-rich-sheet button { background: var(--muted); } }",
+    "@media (max-width: 480px), (pointer: coarse) { .paper-photo-handle { width: 44px; height: 44px; } }",
+    "@media (prefers-reduced-motion: reduce) { .paper-editor-page { transition: none; } }",
+    "@media print { .paper-chrome .paper-editor-stage { position: static; transform: none !important; } }",
+    "@media (hover: hover) { .paper-editor-page button { background: var(--muted); } }",
   ])
     assert.deepEqual(detect(source, css), [], source)
   assert.deepEqual(
     detect(
-      "const scale = Math.min(1, available / width); host.style.setProperty('--cv-rich-page-scale', String(scale))",
-      layout
+      "const width = host.clientWidth; const gutter = width < NARROW_PX ? 16 : 32; scale = pageScale(width - 2 * gutter, widthPx); stage.style.transform = `scale(${scale})`",
+      editor
+    ),
+    []
+  )
+  assert.deepEqual(
+    detect(
+      "if (row.clientWidth < need) row.classList.add('folded')",
+      "apps/web/src/features/paper/editor/chrome/toolbar-fold.ts"
     ),
     []
   )
 })
 
-test("the original reflow commit fails and current Paper sources pass", () => {
-  for (const file of [css, layout]) {
-    const historic = execFileSync(
-      "git",
-      ["show", `f66e65e0:${pathAtRevision("f66e65e0", file)}`],
-      {
-        encoding: "utf8",
-      }
-    )
-    assert.ok(detect(historic, file).length, file)
-  }
+test("the editor scales a fixed-width page and current Paper sources pass", () => {
+  const fit = readFileSync(editor, "utf8")
+  assert.ok(fit.includes(fitLine))
+  assert.match(fit, /stage\.style\.width = `\$\{widthPx\}px`/)
+  assert.match(fit, /scale\(\$\{scale\}\)`/)
+  assert.match(
+    readFileSync(painter, "utf8"),
+    /export function pageScale\(availablePx: number, widthPx: number\): number \{\n  return Math\.min\(1, Math\.max\(0\.1, availablePx \/ widthPx\)\)\n\}/
+  )
+  assert.deepEqual(detect(fit, editor), [])
+  assert.match(
+    detect(
+      fit.replace(
+        fitLine,
+        "    const reflow = width < widthPx\n    if (reflow) stage.style.width = `${width}px`\n"
+      ),
+      editor
+    ).join(),
+    remedy
+  )
   const files = execFileSync(
     "git",
-    [
-      "ls-files",
-      "apps/web/src/features/paper",
-      "apps/web/src/features/paper-page",
-      "apps/web/src/styles",
-      "packages/paper-crdt/src",
-      "packages/domain/src/paper-doc/paper-page-scale.ts",
-    ],
+    ["ls-files", "apps/web/src/features/paper", "packages/paper-engine/src"],
     { encoding: "utf8" }
   )
     .trim()
@@ -140,104 +170,4 @@ test("the earlier US Letter thumbnails fail the A4 picture guard", () => {
     )
     assert.match(detect(historic, file).join(), /shared A4 ratio/, file)
   }
-})
-
-const canvasCss = "apps/web/src/features/paper-page/canvas.css"
-const canvas = "apps/web/src/features/paper-page/canvas.tsx"
-
-test("older Word canvas refuses responsive page geometry", () => {
-  for (const source of [
-    ".writing-page { padding-inline: clamp(1.25rem, 12%, 1in); }",
-    ".writing-page { width: min(100% - 3rem, 8.5in); }",
-    ".writing-scroll { grid-template-columns: min(100% - 3rem, 8.5in); }",
-    "@container writing-sheet (width < 800px) { .writing-page p { font-size: 12pt; } }",
-    "@media (max-width: 767px) { .writing-page { padding: 1rem; } }",
-  ])
-    assert.match(
-      detect(source, canvasCss).join(),
-      /scale the page in rich-page-layout.ts instead/
-    )
-  assert.ok(
-    detect("if (scroll.clientWidth < 816) page.style.padding = '20px'", canvas)
-      .length
-  )
-  assert.deepEqual(
-    detect(
-      ".writing-page { inline-size: 8.5in; min-block-size: 11in; padding: 1in; transform: scale(var(--cv-rich-page-scale)); }",
-      canvasCss
-    ),
-    []
-  )
-  const historic = execFileSync(
-    "git",
-    ["show", `646b7471:${pathAtRevision("646b7471", canvasCss)}`],
-    {
-      encoding: "utf8",
-    }
-  )
-  assert.ok(detect(historic, canvasCss).length)
-})
-
-test("shared viewport geometry preserves the lazy editor boundary", () => {
-  const canvasViewport = "apps/web/src/features/paper-page/canvas-viewport.ts"
-  const viewport = "packages/domain/src/paper-doc/paper-page-scale.ts"
-  const message = /independent of the lazy letter editor/
-  assert.match(
-    detect(
-      'import { scalePaperPage } from "@workspace/paper-crdt/page-viewport"',
-      canvasViewport
-    ).join(),
-    message
-  )
-  for (const source of [
-    'import { openRichPaperClient } from "@workspace/paper-crdt/editor"',
-    'export { openRichPaperClient } from "@workspace/paper-crdt/editor"',
-    'const editor = import("@workspace/paper-crdt/editor")',
-  ])
-    assert.match(detect(source, viewport).join(), message)
-  assert.deepEqual(
-    detect(
-      'import { scalePaperPage } from "@workspace/domain/internal/paper-page-scale"',
-      canvasViewport
-    ),
-    []
-  )
-  assert.deepEqual(detect(readFileSync(viewport, "utf8"), viewport), [])
-  const historic = execFileSync(
-    "git",
-    ["show", `3f8f4170:${pathAtRevision("3f8f4170", canvasViewport)}`],
-    {
-      encoding: "utf8",
-    }
-  )
-  assert.match(detect(historic, canvasViewport).join(), message)
-})
-
-test("Word page border space cannot disappear with its chrome", () => {
-  const message = /Keep the Word page's 1px border space/
-  for (const border of [
-    "border: 0",
-    "border: 0px",
-    "border: none",
-    "border-width: 0",
-    "border-style: none",
-  ])
-    assert.match(
-      detect(`.writing-page { ${border}; }`, canvasCss).join(),
-      message
-    )
-  for (const source of [
-    ".writing-page { border: 1px solid transparent; }",
-    ".writing-page { border: 1px solid var(--border); }",
-    ".writing-page p { border: 0; }",
-  ])
-    assert.deepEqual(detect(source, canvasCss), [])
-  const historic = execFileSync(
-    "git",
-    ["show", `d04e2f15:${pathAtRevision("d04e2f15", canvasCss)}`],
-    {
-      encoding: "utf8",
-    }
-  )
-  assert.match(detect(historic, canvasCss).join(), message)
 })

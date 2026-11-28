@@ -3,98 +3,77 @@ import ts from "typescript"
 export const message =
   "Use blankCv() or blankLetter(), backed by emptyPaper(kind): a blank has one empty paragraph and no header, sections or formatting."
 
-export const richMessage =
-  "Use emptyRichPaper(kind): a rich blank holds only the required empty CV header and one empty paragraph, with no photo, table or formatting."
+const ONE_INCH_MPT = 72000
+const plainParagraph = {
+  kind: "paragraph",
+  list: null,
+  level: 0,
+  align: "left",
+  lineSpacing: null,
+  keepWithNext: null,
+}
+
+const keysOf = (value) =>
+  Object.keys(value ?? {})
+    .sort()
+    .join(",")
 
 export function detectDocument(document) {
-  const paragraph = document?.blocks?.[0]
-  return document?.version === 3 &&
-    ["cv", "letter"].includes(document.kind) &&
-    Object.keys(document).sort().join(",") === "blocks,clashes,kind,version" &&
-    Array.isArray(document.clashes) &&
-    document.clashes.length === 0 &&
-    document.blocks.length === 1 &&
-    paragraph?.type === "paragraph" &&
-    typeof paragraph.id === "string" &&
-    (document.kind !== "letter" || paragraph.id === "letter-1") &&
-    Object.keys(paragraph).sort().join(",") === "content,id,type" &&
-    Array.isArray(paragraph.content) &&
-    paragraph.content.length === 0
+  const page = document?.attrs?.page
+  const block = document?.content?.[0]
+  const attrs = block?.attrs ?? {}
+  const kind = document?.attrs?.template === "letter" ? "letter" : "cv"
+  return document?.type === "doc" &&
+    keysOf(document) === "attrs,content,type" &&
+    keysOf(document.attrs) === "page,schema,template" &&
+    document.attrs.schema === 1 &&
+    ["classic", "letter"].includes(document.attrs.template) &&
+    page?.size === "A4" &&
+    page?.orientation === "portrait" &&
+    keysOf(page.marginsMpt) === "bottom,left,right,top" &&
+    Object.values(page.marginsMpt).every((mpt) => mpt === ONE_INCH_MPT) &&
+    Array.isArray(document.content) &&
+    document.content.length === 1 &&
+    block?.type === "text_block" &&
+    keysOf(block) === "attrs,type" &&
+    keysOf(attrs) === "align,id,keepWithNext,kind,level,lineSpacing,list" &&
+    typeof attrs.id === "string" &&
+    (kind !== "letter" || attrs.id === "letter-1") &&
+    Object.entries(plainParagraph).every(([key, value]) => attrs[key] === value)
     ? []
     : [message]
 }
 
-export function detectRichDocument(document) {
-  const section = document?.flow?.children?.[0]
-  const page = document?.presentation?.page
-  const nodes = section?.children ?? []
-  const header =
-    document?.kind === "cv" && nodes[0]?.type === "header" ? nodes[0] : null
-  const paragraph = header ? nodes[1] : nodes[0]
-  const headerFieldsEmpty =
-    header === null ||
-    (Array.isArray(header.children) &&
-      header.children.every(
-        (field) =>
-          field?.type === "cvField" &&
-          typeof field.fieldKey === "string" &&
-          Object.keys(field).sort().join(",") ===
-            "content,fieldKey,id,ownerId,paragraph,type" &&
-          Object.keys(field.paragraph ?? {}).length === 0 &&
-          Array.isArray(field.content) &&
-          field.content.length === 0
-      ))
-  return document?.version === 4 &&
-    document?.schemaRevision === 2 &&
-    ["cv", "letter"].includes(document.kind) &&
-    document?.profile === "private-layout-3" &&
-    Object.keys(document.presentation ?? {})
-      .sort()
-      .join(",") === "codecVersion,inline,page,paragraph,styles" &&
-    Array.isArray(document.presentation?.styles) &&
-    document.presentation?.styles?.length === 0 &&
-    Object.keys(document.presentation?.paragraph ?? {}).length === 0 &&
-    Array.isArray(document.flow?.children) &&
-    document.flow.children.length === 1 &&
-    section?.type === "flowSection" &&
-    section?.start === "continuous" &&
-    section?.columns?.count === 1 &&
-    page &&
-    ["width", "height", "orientation", "top", "bottom", "start", "end"].every(
-      (key) => section.page?.[key] === page[key]
-    ) &&
-    Array.isArray(nodes) &&
-    nodes.length === (document.kind === "cv" ? 2 : 1) &&
-    headerFieldsEmpty &&
-    paragraph?.type === "paragraph" &&
-    typeof paragraph.id === "string" &&
-    (document.kind !== "letter" || paragraph.id === "letter-1") &&
-    Object.keys(paragraph).sort().join(",") === "content,id,paragraph,type" &&
-    Object.keys(paragraph.paragraph ?? {}).length === 0 &&
-    Array.isArray(paragraph.content) &&
-    paragraph.content.length === 0
-    ? []
-    : [richMessage]
-}
+const startingShape = [
+  /\bpaperEngineBlank\.blankCv\(\)/,
+  /\bpaperEngineBlank\.blankLetter\(\)/,
+  /return content\.length \? \{ \.\.\.blank, content \} : blank\b/,
+]
 
 export function detect(text, file = "document.ts") {
   const source = ts.createSourceFile(file, text, ts.ScriptTarget.Latest, true)
   const problems = []
   const visit = (node) => {
-    if (
-      ts.isFunctionDeclaration(node) &&
-      node.body &&
-      ["blankCv", "blankLetter", "blankPaper", "mintBlankBytes"].includes(
-        node.name?.text
+    if (ts.isFunctionDeclaration(node) && node.body) {
+      const name = node.name?.text
+      const body = node.body.getText(source)
+      if (
+        ["blankCv", "blankLetter", "blankPaper", "mintBlankBytes"].includes(
+          name
+        )
+      ) {
+        const shared = /\b(blankPaper|emptyPaper)\(/.test(body)
+        const dispatch =
+          name === "blankPaper" &&
+          /\bblankCv\(\)/.test(body) &&
+          /\bblankLetter\(\)/.test(body)
+        if (!shared && !dispatch) problems.push(message)
+      }
+      if (
+        name === "startingPage" &&
+        !startingShape.every((pattern) => pattern.test(body))
       )
-    ) {
-      const body = node.body?.getText(source) ?? ""
-      const shared = /\b(blankPaper|emptyPaper)\(/.test(body)
-      const dispatch =
-        node.name?.text === "blankPaper" &&
-        /\bblankCv\(\)/.test(body) &&
-        /\bblankLetter\(\)/.test(body)
-      if (!shared && !dispatch) problems.push(message)
+        problems.push(message)
     }
     ts.forEachChild(node, visit)
   }

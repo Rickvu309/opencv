@@ -5,9 +5,6 @@
     "module": "scripts/lib/paper-page-scale.mjs",
     "export": "detect"
   },
-  "historic": {
-    "mode": "detect",
-    "sha": "f66e65e0",
-    "path": "packages/paper-crdt/src/rich-page-layout.ts"
-  }
+  "historic": null,
+  "reason": "Retargeted to the new Paper editor, which scales one fixed-width page with pageScale in painter.ts from its first commit. The historic reflow mistake (f66e65e0) lived in the old rich-page-layout.ts, which is out of the guard's scope now. The test puts the same reflow mistake into the current fit() of paper-editor.ts and it fires, and every current Paper source stays quiet."
 }

@@ -1,0 +1,370 @@
+[
+  {
+    "subject": "scripts/blocknote-dependencies.test.mjs",
+    "because": "BlockNote was the old editor's library. scripts/no-editor-view-framework.test.mjs replaces this check: it fires on BlockNote, Tiptap, ProseMirror view and Yjs in the new Paper packs, and it widens to the whole repo when the old packages and their dependencies are removed.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 13
+  },
+  {
+    "subject": "scripts/paper-measured-pagination.test.mjs",
+    "because": "It checks how the old rich editor tiles page backgrounds with a repeating gradient. The new editor paints each page as its own box in painter.ts, so there is no tiled background to check and no replacement is needed.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 11
+  },
+  {
+    "subject": "scripts/guard-ledger/paper-measured-pagination.json",
+    "because": "Ledger row of the retired paper-measured-pagination check; its historic mistake lives in old rich editor code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/paper-page-layout.test.mjs",
+    "because": "It checks gap bands on the old continuous sheet. The new editor lays out separate pages in packages/paper-engine and paints each page as its own element, so no replacement is needed.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 5
+  },
+  {
+    "subject": "scripts/guard-ledger/paper-page-layout.json",
+    "because": "Ledger row of the retired paper-page-layout check, which only reads old continuous-sheet code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/paper-size-spacing.test.mjs",
+    "because": "It checks size and spacing controls of the old rich editor toolbar, which is removed with the old engine. The new toolbar is covered by apps/web/src/features/paper/editor/chrome/paper-toolbar.browser.test.ts.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 9
+  },
+  {
+    "subject": "scripts/guard-ledger/paper-size-spacing.json",
+    "because": "Ledger row of the retired paper-size-spacing check, which only reads old rich editor toolbar files.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/paper-rich-scroll.test.mjs",
+    "because": "It checks that the old rich page stays height bounded inside its pane. The new editor sizes its host from the page count and scale in fit() of paper-editor.ts, which paper-page-scale now checks; no replacement is needed for old code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
+  },
+  {
+    "subject": "scripts/guard-ledger/paper-rich-scroll.json",
+    "because": "Ledger row of the retired paper-rich-scroll check, which only reads old rich page code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/paper-photo-screen-bounds.test.mjs",
+    "because": "It checks the old rich photo geometry. New photos are image blocks the engine lays out in page units, so no replacement is needed.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 3
+  },
+  {
+    "subject": "scripts/guard-ledger/paper-photo-screen-bounds.json",
+    "because": "Ledger row of the retired paper-photo-screen-bounds check, which only reads old rich photo code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/paper-header-fit.test.mjs",
+    "because": "It checks the old rich document header stylesheet, which is removed with the old editor. The new Paper chrome is a different component, so no replacement is needed.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 6
+  },
+  {
+    "subject": "scripts/guard-ledger/paper-header-fit.json",
+    "because": "Ledger row of the retired paper-header-fit check, which only reads the old rich header stylesheet.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/paper-cv-fields.test.mjs",
+    "because": "It checks private CV field identity in the old rich document format. The new Paper document has no CV field nodes, so no replacement is needed.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/guard-ledger/paper-cv-fields.json",
+    "because": "Ledger row of the retired paper-cv-fields check, which only reads old rich document code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/paper-presentation.test.mjs",
+    "because": "It checks the old rich presentation model and its photo form, clipboard HTML, recovery, storage and domain aliases in paper-crdt and the old rich editor. The new Paper has none of these paths; its paste, photos and storage are covered by apps/web/src/features/paper/editor/paste-html.test.ts and the apps/api/src/paper/log tests.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 25
+  },
+  {
+    "subject": "scripts/guard-ledger/paper-presentation.json",
+    "because": "Ledger row of the retired paper-presentation check, which only reads old rich presentation code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/guard-ledger/paper-clipboard-html.json",
+    "because": "Ledger row on the retired paper-presentation check; its clipboard mistake lives in old rich editor code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/guard-ledger/paper-domain-subpath-alias.json",
+    "because": "Ledger row on the retired paper-presentation check; it guards a domain alias only the old rich editor uses.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/guard-ledger/paper-domain-vite-alias.json",
+    "because": "Ledger row on the retired paper-presentation check; it guards a Vite alias only the old rich editor uses.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/guard-ledger/paper-flow-inline-paste.json",
+    "because": "Ledger row on the retired paper-presentation check; its paste mistake lives in old paper-crdt flow code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/guard-ledger/paper-pagination-support.json",
+    "because": "Ledger row on the retired paper-presentation check; its pagination mistake lives in old paper-crdt code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/guard-ledger/paper-photo-apply-rounding.json",
+    "because": "Ledger row on the retired paper-presentation check; its rounding mistake lives in the old rich photo form.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/guard-ledger/paper-rich-html.json",
+    "because": "Ledger row on the retired paper-presentation check; its HTML mistake lives in old rich editor code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/guard-ledger/paper-rich-recovery-admission.json",
+    "because": "Ledger row on the retired paper-presentation check; its recovery mistake lives in old rich sync code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/guard-ledger/paper-storage-headless.json",
+    "because": "Ledger row on the retired paper-presentation check; its storage mistake lives in old paper-crdt code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/paper-editor-lifecycle.test.mjs",
+    "because": "It checks how the old BlockNote editor mounts on the client. The new editor mounts through createPaperEditor and is covered by apps/web/src/features/paper/editor/paper-editor.browser.test.ts.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 8
+  },
+  {
+    "subject": "scripts/guard-ledger/paper-editor-lifecycle.json",
+    "because": "Ledger row of the retired paper-editor-lifecycle check, which only reads the old editor mount.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/paper-search.test.mjs",
+    "because": "It checks the old find bar's incremental indexes and Yjs anchors. The new find bar in apps/web/src/features/paper/editor/find-bar.ts has no Yjs, so no replacement is needed.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 10
+  },
+  {
+    "subject": "scripts/guard-ledger/paper-search.json",
+    "because": "Ledger row of the retired paper-search check, which only reads old find bar and paper-crdt code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/paper-tables.test.mjs",
+    "because": "It checks tables in the old rich editor. The new Paper document has no table block, so no replacement is needed.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 15
+  },
+  {
+    "subject": "scripts/guard-ledger/paper-tables.json",
+    "because": "Ledger row of the retired paper-tables check, which only reads old rich table code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/paper-text-marks.test.mjs",
+    "because": "It checks UTF-16 positions of marks in the old rich text code in paper-crdt. New runs and marks are covered by the packages/paper-engine command and history tests.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
+  },
+  {
+    "subject": "scripts/guard-ledger/paper-text-marks.json",
+    "because": "Ledger row of the retired paper-text-marks check, which only reads old paper-crdt text code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/guard-ledger/paper-href-trim.json",
+    "because": "Ledger row on the retired paper-text-marks check; its link trim mistake lives in old paper-crdt code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/paper-link-direct-marks.test.mjs",
+    "because": "It checks link styling in the old Word writer under apps/api/src/paper/native-output, which is removed with the old engine. The new Word writer is covered by apps/api/src/paper/word/round-trip.test.ts.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 8
+  },
+  {
+    "subject": "scripts/guard-ledger/paper-link-direct-marks.json",
+    "because": "Ledger row of the retired paper-link-direct-marks check, which only reads the old Word writer.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/paper-link-patterns.test.mjs",
+    "because": "It checks link normalization in the old rich structure. New links are run marks covered by the packages/paper-engine tests, so no replacement is needed.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/guard-ledger/paper-link-patterns.json",
+    "because": "Ledger row of the retired paper-link-patterns check, which only reads old rich structure code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/paper-print-cancel.test.mjs",
+    "because": "It checks the library print of the old Paper document shape. The new editor prints through its own print stylesheet, and while the old print module lives it keeps apps/web/src/features/paper/paper-print.test.ts.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 3
+  },
+  {
+    "subject": "scripts/guard-ledger/paper-print-cancel.json",
+    "because": "Ledger row of the retired paper-print-cancel check, which only reads the old library print module.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/paper-print-readiness.test.mjs",
+    "because": "It checks print readiness of the library print of the old Paper document shape. The new editor prints through its own print stylesheet, and while the old module lives it keeps apps/web/src/features/paper/paper-print-readiness.test.ts.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 6
+  },
+  {
+    "subject": "scripts/guard-ledger/paper-print-readiness.json",
+    "because": "Ledger row of the retired paper-print-readiness check, which only reads the old library print module.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/paper-blank-canvas.test.mjs",
+    "because": "Retargeted to the new Paper. The blank rule stays and now checks emptyPaper, blankCv and blankLetter from paperEngineBlank, the startingPage creation path with a mistake fixture, and the bytes of the new Word writer for a blank. The cases on emptyRichPaper and the old canvas mint checked only old engine code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 20
+  },
+  {
+    "subject": "scripts/paper-page-scale.test.mjs",
+    "because": "Retargeted to the new Paper editor. The rule that the page is the same on every screen stays and now checks paper-editor.css, paper-editor.ts and painter.ts, with a mistake fixture that puts a reflow into fit(). The old Word canvas, its border space and the lazy rich editor boundary cases checked files that are gone or only used by old engine code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 10
+  },
+  {
+    "subject": "scripts/guard-ledger/paper-page-scale.json",
+    "because": "The guard now scopes to the new editor, so the historic reflow in the old rich-page-layout.ts is out of scope. The row records why, and the test injects the same reflow into the current fit() of paper-editor.ts, where it fires.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  }
+]
