@@ -6,5 +6,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 2
+  },
+  {
+    "subject": "apps/api/src/paper/reset-paper.test.ts",
+    "because": "Migration 0029_paper_drop_old drops paper_doc_updates, the paper_package tables, the jobs package links and the crdt columns, so checks that named them have no subject; migrate-paper-drop-old.test.ts proves the drop.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
   }
 ]
