@@ -58,6 +58,6 @@ All five prototypes passed on Chromium, Firefox and WebKit on Linux. None of the
 
 - This supersedes ADR 0004. Concurrent updates are ordered by the server's change log and rebased by `prosemirror-collab`, not merged by Yjs.
 - This amends ADR 0008. A Paper is still one document and Word is still a door; the document is now the flat schema above, and PDF is a second door out.
-- The old core (`packages/paper-crdt`, `apps/web/src/features/paper/rich-editor`, `apps/api/src/paper/content`, `apps/api/src/paper/native-output`) is fenced while the rebuild runs and is deleted after the switch.
+- The old core (the Yjs package, the old rich editor, and the API content and native output modules) was fenced while the rebuild ran and was deleted after the switch, in #2311 to #2327.
 - The promises are scenarios in `apps/api/src/scenarios/paper-engine.scenario.test.ts`, marked as expected to fail until the work that keeps each one lands.
 - Our own caret, selection, composition, phone selection, accessibility and spelling are ours to maintain. Columns, text wrapping around a photo, and headers and footers are out of scope for this release.
