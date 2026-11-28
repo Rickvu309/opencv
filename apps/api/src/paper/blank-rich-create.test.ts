@@ -1,5 +1,4 @@
 import { personActor } from "@workspace/domain/kernel"
-import { RICH_NATIVE_WRITER } from "@workspace/domain/paper-doc"
 import { describe, expect, it } from "vitest"
 
 import { withDatabase } from "../db/context.js"
@@ -35,7 +34,7 @@ describe("paper.create format rich", () => {
         )
         const document = (await registry.read(
           "paper.read",
-          { view: "info", docId: created.id, writer: RICH_NATIVE_WRITER },
+          { view: "info", docId: created.id },
           actor
         )) as {
           format: "rich"

@@ -1,4 +1,4 @@
-import { RICH_NATIVE_WRITER, type Document } from "@workspace/domain/paper-doc"
+import { type Document } from "@workspace/domain/paper-doc"
 import { eq } from "drizzle-orm"
 import { describe, expect, it } from "vitest"
 
@@ -75,7 +75,6 @@ describe("Copied CV photo lifetime", () => {
         .where(eq(paperDocs.id, sourceId))
       const duplicated = await command("paper.duplicate", {
         docId: sourceId,
-        writer: RICH_NATIVE_WRITER,
       })
       expect(duplicated.status).toBe(200)
       const duplication = (await duplicated.json()) as {

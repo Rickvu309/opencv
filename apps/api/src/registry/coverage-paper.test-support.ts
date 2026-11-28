@@ -1,5 +1,4 @@
 import { parseUserId, personActor } from "@workspace/domain/kernel"
-import { RICH_NATIVE_WRITER } from "@workspace/domain/paper-doc"
 import { expect } from "vitest"
 
 import { importedPaper, saveFile } from "../paper/index.js"
@@ -123,7 +122,6 @@ export function paperCases(tools: CoverageTools): CoverageCase[] {
       act: () =>
         run(paperUpdate.name, {
           docId: ctx.docId,
-          writer: RICH_NATIVE_WRITER,
           patch: { name: "Renamed CV", isFavorite: true, status: "ready" },
         }),
       assert: async (result) => {
@@ -140,7 +138,6 @@ export function paperCases(tools: CoverageTools): CoverageCase[] {
         const beforeUpdatedAt = text(first, "updatedAt")
         const unfavorite = await run(paperUpdate.name, {
           docId: ctx.docId,
-          writer: RICH_NATIVE_WRITER,
           patch: { isFavorite: false },
         })
         const unmarked = await paperOf(ctx.docId)
@@ -149,7 +146,7 @@ export function paperCases(tools: CoverageTools): CoverageCase[] {
         await undo(unfavorite)
         const listed = (await registry.read(
           "paper.list",
-          { writer: RICH_NATIVE_WRITER },
+          {},
           personActor(userId)
         )) as { id: string; isFavorite: boolean }[]
         expect(listed.find((paper) => paper.id === ctx.docId)?.isFavorite).toBe(
@@ -176,7 +173,6 @@ export function paperCases(tools: CoverageTools): CoverageCase[] {
       act: () =>
         run(paperDuplicate.name, {
           docId: ctx.docId,
-          writer: RICH_NATIVE_WRITER,
         }),
       assert: async (result) => {
         expect(text(await paperOf(idOf(result.output)), "name")).toBe(

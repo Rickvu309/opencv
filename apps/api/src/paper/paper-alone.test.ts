@@ -1,5 +1,4 @@
 import { personActor } from "@workspace/domain/kernel"
-import { RICH_NATIVE_WRITER } from "@workspace/domain/paper-doc"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 
 import { withDatabase, type TestDatabase } from "../db/context.js"
@@ -32,8 +31,6 @@ afterAll(async () => {
 
 type Paper = { id: string; name: string }
 
-const writer = RICH_NATIVE_WRITER
-
 describe("Paper with nothing else registered", () => {
   it("starts a blank Paper, lists it, renames it and deletes it", async () => {
     await withDatabase(db, async () => {
@@ -45,14 +42,10 @@ describe("Paper with nothing else registered", () => {
       const docId = (created.output as Paper).id
       await registry.execute({
         name: "paper.update",
-        input: { docId, writer, patch: { name: "Product CV" } },
+        input: { docId, patch: { name: "Product CV" } },
         actor: person,
       })
-      const listed = (await registry.read(
-        "paper.list",
-        { writer },
-        person
-      )) as Paper[]
+      const listed = (await registry.read("paper.list", {}, person)) as Paper[]
       expect(listed.map((paper) => [paper.id, paper.name])).toEqual([
         [docId, "Product CV"],
       ])
@@ -61,7 +54,7 @@ describe("Paper with nothing else registered", () => {
         input: { docId },
         actor: person,
       })
-      expect(await registry.read("paper.list", { writer }, person)).toEqual([])
+      expect(await registry.read("paper.list", {}, person)).toEqual([])
     })
   })
 

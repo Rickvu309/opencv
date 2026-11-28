@@ -2,7 +2,6 @@ import { parsePaperId } from "@workspace/domain/kernel"
 import {
   paperDocStatusSchema,
   paperViewSchema,
-  RICH_NATIVE_WRITER,
 } from "@workspace/domain/paper-doc"
 import { operation } from "@workspace/domain/operations/paper/update"
 import { z } from "zod"
@@ -35,7 +34,7 @@ export const implementation = {
     },
     expect: {
       query: "paper.read",
-      input: { view: "info", docId: input.docId, writer: RICH_NATIVE_WRITER },
+      input: { view: "info", docId: input.docId },
       matches: { name: result.name },
       skipped: "This Paper was renamed again, so Undo was skipped",
     },

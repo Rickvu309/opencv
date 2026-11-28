@@ -1,4 +1,3 @@
-import { RICH_NATIVE_WRITER } from "@workspace/domain/paper-doc"
 import { describe, expect, it } from "vitest"
 
 import {
@@ -148,7 +147,7 @@ describe("job reads", () => {
       await app.request("/api/reads/paper.list", {
         method: "POST",
         headers,
-        body: JSON.stringify({ kind: "cv", writer: RICH_NATIVE_WRITER }),
+        body: JSON.stringify({ kind: "cv" }),
       })
     )
     const cvRows = cvs.data as unknown as { name: string; kind: string }[]

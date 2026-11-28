@@ -1,4 +1,3 @@
-import { RICH_NATIVE_WRITER } from "@workspace/domain/paper-doc"
 import { eq } from "drizzle-orm"
 import { expect } from "vitest"
 import { z } from "zod"
@@ -19,16 +18,12 @@ export function paperReadRequest(
 }
 
 export function richInfoRequest(docId: string, cookie: string) {
-  return paperReadRequest(
-    { view: "info", docId, writer: RICH_NATIVE_WRITER },
-    cookie
-  )
+  return paperReadRequest({ view: "info", docId }, cookie)
 }
 
 export function richEditorHeaders(cookie: string) {
   return {
     ...authHeaders(cookie),
-    "x-paper-writer": JSON.stringify(RICH_NATIVE_WRITER),
   }
 }
 
@@ -72,7 +67,7 @@ export async function expectListIsLivePages(
   const response = await app.request("/api/reads/paper.list", {
     method: "POST",
     headers: authHeaders(account.cookie),
-    body: JSON.stringify({ writer: RICH_NATIVE_WRITER }),
+    body: JSON.stringify({}),
   })
   expect(response.status).toBe(200)
   const fromList = listed

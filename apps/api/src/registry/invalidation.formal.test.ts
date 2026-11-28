@@ -7,7 +7,6 @@ import {
   type QueryRef,
   type ResourceRef,
 } from "@workspace/domain/kernel"
-import { RICH_NATIVE_WRITER } from "@workspace/domain/paper-doc"
 import { eq, inArray } from "drizzle-orm"
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest"
 
@@ -68,7 +67,7 @@ const SNAPSHOT_QUERIES: {
   "inbox.list": () => [{}],
   "inbox.snoozed": () => [{}],
   "inbox.get": (ids) => ids.threads.map((threadId) => ({ threadId })),
-  "paper.list": () => [{}, { writer: RICH_NATIVE_WRITER }],
+  "paper.list": () => [{}],
   "paper.read": (ids) => [
     { view: "library" },
     ...ids.docs.map((docId) => ({ view: "info", docId })),
