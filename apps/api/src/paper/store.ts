@@ -108,7 +108,6 @@ export async function createPaper(
       name: input.name?.trim() || DEFAULT_PAPER_DOC_NAME[input.kind],
       kind: input.kind,
       templateId: input.templateId ?? "simple",
-      engine: NEW_ENGINE,
       contentVersion: 1,
       createdAt: input.createdAt ?? now,
       updatedAt: now,
@@ -118,9 +117,8 @@ export async function createPaper(
   importParsers.onInsert?.()
   const row = (await ownedPaperOrNull(actor.userId, parsePaperId(id))) ?? null
   if (!row) return documentNotFound()
-  const info = await readPaperDocumentInfo(actor.userId, parsePaperId(id))
   if (inserted.length) admitted(await engineLog.start(id, input.page))
-  return info
+  return readPaperDocumentInfo(actor.userId, parsePaperId(id))
 }
 
 export async function createEngineImportPage(

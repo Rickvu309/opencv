@@ -36,29 +36,3 @@ export function readRichPaper(row: PaperRow) {
     )
   return rich
 }
-
-export function isRichPaper(row: PaperRow) {
-  return tryReadRichPaper(row) !== null
-}
-
-export function toListedPaper(row: PaperRow, writer?: NativeWriter): PaperView {
-  const rich = readRichPaper(row)
-  admitDocument(rich, writer)
-  return {
-    id: parsePaperId(row.id),
-    name: row.name,
-    kind: row.kind,
-    templateId: row.templateId as PaperView["templateId"],
-    status: row.status,
-    paper: row.kind === "cv" ? blankCv() : blankLetter(),
-    contentVersion: row.contentVersion,
-    checks: row.checks ?? [],
-    pageChoice: row.pageChoice,
-    sourceFileId: row.sourceFileId ? parseFileId(row.sourceFileId) : null,
-    format: "rich",
-    preview: paperPreviewLines(rich),
-    createdAt: iso(row.createdAt),
-    updatedAt: iso(row.updatedAt),
-    isFavorite: row.isFavorite,
-  }
-}
