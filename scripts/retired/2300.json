@@ -38,5 +38,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 1
+  },
+  {
+    "subject": "apps/api/src/paper/native-word.test.ts",
+    "because": "paper.export without format no longer returns an old rich basis; it downloads through the engine. The Word download still checks its basis through downloadNativeWord in the same case.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
   }
 ]
