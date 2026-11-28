@@ -1,6 +1,10 @@
 import * as Y from "yjs"
 import { cvSlots, richPaperDocumentSchema } from "@workspace/domain/paper-doc"
 
+export function paperPhotoRef(fileId: string) {
+  return `file:${fileId}`
+}
+
 export function richPaper(kind: "cv" | "letter", photo: string) {
   const page = {
     width: 11906,
