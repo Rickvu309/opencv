@@ -30,5 +30,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 3
+  },
+  {
+    "subject": "scripts/guard-ledger/paper-native-client.json",
+    "because": "Only tests the engine 1 native client basis, which no Paper reaches after the switch; none needed, the new page sends engine steps checked by packages/paper-engine/src/wire-steps.test.ts",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
   }
 ]
